@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+</head>
+
+<body style="margin: 0px;background-color: #efefef;font-family: Helvetica,Arial,sans-serif;font-size: 14px;line-height: 23px;border-collapse: collapse;">
+<div style="font-family:arial,helvetica,sans-serif;margin: auto;width: 900px;background-color:white;padding: 30px 40px 30px 40px;">
+    <div>
+
+        <div style="
+    text-align: center;
+    font-family: Helvetica,Arial,sans-serif;
+    font-size: 29px;
+    color: #02a3d5;
+    font-weight: bolder;
+     padding-top: 12px;
+">PERFORMANCE NOTIFICATION
+        </div>
+
+
+        <div style="border-bottom: 2px solid #02a3d5;margin: 25px 0px 35px 0px;"></div>
+
+        <h2 style="color: #02a3d5;">Test Execution Summary:</h2>
+        <table style="border-spacing: 10px; width: 100%;">
+            <tr>
+                <td style="vertical-align:top">
+                    <b style="color: #02a3d5;">Test:</b> {{ t_params.simulation }} <br/>
+                    <b style="color: #02a3d5;">vUser count:</b> {{ t_params.users }} <br/>
+                    <b style="color: #02a3d5;">Start time:</b> {{ t_params.start }} <br/>
+                    <b style="color: #02a3d5;">End time:</b> {{ t_params.end }} <br/>
+                    <b style="color: #02a3d5;">Duration:</b> {{ t_params.duration }} sec<br/>
+
+                </td>
+                <td style="vertical-align:top">
+                    <b style="color: #02a3d5;">Status:</b> <b style="color:{{ t_params.color }}"> {{ t_params.status
+                    }} </b> <br/>
+                    {% if t_params.failed_reason|length != 0 %}
+                    <b>Failed reasons:</b> <br/>
+                    {% for reason in t_params.failed_reason %}
+                    {{ reason }} <br/>
+                    {% endfor %}
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <table style="border-spacing: 10px; width: 100%;">
+            {% if baseline != None %}
+            <tr>
+                <td style="vertical-align:top">
+                    <h2 style="font-size: 16px; color: #02a3d5;">Comparison vs Baseline</h2>
+                    <img src="cid:baseline" style="width:620px;height:350px;">
+                </td>
+                <td style="vertical-align:top">
+                    <br><br><br>
+                    <b style="font-size: 16px; color: #02a3d5;">Top 5 excided baseline</b> <br>
+                    {% for request in top_five_baseline %}
+                    {{ request.request_name }} {{ request.response_time }} <br>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td style="vertical-align:top">
+                    <h2 style="font-size: 16px; color: #02a3d5;">Comparison vs Thresholds</h2>
+                    <img src="cid:thresholds" style="width:620px;height:350px;">
+
+                </td>
+                <td style="vertical-align:top">
+                    <br><br><br>
+                    <b style="font-size: 16px; color: #02a3d5;">Top 5 excided thresholds</b> <br>
+                    {% for request in top_five_thresholds %}
+                    {{ request.request_name }} {{ request.response_time }} <b style="color: {{ request.style_color }}">({{
+                    request.color }})</b> <br>
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+
+        {% if comparison|length != 1 %}
+
+        <div>
+            <h2 style="font-size: 16px; color: #02a3d5;">Comparison vs latest builds</h2>
+
+            <table style="font-family: Helvetica,Arial,sans-serif;font-size: 14px;line-height: 23px;border-collapse: collapse; width: 100%;">
+                <thead style="background-color: #dcdbdb;">
+
+                <th>Date</th>
+                <th>Total request, count</th>
+                <th>Diff, %</th>
+                <th>Throughput, req/sec</th>
+                <th>Diff, %</th>
+                <th>Error rate, %</th>
+                <th>Diff, %</th>
+                <th>95th pct, sec</th>
+                <th>Diff, %</th>
+                </thead>
+                {% for test in comparison %}
+                <tr align="center">
+                    <td>{{ test.date }}</td>
+                    <td>{{ test.total }}</td>
+                    <td>{{ test.total_diff }}</td>
+                    <td>{{ test.throughput }}</td>
+                    <td>{{ test.throughput_diff }}</td>
+                    <td>{{ test.error_rate }}</td>
+                    <td>{{ test.error_rate_diff }}</td>
+                    <td>{{ (test.pct95 /1000.0)|round(2, 'floor') }}</td>
+                    <td>{{ test.pct95_diff }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        {% endif %}
+
+        <div>
+            <h2 style="font-size: 16px; color: #02a3d5;">Results summary table</h2>
+
+            <table style="font-family: Helvetica,Arial,sans-serif;font-size: 14px;line-height: 23px;border-collapse: collapse; width: 100%;">
+                <thead style="background-color: #dcdbdb;">
+
+                <th>Request name</th>
+                <th>Request count</th>
+                <th>Throughput, req/sec</th>
+                <th>Errors</th>
+                <th>Min, sec</th>
+                <th>50th, sec</th>
+                <th>75th, sec</th>
+                <th>95th, sec</th>
+                <th>Max, sec</th>
+                </thead>
+                {% for request in summary %}
+                <tr align="center">
+                    <td>{{ request.request_name }}</td>
+                    <td>{{ request.total }}</td>
+                    <td>{{ request.throughput }}</td>
+                    <td>{{ request.ko }}</td>
+                    <td style="color:{{ request.min_threshold }}">{{ (request.min /1000.0)|round(2, 'floor') }}</td>
+                    <td style="color:{{ request.pct50_threshold }}">{{ (request.pct50 /1000.0)|round(2, 'floor') }}</td>
+                    <td style="color:{{ request.pct75_threshold }}">{{ (request.pct75 /1000.0)|round(2, 'floor') }}</td>
+                    <td style="color:{{ request.pct95_threshold }}">{{ (request.pct95 /1000.0)|round(2, 'floor') }}</td>
+                    <td style="color:{{ request.max_threshold }}">{{ (request.max /1000.0)|round(2, 'floor') }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% if comparison|length != 1 %}
+        <h2 style="font-size: 16px; color: #02a3d5;">Success Rate</h2>
+        <img src="cid:success_rate" style="width:900px;height:270px;">
+        <h2 style="font-size: 16px; color: #02a3d5;">RPS/TPS Rate</h2>
+        <img src="cid:throughput" style="width:900px;height:270px;">
+        {% endif %}
+
+        <div style="border-bottom: 2px solid #02a3d5;margin: 30px 0px 15px 0px;"></div>
+        <p style="font-size: 11px; line-height: 12px; color: #666; margin: .2em 0; padding: 0;">
+            Auto generated performance test run report
+        </p>
+
+        <p style="font-size: 10px; line-height: 12px; color: #999; margin: .2em 0; padding: 0;">
+            (c) 2019 Carrier.
+        </p>
+
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+</head>
+
+<body style="margin: 0px;background-color: #efefef;font-family: Helvetica,Arial,sans-serif;font-size: 14px;line-height: 23px;border-collapse: collapse;">
+<div style="font-family:arial,helvetica,sans-serif;margin: auto;width: 900px;background-color:white;padding: 30px 40px 30px 40px;">
+    <div>
+
+        <div style="
+    text-align: center;
+    font-family: Helvetica,Arial,sans-serif;
+    font-size: 29px;
+    color: #02a3d5;
+    font-weight: bolder;
+     padding-top: 12px;
+">PERFORMANCE NOTIFICATION
+        </div>
+
+
+        <div style="border-bottom: 2px solid #02a3d5;margin: 25px 0px 35px 0px;"></div>
+
+        <h2 style="color: #02a3d5;">Test Execution Summary:</h2>
+        <table style="border-spacing: 10px; width: 100%;">
+            <tr>
+                <td style="vertical-align:top">
+                    <b style="color: #02a3d5;">Scenario:</b> {{ t_params.scenario }} <br/>
+                    <b style="color: #02a3d5;">Test Suite:</b> {{ t_params.suite }} <br/>
+                    <b style="color: #02a3d5;">Start time:</b> {{ t_params.start_time }} <br/>
+                </td>
+                <td style="vertical-align:top">
+                    <b style="color: #02a3d5;">Status:</b> <b style="color:{{ t_params.color }}"> {{ t_params.status
+                    }} </b> <br/>
+                    {% if t_params.failed_reason|length != 0 %}
+                    <b>Failed reasons:</b> <br/>
+                    {% for reason in t_params.failed_reason %}
+                    {{ reason }} <br/>
+                    {% endfor %}
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <table style="border-spacing: 10px; width: 100%;">
+            <tr>
+                <td style="vertical-align:top">
+                    <h2 style="font-size: 16px; color: #02a3d5;">Comparison vs Thresholds</h2>
+                    <img src="cid:thresholds" style="width:620px;height:350px;">
+                </td>
+                <td style="vertical-align:top">
+                    <br><br><br>
+                    <b style="font-size: 16px; color: #02a3d5;">Top 5 excided thresholds</b> <br>
+                    {% for request in top_five_thresholds %}
+                    {{ request.request_name }} {{ request.response_time }} <b style="color: {{ request.style_color }}">({{
+                    request.color }})</b> <br>
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+
+        {% if comparison|length != 1 %}
+
+        <div>
+            <h2 style="font-size: 16px; color: #02a3d5;">Comparison vs latest builds</h2>
+
+            <table style="font-family: Helvetica,Arial,sans-serif;font-size: 14px;line-height: 23px;border-collapse: collapse; width: 100%;">
+                <thead style="background-color: #dcdbdb;">
+
+                <th>Date</th>
+                <th>Count</th>
+                <th>Diff, %</th>
+                <th>Error, %</th>
+                <th>Diff, %</th>
+                <th>latency, s</th>
+                <th>Diff, %</th>
+                <th>transfer, s</th>
+                <th>Diff, %</th>
+                <th>tti, s</th>
+                <th>Diff, %</th>
+                <th>ttl, s</th>
+                <th>Diff, %</th>
+                <th>total_time, s</th>
+                <th>Diff, %</th>
+                </thead>
+                {% for test in comparison %}
+                <tr align="center">
+                    <td>{{ test.date }}</td>
+                    <td>{{ test.count }}</td>
+                    <td>{{ test.total_page_diff }}</td>
+                    <td>{{ test.error_rate }}</td>
+                    <td>{{ test.error_rate_diff }}</td>
+                    <td>{{ test.latency }}</td>
+                    <td>{{ test.total_latency_diff }}</td>
+                    <td>{{ test.transfer }}</td>
+                    <td>{{ test.total_transfer_diff }}</td>
+                    <td>{{ test.tti }}</td>
+                    <td>{{ test.total_tti_diff }}</td>
+                    <td>{{ test.ttl }}</td>
+                    <td>{{ test.total_ttl_diff }}</td>
+                    <td>{{ test.total_time }}</td>
+                    <td>{{ test.total_time_diff }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        {% endif %}
+
+        <div>
+            <h2 style="font-size: 16px; color: #02a3d5;">Results summary table</h2>
+
+            <table style="font-family: Helvetica,Arial,sans-serif;font-size: 14px;line-height: 23px;border-collapse: collapse; width: 100%;">
+                <thead style="background-color: #dcdbdb;">
+
+                <th>Page name</th>
+                <th>Page count</th>
+                <th>Errors</th>
+                <th>Latency, sec</th>
+                <th>Transfer, sec</th>
+                <th>tti, sec</th>
+                <th>ttl, sec</th>
+                <th>total_time, sec</th>
+                </thead>
+                {% for request in summary %}
+                <tr align="center">
+                    <td>{{ request.request_name }}</td>
+                    <td>{{ request.count }}</td>
+                    <td>{{ request.failed }}</td>
+                    <td>{{ request.latency }}</td>
+                    <td>{{ request.transfer }}</td>
+                    <td>{{ request.tti }}</td>
+                    <td>{{ request.ttl }}</td>
+                    <td style="color:{{ request.time_threshold }}">{{ request.total_time }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        {% if comparison|length != 1 %}
+        <h2 style="font-size: 16px; color: #02a3d5;">Success Rate</h2>
+        <img src="cid:success_rate" style="width:900px;height:270px;">
+        <h2 style="font-size: 16px; color: #02a3d5;">Page load time summary</h2>
+        <img src="cid:comparison" style="width:900px;height:270px;">
+        {% endif %}
+
+        <div style="border-bottom: 2px solid #02a3d5;margin: 30px 0px 15px 0px;"></div>
+        <p style="font-size: 11px; line-height: 12px; color: #666; margin: .2em 0; padding: 0;">
+            Auto generated performance test run report
+        </p>
+
+        <p style="font-size: 10px; line-height: 12px; color: #999; margin: .2em 0; padding: 0;">
+            (c) 2019 Carrier.
+        </p>
+
+    </div>
+</div>
+
+</body>
+</html>
