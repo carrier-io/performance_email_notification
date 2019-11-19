@@ -146,7 +146,7 @@ class ReportBuilder:
         request_count, missed_thresholds = 0, 0
         for request in test:
             request_count += 1
-            if request[comparison_metric + '_threshold'] is not 'green':
+            if request[comparison_metric + '_threshold'] != GREEN:
                 missed_thresholds += 1
         missed_thresholds_rate = round(missed_thresholds * 100 / request_count, 2)
         if missed_thresholds_rate > 50:
@@ -462,7 +462,8 @@ class ReportBuilder:
             req = {}
             req['response_time'] = str(round(float(request[comparison_metric]) / 1000, 2))
             req['threshold_value'] = str(request['yellow_threshold_value'])
-            req['threshold'] = round(float(int(request[comparison_metric]) - int(request['yellow_threshold_value']))/ 1000, 2)
+            req['threshold'] = round(
+                float(int(request[comparison_metric]) - int(request['yellow_threshold_value'])) / 1000, 2)
             if len(str(request['request_name'])) > 25:
                 req['request_name'] = str(request['request_name'])[:25] + "... "
             else:
@@ -471,12 +472,14 @@ class ReportBuilder:
                 req['threshold_color'] = YELLOW
             elif request[comparison_metric + '_threshold'] == RED:
                 req['threshold_value'] = str(request['red_threshold_value'])
-                req['threshold'] = round(float(int(request[comparison_metric]) - int(request['red_threshold_value']))/ 1000, 2)
+                req['threshold'] = round(
+                    float(int(request[comparison_metric]) - int(request['red_threshold_value'])) / 1000, 2)
                 req['threshold_color'] = RED
             else:
                 req['threshold_color'] = GREEN
             if baseline:
-                req['baseline'] = round(float(int(request[comparison_metric]) - baseline_metrics[request['request_name']]) / 1000, 2)
+                req['baseline'] = round(
+                    float(int(request[comparison_metric]) - baseline_metrics[request['request_name']]) / 1000, 2)
                 if req['baseline'] < 0:
                     req['baseline_color'] = GREEN
                 else:
@@ -600,7 +603,8 @@ class ReportBuilder:
             test_data.append(page_info)
         return test_data
 
-    def get_api_email_body(self, test_params, last_test_data, baseline, builds_comparison, baseline_and_thresholds, general_metrics):
+    def get_api_email_body(self, test_params, last_test_data, baseline, builds_comparison, baseline_and_thresholds,
+                           general_metrics):
         env = Environment(loader=FileSystemLoader('./templates/'))
         template = env.get_template("backend_email.html")
         last_test_data = self.reprocess_test_data(last_test_data, ['total', 'throughput'])
@@ -612,9 +616,9 @@ class ReportBuilder:
     @staticmethod
     def stringify_number(number):
         if float(number) // 1000000 > 0:
-            return f'{str(round(float(number) / 1000000), 2)}M'
+            return f'{str(round(float(number) / 1000000, 2))}M'
         elif float(number) // 1000 > 0:
-            return f'{str(round(float(number) / 1000), 2)}K'
+            return f'{str(round(float(number) / 1000, 2))}K'
         else:
             return str(number)
 
