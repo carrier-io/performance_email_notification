@@ -165,7 +165,10 @@ class ReportBuilder:
                 error_count += float(request['ko'])
                 pct95 += int(request['pct95'])
             date = str(test[0]['time']).replace("T", " ").replace("Z", "")
-            timestamp = calendar.timegm(time.strptime(date, '%Y-%m-%d %H:%M:%S'))
+            try:
+                timestamp = calendar.timegm(time.strptime(date, '%Y-%m-%d %H:%M:%S'))
+            except ValueError:
+                timestamp = calendar.timegm(time.strptime(date.split(".")[0], '%Y-%m-%d %H:%M:%S'))
             test_info['date'] = datetime.datetime.utcfromtimestamp(int(timestamp)).strftime('%d-%b %H:%M')
             test_info['total'] = total_request_count
             test_info['throughput'] = round(avg_throughput, 2)

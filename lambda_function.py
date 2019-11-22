@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from os import environ
 from email_notifications import EmailNotification
 import json
 
@@ -67,11 +68,11 @@ def parse_args(_event):
     args['users'] = event.get('users', 1)
 
     # Required params
-    args['influx_host'] = event.get('influx_host')
-    args['smpt_user'] = event.get('smpt_user')
-    args['smpt_password'] = event.get('smpt_password')
+    args['influx_host'] = environ.get("influx_host") if not event.get('influx_host') else event.get('influx_host')
+    args['smpt_user'] = environ.get('smpt_user') if not event.get('smpt_user') else event.get('smpt_user')
+    args['smpt_password'] = environ.get("smpt_password") if not event.get('smpt_password') else event.get('smpt_password')
     args['user_list'] = event.get('user_list')
-    args['notification_type'] = event.get('notification_type')
+    args['notification_type'] = environ.get('notification_type') if not event.get('notification_type') else event.get('notification_type')
     args['test'] = event.get('test')
 
     if args['notification_type'] == 'ui':
