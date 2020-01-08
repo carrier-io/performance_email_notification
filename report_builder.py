@@ -24,15 +24,18 @@ from jinja2 import Environment, FileSystemLoader
 GREEN = '#028003'
 YELLOW = '#FFA400'
 RED = '#FF0000'
+GRAY = '#CCCCCC'
 
 class ReportBuilder:
 
-    def create_api_email_body(self, tests_data, last_test_data, baseline, comparison_metric):
-        test_description = self.create_test_description(last_test_data, baseline, comparison_metric)
+    def create_api_email_body(self, tests_data, last_test_data, baseline, comparison_metric,
+                              violation, thresholds=None):
+        test_description = self.create_test_description(last_test_data, baseline, comparison_metric, violation)
         builds_comparison = self.create_builds_comparison(tests_data)
-        general_metrics = self.get_general_metrics(builds_comparison[0], baseline, {})
+        general_metrics = self.get_general_metrics(builds_comparison[0], baseline, thresholds)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
-        baseline_and_thresholds = self.get_baseline_and_thresholds(last_test_data, baseline, comparison_metric)
+        baseline_and_thresholds = self.get_baseline_and_thresholds(last_test_data, baseline, comparison_metric,
+                                                                   thresholds)
         
         email_body = self.get_api_email_body(test_description, last_test_data, baseline, builds_comparison,
                                              baseline_and_thresholds, general_metrics)
@@ -47,7 +50,7 @@ class ReportBuilder:
         email_body = self.get_ui_email_body(test_params, top_five_thresholds, builds_comparison, last_test_data)
         return email_body, charts, str(test_params['start_time']).split(" ")[0]
 
-    def create_test_description(self, test, baseline, comparison_metric):
+    def create_test_description(self, test, baseline, comparison_metric, violation):
         params = ['simulation', 'users', 'duration']
         test_params = {}
         for param in params:
@@ -56,8 +59,8 @@ class ReportBuilder:
         timestamp = calendar.timegm(time.strptime(test_params['end'], '%Y-%m-%d %H:%M:%S'))
         test_params['start'] = datetime.datetime.utcfromtimestamp(int(timestamp) - int(float(test[0]['duration']))) \
             .strftime('%Y-%m-%d %H:%M:%S')
-        test_params['status'], test_params['color'], test_params['failed_reason'] = self.check_status(test, baseline,
-                                                                                                      comparison_metric)
+        test_params['status'], test_params['color'], test_params['failed_reason'] = self.check_status(
+            test, baseline, comparison_metric, violation)
         return test_params
         
     @staticmethod
@@ -85,13 +88,13 @@ class ReportBuilder:
             description['status'] = 'FAILED'
             failed_reasons.append('missed thresholds - ' + str(missed_thresholds_rate) + ' %')
         if description['status'] is 'SUCCESS':
-            description['color'] = 'green'
+            description['color'] = GREEN
         else:
-            description['color'] = 'red'
+            description['color'] = RED
         description['failed_reason'] = failed_reasons
         return description
 
-    def check_status(self, test, baseline, comparison_metric):
+    def check_status(self, test, baseline, comparison_metric, violation):
         failed_reasons = []
         test_status, failed_message = self.check_functional_issues(test)
         if failed_message != '':
@@ -101,7 +104,7 @@ class ReportBuilder:
             failed_reasons.append(failed_message)
         if test_status is 'SUCCESS':
             test_status = status
-        status, failed_message = self.check_missed_thresholds(test, comparison_metric)
+        status, failed_message = self.check_missed_thresholds(violation)
         if failed_message != '':
             failed_reasons.append(failed_message)
         if test_status is 'SUCCESS':
@@ -142,15 +145,9 @@ class ReportBuilder:
             return 'SUCCESS', ''
 
     @staticmethod
-    def check_missed_thresholds(test, comparison_metric):
-        request_count, missed_thresholds = 0, 0
-        for request in test:
-            request_count += 1
-            if request[comparison_metric + '_threshold'] != GREEN:
-                missed_thresholds += 1
-        missed_thresholds_rate = round(missed_thresholds * 100 / request_count, 2)
-        if missed_thresholds_rate > 50:
-            return 'FAILED', 'missed thresholds rate - ' + str(missed_thresholds_rate) + ' %'
+    def check_missed_thresholds(violation):
+        if violation > 50:
+            return 'FAILED', 'missed thresholds rate - ' + str(violation) + ' %'
         return 'SUCCESS', ''
 
     def create_builds_comparison(self, tests):
@@ -430,56 +427,75 @@ class ReportBuilder:
     def get_general_metrics(build_data, baseline, thresholds=None):
         current_tp = build_data['throughput']
         current_error_rate = build_data['error_rate']
-        baseline_throughput = 0
-        baseline_error_rate = 0
+        baseline_throughput = "N/A"
+        baseline_error_rate = "N/A"
+        thresholds_tp_rate = "N/A"
+        thresholds_error_rate = "N/A"
+        thresholds_tp_color = GRAY
+        thresholds_er_color = GRAY
+        baseline_tp_color = GRAY
+        baseline_er_color = GRAY
         if baseline:
             baseline_throughput = round(sum([tp['throughput'] for tp in baseline]), 2)
             baseline_ko_count = round(sum([tp['ko'] for tp in baseline]), 2)
             baseline_ok_count = round(sum([tp['ok'] for tp in baseline]), 2)
             baseline_error_rate = round((baseline_ko_count / (baseline_ko_count+baseline_ok_count)) * 100, 2)
-        baseline_tp_color = RED if baseline_throughput > current_tp else GREEN
-        baseline_er_color = RED if current_error_rate > baseline_error_rate else GREEN
-        thresholds_tp_color = RED if thresholds.get('throughput', 0) > current_tp else GREEN
-        thresholds_er_color = RED if current_error_rate > thresholds.get('error_rate', 0) else GREEN
+            baseline_tp_color = RED if baseline_throughput > current_tp else GREEN
+            baseline_er_color = RED if current_error_rate > baseline_error_rate else GREEN
+            baseline_throughput = round(current_tp - baseline_throughput, 2)
+            baseline_error_rate = round(current_error_rate - baseline_error_rate, 2)
+        if thresholds:
+            for th in thresholds:
+                if th['request_name'] == 'all':
+                    if th['target'] == 'error_rate':
+                        thresholds_error_rate = round(th["metric"] - th['yellow'], 2)
+                        if th['threshold'] == "red":
+                            thresholds_er_color = RED
+                        elif th['threshold'] == "yellow":
+                            thresholds_er_color = YELLOW
+                        else:
+                            thresholds_er_color = GREEN
+                    if th['target'] == 'throughput':
+                        thresholds_tp_rate = round(th["metric"] - th['yellow'], 2)
+                        if th['threshold'] == "red":
+                            thresholds_tp_color = RED
+                        elif th['threshold'] == "yellow":
+                            thresholds_tp_color = YELLOW
+                        else:
+                            thresholds_tp_color = GREEN
         return {
             "current_tp": current_tp,
-            "baseline_tp": round(current_tp - baseline_throughput, 2),
+            "baseline_tp": baseline_throughput,
             "baseline_tp_color": baseline_tp_color,
-            "threshold_tp": round(current_tp - thresholds.get('throughput', 0), 2),
+            "threshold_tp": thresholds_tp_rate,
             "threshold_tp_color": thresholds_tp_color,
             "current_er": current_error_rate,
-            "baseline_er": round(current_error_rate - baseline_error_rate, 2),
+            "baseline_er": baseline_error_rate,
             "baseline_er_color": baseline_er_color,
-            "threshold_er": round(current_error_rate - thresholds.get('error_rate', 0), 2),
+            "threshold_er": thresholds_error_rate,
             "threshold_er_color": thresholds_er_color
         }
 
     @staticmethod
-    def get_baseline_and_thresholds(last_test_data, baseline, comparison_metric):
+    def get_baseline_and_thresholds(last_test_data, baseline, comparison_metric, thresholds):
         exceeded_thresholds = []
         baseline_metrics = {}
+        thresholds_metrics = {}
         if baseline:
             for request in baseline:
                 baseline_metrics[request['request_name']] = int(request[comparison_metric])
+
+        if thresholds:
+            for th in thresholds:
+                if th['target'] == 'response_time':
+                    thresholds_metrics[th['request_name']] = th
         for request in last_test_data:
             req = {}
             req['response_time'] = str(round(float(request[comparison_metric]) / 1000, 2))
-            req['threshold_value'] = str(request['yellow_threshold_value'])
-            req['threshold'] = round(
-                float(int(request[comparison_metric]) - int(request['yellow_threshold_value'])) / 1000, 2)
             if len(str(request['request_name'])) > 25:
                 req['request_name'] = str(request['request_name'])[:25] + "... "
             else:
                 req['request_name'] = str(request['request_name'])
-            if request[comparison_metric + '_threshold'] == YELLOW:
-                req['threshold_color'] = YELLOW
-            elif request[comparison_metric + '_threshold'] == RED:
-                req['threshold_value'] = str(request['red_threshold_value'])
-                req['threshold'] = round(
-                    float(int(request[comparison_metric]) - int(request['red_threshold_value'])) / 1000, 2)
-                req['threshold_color'] = RED
-            else:
-                req['threshold_color'] = GREEN
             if baseline:
                 req['baseline'] = round(
                     float(int(request[comparison_metric]) - baseline_metrics[request['request_name']]) / 1000, 2)
@@ -487,12 +503,30 @@ class ReportBuilder:
                     req['baseline_color'] = GREEN
                 else:
                     req['baseline_color'] = YELLOW
-            if req['threshold_color'] == RED:
-                req['line_color'] = RED
-            elif req['threshold_color'] == GREEN and req.get('baseline_color', GREEN) == GREEN:
-                req['line_color'] = GREEN
             else:
-                req['line_color'] = YELLOW
+                req['baseline'] = "N/A"
+                req['baseline_color'] = GRAY
+            if thresholds_metrics and thresholds_metrics.get(request['request_name']):
+                req['threshold'] = round(
+                    float(int(request[comparison_metric]) -
+                          int(thresholds_metrics[request['request_name']]['yellow'])) / 1000, 2)
+                req['threshold_value'] = str(thresholds_metrics[request['request_name']]['yellow'])
+                if thresholds_metrics[request['request_name']]['threshold'] == 'yellow':
+                    req['threshold_color'] = YELLOW
+                elif thresholds_metrics[request['request_name']]['threshold'] == 'red':
+                    req['line_color'] = RED
+                else:
+                    req['threshold_color'] = GREEN
+            else:
+                req['threshold'] = "N/A"
+                req['threshold_value'] = 0.0
+                req['threshold_color'] = GRAY
+                req['line_color'] = GRAY
+            if not req.get('line_color'):
+                if req['threshold_color'] == GREEN and req.get('baseline_color', GREEN) == GREEN:
+                    req['line_color'] = GREEN
+                else:
+                    req['line_color'] = YELLOW
             exceeded_thresholds.append(req)
         exceeded_thresholds = sorted(exceeded_thresholds, key=lambda k: k['response_time'], reverse=True)
         hundered = 0

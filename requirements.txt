@@ -1,3 +1,4 @@
 matplotlib==3.1.1
 influxdb==5.2.3
 jinja2==2.10.3
+-e git://github.com/carrier-io/perfreporter.git#egg=perfreporter

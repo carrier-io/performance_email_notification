@@ -53,31 +53,46 @@ def parse_args(_event):
     # Galloper or AWS Lambda service
     event = _event if not _event.get('body') else json.loads(_event['body'])
 
-    # Optional params
+    # Influx Config
+    args['influx_host'] = environ.get("influx_host") if not event.get('influx_host') else event.get('influx_host')
     args['influx_port'] = event.get("influx_port", 8086)
-    args['smpt_port'] = event.get("smpt_port", 465)
-    args['smpt_host'] = event.get("smpt_host", "smtp.gmail.com")
-    args['influx_thresholds_database'] = event.get("influx_thresholds_database", "thresholds")
-    args['influx_thresholds_database'] = event.get("influx_thresholds_database", "thresholds")
-    args['influx_ui_tests_database'] = event.get("influx_ui_tests_database", "perfui")
-    args['influx_comparison_database'] = event.get("influx_comparison_database", "comparison")
     args['influx_user'] = event.get("influx_user", "")
     args['influx_password'] = event.get("influx_password", "")
+
+    # Influx DBs
+    # TODO: Deprecate influx_thresholds_database influx_comparison_database and influx_ui_tests_database
+    args['influx_thresholds_database'] = event.get("influx_thresholds_database", "thresholds")
+    args['influx_comparison_database'] = event.get("influx_comparison_database", "comparison")
+    args['comparison_db'] = event.get("influx_comparison_database", event.get("comparison_db", "comparison"))
+    args['thresholds_db'] = event.get("influx_thresholds_database", event.get("thresholds_db", "thresholds"))
+    args['influx_db'] = event.get("influx_db")
+
+    # SMTP Config
+    args['smpt_port'] = event.get("smpt_port", 465)
+    args['smpt_host'] = event.get("smpt_host", "smtp.gmail.com")
+    args['smpt_user'] = environ.get('smpt_user') if not event.get('smpt_user') else event.get('smpt_user')
+    if not event.get('smpt_password'):
+        args['smpt_password'] = environ.get("smpt_password")
+    else:
+        args['smpt_password'] = event.get('smpt_password')
+
+    # Test Config
+    args['users'] = event.get('users', 1)
+    args['test'] = event.get('test')
+    args['simulation'] = event.get('test')
+
+    # Notification Config
+    args['user_list'] = event.get('user_list')
     args['test_limit'] = event.get("test_limit", 5)
     args['comparison_metric'] = event.get("comparison_metric", 'pct95')
-    args['users'] = event.get('users', 1)
-
-    # Required params
-    args['influx_host'] = environ.get("influx_host") if not event.get('influx_host') else event.get('influx_host')
-    args['smpt_user'] = environ.get('smpt_user') if not event.get('smpt_user') else event.get('smpt_user')
-    args['smpt_password'] = environ.get("smpt_password") if not event.get('smpt_password') else event.get('smpt_password')
-    args['user_list'] = event.get('user_list')
-    args['notification_type'] = environ.get('notification_type') if not event.get('notification_type') else event.get('notification_type')
-    args['test'] = event.get('test')
-
+    if not event.get('notification_type'):
+        args['notification_type'] = environ.get('notification_type')
+    else:
+        args['notification_type'] = event.get('notification_type')
     if args['notification_type'] == 'ui':
         args['test_type'] = event.get('test_suite')
     if args['notification_type'] == 'api':
         args['test_type'] = event.get('test_type')
+    args['type'] = args['test_type']
 
     return args
