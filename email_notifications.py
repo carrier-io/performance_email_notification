@@ -15,7 +15,7 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from data_manager import DataManager
+from perfreporter.data_manager import DataManager
 from report_builder import ReportBuilder
 
 
@@ -30,9 +30,10 @@ class EmailNotification:
                             'password': arguments['smpt_password']}
 
     def email_notification(self):
-        tests_data, last_test_data, baseline = self.data_manager.get_api_test_info()
+        tests_data, last_test_data, baseline, violation, compare_with_thresholds = self.data_manager.get_api_test_info()
         email_body, charts, date = self.report_builder.create_api_email_body(tests_data, last_test_data, baseline,
-                                                                       self.args['comparison_metric'])
+                                                                             self.args['comparison_metric'],
+                                                                             violation, compare_with_thresholds)
         self.send_email(self.smtp_config, self.args['user_list'], email_body, charts, date)
 
     def ui_email_notification(self):

@@ -19,235 +19,342 @@
                 unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
             }
         }
+        .cellless {
+            border-spacing: 0px;
+            -webkit-border-horizontal-spacing: 0px;
+            -webkit-border-vertical-spacing: 0px;
+        }
+
+        .shadow {
+            border-top: 1px solid #ededed;
+            border-left: 1px solid #e6e6e6;
+            border-right: 1px solid #e6e6e6;
+            border-bottom: 2px solid #d4d4d4;
+         }
     </style>
 </head>
-<body style="background-color:#3D1391; width: 100%; vertical-align: middle; margin: auto; font-family: Roboto, 'Trebuchet MS', Arial, sans-serif; font-weight: 400;">
-	<div style="text-align: center; margin: auto; color: white; font-weight: 400; font-size: 14px; width: 80%; padding-top: 20px; max-width: 1000px; min-width: 500px;">
-        <h1>Performance Notification</h1>
-    </div>
-    <div style="width: 80%; border-radius: 8px; margin: auto; background-color: white; max-width: 1000px; min-width: 500px;">
-        <table style="padding: 20px; width: 100%; font-size: 14px;">
-            <tr>
-                <th style = "text-align: left; font-weight: 700; padding-bottom: 10px;">Test Execution Summary</th>
-                <th style = "font-weight: 400; text-align: right;">
-                    Status
-                    <div style="border-radius: 5px; margin: 0px 10px 0px 10px; padding: 5px 10px 5px 10px; display: inline; background-color: {{ t_params.color }}; font-size: 12px; color: white;">
-                        {{ t_params.status }}
-                    </div>
-                </th>
-            </tr> 
-            {% if t_params.failed_reason|length != 0 %}
-            <tr>
-                <td colspan="2" style="text-align: right; vertical-align: top;">
-                    <ul style="list-style-type:none; padding: 0px; margin-top: 10px;">
-            {% for reason in t_params.failed_reason %}
-            <li style="padding-bottom: 5px;">{{ reason }}</li>
-            {% endfor %}
-                    </ul>
-                </td>
-            </tr>
-            {% endif %}
-            <tr>
-                <td style="text-align: left; vertical-align: top; padding-left: 10px;">Test</td>
-                <td style="text-align: right; padding-right: 10px;">{{ t_params.simulation }}</td>
-            </tr>
-                <tr>
-                    <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
-                </tr>
-                <tr>
-                    <td style="text-align: left; vertical-align: top; padding-left: 10px;">vUser count</td>
-                    <td style="text-align: right; padding-right: 10px;">{{ t_params.users }}</td>
-                </tr>
-                <tr>
-                    <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
-                </tr>
-                <tr>
-                    <td style="text-align: left; vertical-align: top; padding-left: 10px;">Start time</td>
-                    <td style="text-align: right; padding-right: 10px;">{{ t_params.start }}</td>
-                </tr>
-                <tr>
-                    <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
-                </tr>
-                <tr>
-                    <td style="text-align: left; vertical-align: top; padding-left: 10px;">End time</td>
-                    <td style="text-align: right; padding-right: 10px;">{{ t_params.end }}</td>
-                </tr>
-                <tr>
-                    <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
-                </tr>
-                <tr>
-                        <td style="text-align: left; vertical-align: top; padding-left: 10px;">Duration</td>
-                        <td style="text-align: right; padding-right: 10px;">{{ t_params.duration }} sec</td>
-                </tr>
-        </table>
-    </div>
-    <div style="width: 80%; padding: 5px; margin: auto;"></div>
-    <div style="width: 80%; border-radius: 8px; margin: auto; background-color: white; max-width: 1000px; min-width: 500px;">
-        <div style="margin: 0 20px 0 20px; padding-top: 20px; padding-bottom: 20px; font-size: 14px;">
-            <span style="font-size: 16px; font-weight: 700;">General Metrics</span>
-            <table style="width: 100%; text-align: right; padding-top: 5px; padding-bottom: 10px; border-left: 1px solid white;">
-                <tr>
-                    <th style="background-color: #fbfbfb; padding: 5px; text-align: left;">Metric</th>
-                    <th style="background-color: #fbfbfb;">Baseline diff</th>
-                    <th style="background-color: #fbfbfb;">Threshold diff</th>
-                    <th style="background-color: #fbfbfb; padding-right: 5px;">Current value</th>
-                </tr>
-                <tr>
-                    <td style="text-align: left; vertical-align: top; padding-left: 10px;">Throughput</td>
-                    <td style="text-align: right; padding-right: 10px; color:{{ general_metrics.baseline_tp_color }}">
-                        {% if general_metrics.baseline_tp > 0 %}
-                            + {{ general_metrics.baseline_tp }} req/sec
-                        {% else %}
-                            {{ general_metrics.baseline_tp }} req/sec
-                        {% endif %}
-                    </td>
-                    <td style="text-align: right; padding-right: 10px; color:{{ general_metrics.threshold_tp_color }}">
-                        {% if general_metrics.threshold_tp > 0 %}
-                            + {{ general_metrics.threshold_tp }} req/sec
-                        {% else %}
-                            {{ general_metrics.threshold_tp }} req/sec
-                        {% endif %}
-                    </td>
-                    <td style="text-align: right; padding-right: 10px;">{{ general_metrics.current_tp }} req/sec</td>
-                </tr>
-                <tr>
-                    <td colspan="4"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
-                </tr>
-                <tr>
-                    <td style="text-align: left; vertical-align: top; padding-left: 10px;">Error rate</td>
-                    <td style="text-align: right; padding-right: 10px; color: {{ general_metrics.baseline_er_color }}">
-                        {% if general_metrics.baseline_er > 0 %}
-                            + {{ general_metrics.baseline_er }}%
-                        {% else %}
-                            {{ general_metrics.baseline_er }}%
-                        {% endif %}
-                    </td>
-                    <td style="text-align: right; padding-right: 10px; color: {{ general_metrics.threshold_er_color }}">
-                        {% if general_metrics.threshold_er > 0 %}
-                            + {{ general_metrics.threshold_er }}%
-                        {% else %}
-                            {{ general_metrics.threshold_er }}$
-                        {% endif %}
-                    </td>
-                    <td style="text-align: right; padding-right: 10px;"> {{ general_metrics.current_er }}%</td>
-                </tr>
-            </table>
-            <span style="font-size: 16px; font-weight: 700;">Request Metrics</span>
-            <table style="width: 100%; text-align: right; padding-top: 5px;">
-                <tr>
-                    <th style="width: 30%; background-color: #fbfbfb; padding: 5px; text-align: left; ">Name</th>
-                    <th style="width: 10%; background-color: #fbfbfb;">Baseline diff, sec</th>
-                    <th style="width: 10%; background-color: #fbfbfb;">Threshold diff, sec</th>
-                    <th style="width: 10%; background-color: #fbfbfb;">Current, sec</th>
-                    <th style="width: 40%; background-color: #fbfbfb; padding-left: 5px; text-align: left;">Representation</th>
-                </tr>
-                {% for item in baseline_and_thresholds %}
-                <tr>
-                    <td style="text-align: left;">
-                        <span style="display: inline-block; max-width: 180px; white-space: nowrap; overflow: hidden !important; text-overflow: ellipsis;">
-                            {{ item.request_name }}
-                        </span>
-                    </td>
-                    {% if item.baseline is defined %}
-                    <td style="color: {{ item.baseline_color }};">
-                        {% if item.baseline > 0 %}
-                            + {{item.baseline}}
-                        {% else %}
-                            {{item.baseline}}
-                        {% endif %}
-                    </td>
-                    {% else %}
-                    <td></td>
-                    {% endif %}
-                    <td style="color: {{ item.threshold_color }};">
-                        {% if item.threshold > 0 %}
-                            + {{item.threshold}}
-                        {% else %}
-                            {{item.threshold}}
-                        {% endif %}
-                    </td>
-                    <td>{{ item.response_time }}</td>
-                    <td style="padding-right: 5px; padding-left: 5px;">
-                        <hr style="border: 8px solid {{ item.line_color }}; border-radius: 2px; width: {{ item.share }}%; float: left;" />
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>
-    <div style="width: 80%; padding: 5px; margin: auto;"></div>
-    <div style="width: 80%; border-radius: 8px; margin: auto; background-color: white; max-width: 1000px; min-width: 500px;">
-        <div style="margin: 0 20px 0 20px; padding-top: 20px; padding-bottom: 20px; font-size: 14px;">
-            <span style="font-size: 16px; font-weight: 700; line-height: 40px;">Comparison vs latest builds</span>
-            <table style="width: 100%; text-align: right; padding-top: 5px;">
-                <tr>
-                    <th style="background-color: #fbfbfb; min-width: 80px; padding: 5px; text-align: left; ">Date</th>
-                    <th style="background-color: #fbfbfb;">Ttl req, count</th>
-                    <th style="background-color: #fbfbfb;">Diff, count</th>
-                    <th style="background-color: #fbfbfb;">Thrghpt, req/sec</th>
-                    <th style="background-color: #fbfbfb;">Diff, req/sec</th>
-                    <th style="background-color: #fbfbfb;">Error rate, %</th>
-                    <th style="background-color: #fbfbfb;">Diff, %</th>
-                    <th style="background-color: #fbfbfb;">Pct95, sec</th>
-                    <th style="background-color: #fbfbfb;">Diff, sec</th>
-                </tr>
-                {% for metric in comparison %}
-                <tr>
-                    <td style="text-align: left;">{{metric.date}}</td>
-                    <td>{{metric.total}}</td>
-                    <td>{{metric.total_diff}}</td>
-                    <td>{{metric.throughput}}</td>
-                    <td>{{metric.throughput_diff}}</td>
-                    <td>{{metric.error_rate}}</td>
-                    <td>{{metric.error_rate_diff}}</td>
-                    <td>{{ (metric.pct95 / 1000.0)|round(2, 'floor') }}</td>
-                    <td>{{metric.pct95_diff}}</td>
-                </tr>
-                {% endfor %}
-            </table>
-            <span style="font-size: 16px; font-weight: 700; line-height: 40px;">Results summary table</span>
-            <table style="width: 100%; text-align: right; padding-top: 5px;">
-                <tr>
-                    <th style="width: 30%; max-width: 180px; min-width: 120px; background-color: #fbfbfb; padding: 5px; text-align: left; ">Name</th>
-                    <th style="background-color: #fbfbfb;">Ttl req, count</th>
-                    <th style="background-color: #fbfbfb;">Thrghpt, req/sec</th>
-                    <th style="background-color: #fbfbfb;">Errors, count</th>
-                    <th style="background-color: #fbfbfb;">Min, sec</th>
-                    <th style="background-color: #fbfbfb;">Pct50, sec</th>
-                    <th style="background-color: #fbfbfb;">Pct95, sec</th>
-                    <th style="background-color: #fbfbfb;">Max, sec</th>
-                </tr>
-                {% for request in summary %}
-                <tr>
-                    <td style="text-align: left;">{{ request.request_name }}</td>
-                    <td>{{ request.total }}</td>
-                    <td>{{ request.throughput }}</td>
-                    <td>{{ request.ko }}</td>
-                    <td style="color:{{ request.min_threshold }}">{{ (request.min / 1000.0)|round(2, 'floor') }}</td>
-                    <td style="color:{{ request.pct50_threshold }}">{{ (request.pct50 / 1000.0)|round(2, 'floor') }}</td>
-                    <td style="color:{{ request.pct95_threshold }}">{{ (request.pct95 / 1000.0)|round(2, 'floor') }}</td>
-                    <td style="color:{{ request.max_threshold }}">{{ (request.max /1000.0)|round(2, 'floor') }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>
-    <div style="width: 80%; padding: 5px; margin: auto;"></div>
-    <div style="width: 80%; border-radius: 8px; margin: auto; background-color: white; max-width: 1000px; min-width: 500px; min-height: 600px;">
-        <div style="margin: 0 20px 0 20px; padding-top: 20px; padding-bottom: 20px; font-size: 14px;">
-            <span style="font-size: 16px; font-weight: 700; line-height: 40px;">Success Rate</span>
-            <div style="text-align: center;">
-                <img src="cid:success_rate" style="max-width: 100%; height: auto;" />
-            </div>
-            <span style="font-size: 16px; font-weight: 700; line-height: 40px;">RPS/TPS Rate</span>
-            <div style="text-align: center;">
-                    <img src="cid:throughput" style="max-width: 100%; height: auto;" />
-            </div>
-        </div>
-    </div>
-    <div style="width: 80%; padding: 5px; margin: auto;"></div>
-    <div style="width: 80%; margin: auto; padding-bottom: 5px; text-align: center; max-width: 1000px; min-width: 500px;">
-        <p style="color: white; font-size: 12px;">Auto generated performance analysis report</p>
-        <p style="color: white; font-size: 12px;">&#9400; https://getcarrier.io</p>
-    </div>
+<body style="background-color:#fff; width: 100%; vertical-align: middle; margin: auto; font-family: Roboto, 'Trebuchet MS', Arial, sans-serif; font-weight: 400;">
+	<table style="width: 80%; -webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px;" border="0" align="center">
+		<tr>
+			<td background="http://shutterstock-marketing-assets.s3.amazonaws.com/CRM/2017/20171201_sketch-plugin/images/hero-bg.gif" style="background-color: #fff; border-bottom:5pt solid #fff; background-repeat:no-repeat; background-size: 100% 400px;" valign="top">
+				<table style="-webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px;" border="0" align="center">
+					<tr>
+						<td>
+							<h1 style="text-align: center; margin: auto; color: white; font-weight: 400; font-size: 24px; width: 80%; padding-top: 20px; max-width: 1000px; min-width: 500px;">Performance Notification</h1>
+						    <div class="shadow" style="width: 80%; border-radius: 8px; margin: auto; background-color: white; max-width: 1000px; min-width: 500px;">
+						        <table style="padding: 20px; width: 100%; font-size: 14px;">
+						            <tr>
+						                <th style = "text-align: left; font-weight: 700; padding-bottom: 10px;">Test Execution Summary</th>
+						                <th style = "font-weight: 400; text-align: right;">
+						                    Status
+						                    <div style="border-radius: 5px; margin: 0px 10px 0px 10px; padding: 5px 10px 5px 10px; display: inline; background-color: {{ t_params.color }}; font-size: 12px; color: white;">
+						                        {{ t_params.status }}
+						                    </div>
+						                </th>
+						            </tr> 
+						            {% if t_params.failed_reason|length != 0 %}
+						            <tr>
+						                <td colspan="2" style="text-align: right; vertical-align: top;">
+						                    <ul style="list-style-type:none; padding: 0px; margin-top: 10px;">
+						            {% for reason in t_params.failed_reason %}
+						            <li style="padding-bottom: 5px;">{{ reason }}</li>
+						            {% endfor %}
+						                    </ul>
+						                </td>
+						            </tr>
+						            {% endif %}
+						            <tr>
+						                <td style="text-align: left; vertical-align: top; padding-left: 10px;">Test</td>
+						                <td style="text-align: right; padding-right: 10px;">{{ t_params.simulation }}</td>
+						            </tr>
+                                    <tr>
+                                        <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align: left; vertical-align: top; padding-left: 10px;">vUser count</td>
+                                        <td style="text-align: right; padding-right: 10px;">{{ t_params.users }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align: left; vertical-align: top; padding-left: 10px;">Start time</td>
+                                        <td style="text-align: right; padding-right: 10px;">{{ t_params.start }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align: left; vertical-align: top; padding-left: 10px;">End time</td>
+                                        <td style="text-align: right; padding-right: 10px;">{{ t_params.end }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
+                                    </tr>
+                                    <tr>
+                                            <td style="text-align: left; vertical-align: top; padding-left: 10px;">Duration</td>
+                                            <td style="text-align: right; padding-right: 10px;">{{ t_params.duration }} sec</td>
+                                    </tr>
+						        </table>
+						    </div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div style="width: 80%; padding: 5px; margin: auto;">
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						    <div class="shadow" style="width: 80%; border-radius: 8px; margin: auto; max-width: 1000px; min-width: 500px;">
+								<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; border-top-left-radius: 8px; border-top-right-radius: 8px; padding-top: 10px !important;">
+									<span style="font-size: 16px; font-weight: 700;">General Metrics</span>
+								</div>
+						        <div style="padding-bottom: 20px; font-size: 14px;">
+						            <table class="cellless" style="width: 100%; text-align: right; padding-bottom: 10px;">
+						                <tr style="background-color: #82B1FF;">
+						                    <th colspan=2 style="padding: 5px 5px 5px 25px; text-align: left;">Metric</th>
+						                    <th>Baseline diff</th>
+						                    <th>Threshold diff</th>
+						                    <th colspan=2 style="padding-right: 25px;">Current value</th>
+						                </tr>
+						                <tr>
+											<td style="min-width: 20px"></td>
+						                    <td style="text-align: left; vertical-align: top; padding-left: 10px;">Throughput</td>
+						                    <td style="text-align: right; padding-right: 10px; color:{{ general_metrics.baseline_tp_color }}">
+												{% if general_metrics.baseline_tp is not string %}
+													{% if general_metrics.baseline_tp > 0 %}
+														+ {{ general_metrics.baseline_tp }} req/sec
+													{% else %}
+														{{ general_metrics.baseline_tp }} req/sec
+													{% endif %}
+												{% else %}
+													{{ general_metrics.baseline_tp }}
+												{% endif %}
+						                    </td>
+						                    <td style="text-align: right; padding-right: 10px; color:{{ general_metrics.threshold_tp_color }}">
+												{% if general_metrics.threshold_tp is not string %}
+													{% if general_metrics.threshold_tp > 0 %}
+														+ {{ general_metrics.threshold_tp }} req/sec
+													{% else %}
+														{{ general_metrics.threshold_tp }} req/sec
+													{% endif %}
+												{% else %}
+													{{ general_metrics.threshold_tp }}
+												{% endif %}
+						                    </td>
+						                    <td style="text-align: right; padding-right: 10px;">{{ general_metrics.current_tp }} req/sec</td>
+											<td style="min-width: 20px"></td>
+						                </tr>
+						                <tr>
+						                    <td colspan="6"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
+						                </tr>
+						                <tr>
+											<td style="min-width: 20px"></td>
+						                    <td style="text-align: left; vertical-align: top; padding-left: 10px;">Error rate</td>
+						                    <td style="text-align: right; padding-right: 10px; color: {{ general_metrics.baseline_er_color }}">
+												{% if general_metrics.baseline_er is not string %}
+													{% if general_metrics.baseline_er > 0 %}
+														+ {{ general_metrics.baseline_er }} %
+													{% else %}
+														{{ general_metrics.baseline_er }} %
+													{% endif %}
+												{% else %}
+													{{ general_metrics.baseline_er }}
+												{% endif %}
+						                    </td>
+						                    <td style="text-align: right; padding-right: 10px; color: {{ general_metrics.threshold_er_color }}">
+												{% if general_metrics.threshold_er is not string %}
+													{% if general_metrics.threshold_er > 0 %}
+														+ {{ general_metrics.threshold_er }} %
+													{% else %}
+														{{ general_metrics.threshold_er }} %
+													{% endif %}
+												{% else %}
+													{{ general_metrics.threshold_er }}
+												{% endif %}
+						                    </td>
+						                    <td style="text-align: right; padding-right: 10px;"> {{ general_metrics.current_er }}%</td>
+											<td style="min-width: 20px"></td>
+						                </tr>
+						            </table>
+								</div>
+								<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; padding-top: 10px !important;">
+									<span style="font-size: 16px; font-weight: 700;">Request Metrics</span>
+								</div>
+						        <div style="padding-bottom: 20px; font-size: 14px;">
+						            <table class="cellless" style="width: 100%; text-align: right;">
+						                <tr style="background-color: #82B1FF;">
+						                    <th colspan=2 style="width: 30%; padding: 5px 5px 5px 25px;text-align: left; ">Name</th>
+						                    <th style="width: 10%;">Baseline diff, sec</th>
+						                    <th style="width: 10%;">Threshold diff, sec</th>
+						                    <th style="width: 10%;">Current, sec</th>
+						                    <th colspan=2 style="width: 40%; padding-left: 25px; text-align: left;">Representation</th>
+						                </tr>
+						                {% for item in baseline_and_thresholds %}
+						                <tr>
+											<td style="min-width: 20px"></td>
+						                    <td style="text-align: left;">
+						                        <span style="display: inline-block; max-width: 180px; white-space: nowrap; overflow: hidden !important; text-overflow: ellipsis;">
+						                            {{ item.request_name }}
+						                        </span>
+						                    </td>
+						                    {% if item.baseline is defined %}
+						                    <td style="color: {{ item.baseline_color }};">
+												{% if item.baseline is not string %}
+													{% if item.baseline > 0 %}
+														+ {{item.baseline}}
+													{% else %}
+														{{item.baseline}}
+													{% endif %}
+												{% else %}
+													{{item.baseline}}
+												{% endif %}
+						                    </td>
+						                    {% else %}
+						                    <td></td>
+						                    {% endif %}
+						                    <td style="color: {{ item.threshold_color }};">
+												{% if item.threshold is not string %}
+													{% if item.threshold > 0 %}
+														+ {{item.threshold}}
+													{% else %}
+														{{item.threshold}}
+													{% endif %}
+												{% else %}
+													{{item.threshold}}
+												{% endif %}
+						                    </td>
+						                    <td>{{ item.response_time }}</td>
+						                    <td style="padding-right: 5px; padding-left: 5px;">
+						                        <hr style="border: 8px solid {{ item.line_color }}; border-radius: 2px; width: {{ item.share }}%; float: left;" />
+						                    </td>
+											<td style="min-width: 20px"></td>
+						                </tr>
+						                {% endfor %}
+						            </table>
+						        </div>
+						    </div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div style="width: 80%; padding: 5px; margin: auto;"></div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						    <div class="shadow" style="width: 80%; border-radius: 8px; margin: auto; background-color: white; max-width: 1000px; min-width: 500px;">
+								<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; border-top-left-radius: 8px; border-top-right-radius: 8px; padding-top: 10px !important;">
+									<span style="font-size: 16px; font-weight: 700;">Comparison vs latest builds</span>
+								</div>
+						        <div style="padding-bottom: 20px; font-size: 14px;">
+						            <table class="cellless" style="width: 100%; text-align: right;">
+						                <tr style="background-color: #82B1FF;">
+						                    <th colspan=2 style="min-width: 90px; padding: 5px 5px 5px 25px; text-align: left; ">Date</th>
+						                    <th>Ttl req, count</th>
+						                    <th>Diff, count</th>
+						                    <th>Thrghpt, req/sec</th>
+						                    <th>Diff, req/sec</th>
+						                    <th>Error rate, %</th>
+						                    <th>Diff, %</th>
+						                    <th>Pct95, sec</th>
+						                    <th colspan=2 style="padding-right: 5px;">Diff, sec</th>
+						                </tr>
+						                {% for metric in comparison %}
+						                <tr>
+											<td style="min-width: 10px;"></td>
+						                    <td style="text-align: left;">{{metric.date}}</td>
+						                    <td>{{metric.total}}</td>
+						                    <td>{{metric.total_diff}}</td>
+						                    <td>{{metric.throughput}}</td>
+						                    <td>{{metric.throughput_diff}}</td>
+						                    <td>{{metric.error_rate}}</td>
+						                    <td>{{metric.error_rate_diff}}</td>
+						                    <td>{{ (metric.pct95 / 1000.0)|round(2, 'floor') }}</td>
+						                    <td>{{metric.pct95_diff}}</td>
+											<td style="min-width: 10px;"></td>
+						                </tr>
+						                {% endfor %}
+						            </table>
+								</div>
+									<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; padding-top: 10px !important;">
+										<span style="font-size: 16px; font-weight: 700;">Results summary table</span>
+									</div>
+								<div style="padding-bottom: 20px; font-size: 14px;">
+						            <table class="cellless" style="width: 100%; text-align: right;">
+						                <tr style="background-color: #82B1FF;">
+						                    <th colspan=2 style="width: 30%; max-width: 180px; min-width: 120px; padding: 5px 5px 5px 25px;text-align: left; ">Name</th>
+						                    <th>Ttl req, count</th>
+						                    <th>Thrghpt, req/sec</th>
+						                    <th>Errors, count</th>
+						                    <th>Min, sec</th>
+						                    <th>Pct50, sec</th>
+						                    <th>Pct95, sec</th>
+						                    <th colspan=2 style="padding-right: 5px;">Max, sec</th>
+						                </tr>
+						                {% for request in summary %}
+						                <tr>
+											<td style="min-width: 10px;"></td>
+						                    <td style="text-align: left;">{{ request.request_name }}</td>
+						                    <td>{{ request.total }}</td>
+						                    <td>{{ request.throughput }}</td>
+						                    <td>{{ request.ko }}</td>
+						                    <td style="color:{{ request.min_threshold }}">{{ (request.min / 1000.0)|round(2, 'floor') }}</td>
+						                    <td style="color:{{ request.pct50_threshold }}">{{ (request.pct50 / 1000.0)|round(2, 'floor') }}</td>
+						                    <td style="color:{{ request.pct95_threshold }}">{{ (request.pct95 / 1000.0)|round(2, 'floor') }}</td>
+						                    <td style="color:{{ request.max_threshold }}">{{ (request.max /1000.0)|round(2, 'floor') }}</td>
+											<td style="min-width: 10px;"></td>
+						                </tr>
+						                {% endfor %}
+						            </table>
+						        </div>
+						    </div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div style="width: 80%; padding: 5px; margin: auto;"></div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						    <div class="shadow" style="width: 80%; border-radius: 8px; margin: auto; background-color: white; max-width: 1000px; min-width: 500px; min-height: 600px;">
+								<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; border-top-left-radius: 8px; border-top-right-radius: 8px; padding-top: 10px !important;">
+									<span style="font-size: 16px; font-weight: 700;">Success Rate</span>
+								</div>
+						        <div style="margin: 0 20px 0 20px; padding-top: 20px; padding-bottom: 20px; font-size: 14px;">
+						            <div style="text-align: center;">
+						                <img src="cid:success_rate" style="max-width: 100%; height: auto;" />
+						            </div>
+								</div>
+								<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; padding-top: 10px !important;">
+									<span style="font-size: 16px; font-weight: 700;">RPS/TPS Rate</span>
+								</div>
+						        <div style="margin: 0 20px 0 20px; padding-top: 20px; padding-bottom: 20px; font-size: 14px;">
+						            <div style="text-align: center;">
+						                    <img src="cid:throughput" style="max-width: 100%; height: auto;" />
+						            </div>
+						        </div>
+						    </div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div style="width: 80%; padding: 5px; margin: auto;"></div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						    <div style="width: 80%; margin: auto; padding-bottom: 5px; text-align: center; max-width: 1000px; min-width: 500px;">
+						        <p style="color: black; font-size: 12px;">Auto generated performance analysis report</p>
+						        <p style="color: black; font-size: 12px;">&#9400; https://getcarrier.io</p>
+						    </div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
 </body>
