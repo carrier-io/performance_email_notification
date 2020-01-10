@@ -515,6 +515,7 @@ class ReportBuilder:
                     req['threshold_color'] = YELLOW
                 elif thresholds_metrics[request['request_name']]['threshold'] == 'red':
                     req['line_color'] = RED
+                    req['threshold_color'] = RED
                 else:
                     req['threshold_color'] = GREEN
             else:
