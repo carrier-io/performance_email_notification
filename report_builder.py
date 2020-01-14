@@ -529,7 +529,7 @@ class ReportBuilder:
                 else:
                     req['line_color'] = YELLOW
             exceeded_thresholds.append(req)
-        exceeded_thresholds = sorted(exceeded_thresholds, key=lambda k: k['response_time'], reverse=True)
+        exceeded_thresholds = sorted(exceeded_thresholds, key=lambda k: float(k['response_time']), reverse=True)
         hundered = 0
         for _ in range(len(exceeded_thresholds)):
             if not(hundered):
