@@ -15,14 +15,14 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-plt.rcParams.update({'font.size': 16})
+plt.rcParams.update({'font.size': 14})
 
 from matplotlib.ticker import ScalarFormatter
 
 YELLOW = '#FFA400'
 
 def alerts_linechart(datapoints):
-    fig, ax = plt.subplots(figsize=(datapoints['width'] * 2, datapoints['height'] * 3), dpi=72,
+    fig, ax = plt.subplots(figsize=(datapoints['width'] * 1, datapoints['height'] * 1.5), dpi=72,
                            facecolor='w')
     y_max = 0
     x_max = 0

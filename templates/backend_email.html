@@ -19,342 +19,399 @@
                 unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
             }
         }
-        .cellless {
-            border-spacing: 0px;
-            -webkit-border-horizontal-spacing: 0px;
-            -webkit-border-vertical-spacing: 0px;
-        }
-
-        .shadow {
-            border-top: 1px solid #ededed;
-            border-left: 1px solid #e6e6e6;
-            border-right: 1px solid #e6e6e6;
-            border-bottom: 2px solid #d4d4d4;
-         }
-    </style>
+	</style>
 </head>
-<body style="background-color:#fff; width: 100%; vertical-align: middle; margin: auto; font-family: Roboto, 'Trebuchet MS', Arial, sans-serif; font-weight: 400;">
-	<table style="width: 80%; -webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px;" border="0" align="center">
+<body>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:none;font-family:Roboto,'Trebuchet MS',Arial,sans-serif;font-weight:400">
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+        </style>
+        <tr>
+            <td style="background:#4d1c93;">
+                <h1 style="text-align:center;margin:20px 0 10px;color:#ffffff;font-weight:400;font-size:24px;">Performance Notification</h1>
+                <table border="0" cellpadding="0" cellspacing="0" align="center" style="width:80%;">
+                    <tr>
+                        <td>
+                            <table border="0" cellpadding="0" cellspacing="0" style="width:100%;font-size:1px;height:8px;background:#ffffff;vertical-align: top;">
+                                <tr>
+                                    <td width="8">
+                                        <img style="display:block;" width="8" src="data:image/png;base64,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"
+                                        />
+                                    </td>
+                                    <td width="100%">&nbsp;</td>
+                                    <td width="8">
+                                        <img style="display:block;" width="8" src="data:image/png;base64,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"
+                                        />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px 30px 0;background-color:#ffffff;">
+                            <table border="0" cellpadding="0" cellspacing="0" style="width:100%;font-size:14px;">
+                                <tr>
+                                    <td style="font-weight:700;">Test Execution Summary</td>
+                                    <td style="font-weight:400;text-align:right;vertical-align:center;">
+                                        <table cellspacing="0" cellpadding="0" border="0" style="float:right;">
+                                            <tr>
+                                                <td style="padding-right:10px;font-size:14px;">Status</td>
+												<td style="border-radius:5px;padding:5px 10px 5px 10px;background:{{ t_params.color }};font-size:12px;color:#ffffff"><b>{{ t_params.status }}</b></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+								{% if t_params.failed_reason|length != 0 %}
+								<tr>
+									<td colspan="2" style="text-align:right;padding-top:10px;padding-bottom:10px;">
+										{% for reason in t_params.failed_reason %}
+										{{ reason }}<br />
+										{% endfor %}
+									</td>
+								</tr>
+								{% endif %}
+								<tr>
+                                    <td style="padding-top:15px;padding-bottom:15px;">Test</td>
+                                    <td style="padding-top:15px;padding-bottom:15px;text-align:right;">{{ t_params.simulation }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="vertical-align:middle;">
+                                        <hr style="border:0;height:1px;background:#f0f0f0;margin:0;" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-top:15px;padding-bottom:15px;">vUser count</td>
+                                    <td style="padding-top:15px;padding-bottom:15px;text-align:right;">{{ t_params.users }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="vertical-align:middle;">
+                                        <hr style="border:0;height:1px;background:#f0f0f0;margin:0;" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-top:15px;padding-bottom:15px;">Start time</td>
+                                    <td style="padding-top:15px;padding-bottom:15px;text-align:right;">{{ t_params.start }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="vertical-align:middle;">
+                                        <hr style="border:0;height:1px;background:#f0f0f0;margin:0;" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-top:15px;padding-bottom:15px;">End time</td>
+                                    <td style="padding-top:15px;padding-bottom:15px;text-align:right;">{{ t_params.end }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="vertical-align:middle;">
+                                        <hr style="border:0;height:1px;background:#f0f0f0;margin:0;" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-top:15px;padding-bottom:15px;">Duration</td>
+                                    <td style="padding-top:15px;padding-bottom:15px;text-align:right;">{{ t_params.duration }} sec</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
 		<tr>
-			<td background="http://shutterstock-marketing-assets.s3.amazonaws.com/CRM/2017/20171201_sketch-plugin/images/hero-bg.gif" style="background-color: #fff; border-bottom:5pt solid #fff; background-repeat:no-repeat; background-size: 100% 400px;" valign="top">
-				<table style="-webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px;" border="0" align="center">
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>
+                <table border="0" cellpadding="0" cellspacing="0" align="center" style="width:80%;">
+                    <tr>
+                        <td>
+                            <table border="0" align="center" cellpadding="0" cellspacing="0" style="width:100%;font-size:1px;table-layout: fixed;vertical-align:top;">
+                                <tr>
+                                    <td colspan="3" style="padding: 10px; min-height:30px;text-align:left;background-color:#eee;color:#000;font-size:16px;font-weight:400">
+                                        General Metrics
+                                    </td>
+                                </tr>
+                            </table>
+                            <table border="0" align="center" cellpadding="10" cellspacing="0" style="width:100%;font-size:13px; background-color: #fbfbfb;">
+                                <tbody>
+                                    <tr style="background-color:#f3f3f3;vertical-align:top;">
+                                        <th align="left" style="font-weight:400; font-size: 14px;">Metric</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Baseline diff</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Threshold diff</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Current value</th>
+                                    </tr>
+                                    <tr>
+                                        <td align="left">Throughput</td>
+                                        <td align="right" style="color:{{ general_metrics.baseline_tp_color }}">
+											{% if general_metrics.baseline_tp is not string %}
+												{% if general_metrics.baseline_tp > 0 %}
+													+ {{ general_metrics.baseline_tp }} req/sec
+												{% else %}
+													{{ general_metrics.baseline_tp }} req/sec
+												{% endif %}
+											{% else %}
+												{{ general_metrics.baseline_tp }}
+											{% endif %}
+										</td>
+                                        <td align="right" style="color:{{ general_metrics.threshold_tp_color }}">
+											{% if general_metrics.threshold_tp is not string %}
+												{% if general_metrics.threshold_tp > 0 %}
+													+ {{ general_metrics.threshold_tp }} req/sec
+												{% else %}
+													{{ general_metrics.threshold_tp }} req/sec
+												{% endif %}
+											{% else %}
+												{{ general_metrics.threshold_tp }}
+											{% endif %}
+										</td>
+                                        <td align="right">{{ general_metrics.current_tp }} req/sec</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="4" style="vertical-align:middle;padding-top:0;padding-bottom:0;">
+                                            <hr style="border:0;height:1px;background:#f0f0f0;margin:0;" />
+                                        </td>
+                                    </tr>
+                                    <tr style="background-color: #fbfbfb">
+                                        <td align="left">Error rate</td>
+                                        <td align="right" style="color:{{ general_metrics.baseline_er_color }}">
+											{% if general_metrics.baseline_er is not string %}
+												{% if general_metrics.baseline_er > 0 %}
+													+ {{ general_metrics.baseline_er }} %
+												{% else %}
+													{{ general_metrics.baseline_er }} %
+												{% endif %}
+											{% else %}
+												{{ general_metrics.baseline_er }}
+											{% endif %}
+										</td>
+                                        <td align="right" style="color:{{ general_metrics.threshold_er_color }}">
+											{% if general_metrics.threshold_er is not string %}
+												{% if general_metrics.threshold_er > 0 %}
+													+ {{ general_metrics.threshold_er }} %
+												{% else %}
+													{{ general_metrics.threshold_er }} %
+												{% endif %}
+											{% else %}
+												{{ general_metrics.threshold_er }}
+											{% endif %}
+										</td>
+                                        <td align="right">{{ general_metrics.current_er }}%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                    </tr>
 					<tr>
-						<td>
-							<h1 style="text-align: center; margin: auto; color: white; font-weight: 400; font-size: 24px; width: 80%; padding-top: 20px; max-width: 1000px; min-width: 500px;">Performance Notification</h1>
-						    <div class="shadow" style="width: 80%; border-radius: 8px; margin: auto; background-color: white; max-width: 1000px; min-width: 500px;">
-						        <table style="padding: 20px; width: 100%; font-size: 14px;">
-						            <tr>
-						                <th style = "text-align: left; font-weight: 700; padding-bottom: 10px;">Test Execution Summary</th>
-						                <th style = "font-weight: 400; text-align: right;">
-						                    Status
-						                    <div style="border-radius: 5px; margin: 0px 10px 0px 10px; padding: 5px 10px 5px 10px; display: inline; background-color: {{ t_params.color }}; font-size: 12px; color: white;">
-						                        {{ t_params.status }}
-						                    </div>
-						                </th>
-						            </tr> 
-						            {% if t_params.failed_reason|length != 0 %}
-						            <tr>
-						                <td colspan="2" style="text-align: right; vertical-align: top;">
-						                    <ul style="list-style-type:none; padding: 0px; margin-top: 10px;">
-						            {% for reason in t_params.failed_reason %}
-						            <li style="padding-bottom: 5px;">{{ reason }}</li>
-						            {% endfor %}
-						                    </ul>
-						                </td>
-						            </tr>
-						            {% endif %}
-						            <tr>
-						                <td style="text-align: left; vertical-align: top; padding-left: 10px;">Test</td>
-						                <td style="text-align: right; padding-right: 10px;">{{ t_params.simulation }}</td>
-						            </tr>
-                                    <tr>
-                                        <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
+                        <td>
+                            <table border="0" align="center" cellpadding="0" cellspacing="0" style="width:100%;font-size:1px;table-layout: fixed;vertical-align:top;">
+                                <tr>
+                                    <td colspan="3" style="padding:10px;min-height:30px;text-align:left;background-color:#eee;color:#000;font-size:16px;font-weight:400">
+                                        Request Metrics
+                                    </td>
+                                </tr>
+                            </table>
+                            <table border="0" align="center" cellpadding="10" cellspacing="0" style="width:100%;font-size:13px; background-color: #fbfbfb">
+                                <thead>
+                                    <tr style="background-color:#f3f3f3;vertical-align:top;">
+                                        <th align="left" style="width:30%; font-weight:400; font-size: 14px;">Name</th>
+                                        <th align="right" style="width:10%; font-weight:400; font-size: 14px;">Baseline diff, sec</th>
+                                        <th align="right" style="width:10%; font-weight:400; font-size: 14px;">Threshold diff, sec</th>
+                                        <th align="right" style="width:10%; font-weight:400; font-size: 14px;">Current, sec</th>
+                                        <th align="left" style="width:40%; font-weight:400; font-size: 14px;">Representation</th>
                                     </tr>
-                                    <tr>
-                                        <td style="text-align: left; vertical-align: top; padding-left: 10px;">vUser count</td>
-                                        <td style="text-align: right; padding-right: 10px;">{{ t_params.users }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: left; vertical-align: top; padding-left: 10px;">Start time</td>
-                                        <td style="text-align: right; padding-right: 10px;">{{ t_params.start }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: left; vertical-align: top; padding-left: 10px;">End time</td>
-                                        <td style="text-align: right; padding-right: 10px;">{{ t_params.end }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="2"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
-                                    </tr>
-                                    <tr>
-                                            <td style="text-align: left; vertical-align: top; padding-left: 10px;">Duration</td>
-                                            <td style="text-align: right; padding-right: 10px;">{{ t_params.duration }} sec</td>
-                                    </tr>
-						        </table>
-						    </div>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<div style="width: 80%; padding: 5px; margin: auto;">
-							</div>
-						</td>
-					</tr>
-					<tr>
-						<td>
-						    <div class="shadow" style="width: 80%; border-radius: 8px; margin: auto; max-width: 1000px; min-width: 500px;">
-								<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; border-top-left-radius: 8px; border-top-right-radius: 8px; padding-top: 10px !important;">
-									<span style="font-size: 16px; font-weight: 700;">General Metrics</span>
-								</div>
-						        <div style="padding-bottom: 20px; font-size: 14px;">
-						            <table class="cellless" style="width: 100%; text-align: right; padding-bottom: 10px;">
-						                <tr style="background-color: #82B1FF;">
-						                    <th colspan=2 style="padding: 5px 5px 5px 25px; text-align: left;">Metric</th>
-						                    <th>Baseline diff</th>
-						                    <th>Threshold diff</th>
-						                    <th colspan=2 style="padding-right: 25px;">Current value</th>
-						                </tr>
-						                <tr>
-											<td style="min-width: 20px"></td>
-						                    <td style="text-align: left; vertical-align: top; padding-left: 10px;">Throughput</td>
-						                    <td style="text-align: right; padding-right: 10px; color:{{ general_metrics.baseline_tp_color }}">
-												{% if general_metrics.baseline_tp is not string %}
-													{% if general_metrics.baseline_tp > 0 %}
-														+ {{ general_metrics.baseline_tp }} req/sec
-													{% else %}
-														{{ general_metrics.baseline_tp }} req/sec
-													{% endif %}
-												{% else %}
-													{{ general_metrics.baseline_tp }}
-												{% endif %}
-						                    </td>
-						                    <td style="text-align: right; padding-right: 10px; color:{{ general_metrics.threshold_tp_color }}">
-												{% if general_metrics.threshold_tp is not string %}
-													{% if general_metrics.threshold_tp > 0 %}
-														+ {{ general_metrics.threshold_tp }} req/sec
-													{% else %}
-														{{ general_metrics.threshold_tp }} req/sec
-													{% endif %}
-												{% else %}
-													{{ general_metrics.threshold_tp }}
-												{% endif %}
-						                    </td>
-						                    <td style="text-align: right; padding-right: 10px;">{{ general_metrics.current_tp }} req/sec</td>
-											<td style="min-width: 20px"></td>
-						                </tr>
-						                <tr>
-						                    <td colspan="6"><hr style="border: 0; height: 1px; background: #f0f0f0;"/></td>
-						                </tr>
-						                <tr>
-											<td style="min-width: 20px"></td>
-						                    <td style="text-align: left; vertical-align: top; padding-left: 10px;">Error rate</td>
-						                    <td style="text-align: right; padding-right: 10px; color: {{ general_metrics.baseline_er_color }}">
-												{% if general_metrics.baseline_er is not string %}
-													{% if general_metrics.baseline_er > 0 %}
-														+ {{ general_metrics.baseline_er }} %
-													{% else %}
-														{{ general_metrics.baseline_er }} %
-													{% endif %}
-												{% else %}
-													{{ general_metrics.baseline_er }}
-												{% endif %}
-						                    </td>
-						                    <td style="text-align: right; padding-right: 10px; color: {{ general_metrics.threshold_er_color }}">
-												{% if general_metrics.threshold_er is not string %}
-													{% if general_metrics.threshold_er > 0 %}
-														+ {{ general_metrics.threshold_er }} %
-													{% else %}
-														{{ general_metrics.threshold_er }} %
-													{% endif %}
-												{% else %}
-													{{ general_metrics.threshold_er }}
-												{% endif %}
-						                    </td>
-						                    <td style="text-align: right; padding-right: 10px;"> {{ general_metrics.current_er }}%</td>
-											<td style="min-width: 20px"></td>
-						                </tr>
-						            </table>
-								</div>
-								<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; padding-top: 10px !important;">
-									<span style="font-size: 16px; font-weight: 700;">Request Metrics</span>
-								</div>
-						        <div style="padding-bottom: 20px; font-size: 14px;">
-						            <table class="cellless" style="width: 100%; text-align: right;">
-						                <tr style="background-color: #82B1FF;">
-						                    <th colspan=2 style="width: 30%; padding: 5px 5px 5px 25px;text-align: left; ">Name</th>
-						                    <th style="width: 10%;">Baseline diff, sec</th>
-						                    <th style="width: 10%;">Threshold diff, sec</th>
-						                    <th style="width: 10%;">Current, sec</th>
-						                    <th colspan=2 style="width: 40%; padding-left: 25px; text-align: left;">Representation</th>
-						                </tr>
-						                {% for item in baseline_and_thresholds %}
-						                <tr>
-											<td style="min-width: 20px"></td>
-						                    <td style="text-align: left;">
-						                        <span style="display: inline-block; max-width: 180px; white-space: nowrap; overflow: hidden !important; text-overflow: ellipsis;">
-						                            {{ item.request_name }}
-						                        </span>
-						                    </td>
-						                    {% if item.baseline is defined %}
-						                    <td style="color: {{ item.baseline_color }};">
-												{% if item.baseline is not string %}
-													{% if item.baseline > 0 %}
-														+ {{item.baseline}}
-													{% else %}
-														{{item.baseline}}
-													{% endif %}
+                                </thead>
+                                <tbody>
+								{% for item in baseline_and_thresholds %}
+									<tr>
+                                        <td align="left">{{ item.request_name }}</td>
+										<td align="right" style="color:{{ item.baseline_color }};">
+											{% if item.baseline is not string %}
+												{% if item.baseline > 0 %}
+													+ {{item.baseline}}
 												{% else %}
 													{{item.baseline}}
 												{% endif %}
-						                    </td>
-						                    {% else %}
-						                    <td></td>
-						                    {% endif %}
-						                    <td style="color: {{ item.threshold_color }};">
-												{% if item.threshold is not string %}
-													{% if item.threshold > 0 %}
-														+ {{item.threshold}}
-													{% else %}
-														{{item.threshold}}
-													{% endif %}
+											{% else %}
+												{{item.baseline}}
+											{% endif %}
+										</td>
+                                        <td align="right" style="color:{{ item.threshold_color }};">
+											{% if item.threshold is not string %}
+												{% if item.threshold > 0 %}
+													+ {{item.threshold}}
 												{% else %}
 													{{item.threshold}}
 												{% endif %}
-						                    </td>
-						                    <td>{{ item.response_time }}</td>
-						                    <td style="padding-right: 5px; padding-left: 5px;">
-						                        <hr style="border: 8px solid {{ item.line_color }}; border-radius: 2px; width: {{ item.share }}%; float: left;" />
-						                    </td>
-											<td style="min-width: 20px"></td>
-						                </tr>
-						                {% endfor %}
-						            </table>
-						        </div>
-						    </div>
+											{% else %}
+												{{item.threshold}}
+											{% endif %}
+										</td>
+                                        <td align="right">{{ item.response_time }}</td>
+                                        <td align="left">
+                                            <div style="background:{{ item.line_color }};;border-radius:2px;width:{{ item.share }}%;">&nbsp;</div>
+                                        </td>
+                                    </tr>
+								{% endfor %}
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                    </tr>
+					<tr>
+                        <td>
+                            <table border="0" align="center" cellpadding="0" cellspacing="0" style="width:100%;font-size:1px;table-layout: fixed;vertical-align:top;">
+                                <tr>
+                                    <td colspan="3" style="padding:10px;min-height:30px;text-align:left;background-color:#eee;color:#000;font-size:16px;font-weight:400">
+                                        Comparison vs latest builds
+                                    </td>
+                                </tr>
+                            </table>
+							<table border="0" align="center" cellpadding="10" cellspacing="0" style="width:100%;font-size:14px;background-color: #fbfbfb">
+                                <thead>
+                                    <tr style="background-color:#f3f3f3;vertical-align:top;">
+                                        <th style="text-align:left;font-weight:400;font-size: 14px;">Date</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Ttl req, count</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Diff, count</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Thrghpt, req/sec</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Diff, req/sec</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Error rate, %</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Diff, %</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Pct95, sec</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Diff, sec</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+								{% for metric in comparison %}
+                                    <tr>
+                                        <td style="text-align:left;" nowrap>{{metric.date}}</td>
+                                        <td align="right">{{metric.total}}</td>
+                                        <td align="right">
+                                            <span style="color:#028003;">{{metric.total_diff}}</span>
+                                        </td>
+                                        <td align="right">{{metric.throughput}}</td>
+                                        <td align="right">
+                                            <span style="color:#028003">{{metric.throughput_diff}}</span>
+                                        </td>
+                                        <td align="right">{{metric.error_rate}}</td>
+                                        <td align="right">
+                                            <span style="color:#028003">{{metric.error_rate_diff}}</span>
+                                        </td>
+                                        <td align="right">{{ (metric.pct95 / 1000.0)|round(2, 'floor') }}</td>
+                                        <td align="right">
+                                            <span style="color:#028003">{{metric.pct95_diff}}</span>
+                                        </td>
+                                    </tr>
+									<tr>
+										<td colspan="9" style="vertical-align:middle;padding-top:0;padding-bottom:0;">
+											<hr style="border:0;height:1px;background:#f0f0f0;margin:0;" />
+										</td>
+									</tr>
+								{% endfor %}
+								</tbody>
+							</table>
 						</td>
 					</tr>
 					<tr>
-						<td>
-							<div style="width: 80%; padding: 5px; margin: auto;"></div>
+						<td>&nbsp;</td>
+					</tr>
+					<tr>
+                        <td>
+                            <table border="0" align="center" cellpadding="0" cellspacing="0" style="width:100%;font-size:1px;table-layout: fixed;vertical-align:top;">
+                                <tr>
+                                    <td colspan="3" style="padding:10px;min-height:30px;text-align:left;background-color:#eee;color:#000;font-size:16px;font-weight:400">
+                                        Results summary table
+                                    </td>
+                                </tr>
+                            </table>
+							<table border="0" align="center" cellpadding="10" cellspacing="0" layout="fixed" style="width:100%;font-size:14px;background-color: #fbfbfb">
+                                <thead>
+                                    <tr style="background-color:#f3f3f3;vertical-align:top;">
+                                        <th style="width:30%;text-align:left;font-weight:400;font-size: 14px;">Name</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Ttl req, count</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Thrghpt, req/sec</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Errors, count</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Min, sec</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Pct50, sec</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Pct95, sec</th>
+                                        <th style="padding-right:5px;text-align:right;font-weight:400; font-size: 14px;">Max, sec</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+									{% for request in summary %}
+									<tr>
+                                        <td style="text-align:left">{{ request.request_name }}</td>
+                                        <td align="right">{{ request.total }}</td>
+                                        <td align="right">{{ request.throughput }}</td>
+                                        <td align="right">{{ request.ko }}</td>
+                                        <td align="right" style="color:{{ request.min_threshold }}">{{ (request.min / 1000.0)|round(2, 'floor') }}</td>
+                                        <td align="right" style="color:{{ request.pct50_threshold }}">{{ (request.pct50 / 1000.0)|round(2, 'floor') }}</td>
+                                        <td align="right" style="color:{{ request.pct95_threshold }}">{{ (request.pct95 / 1000.0)|round(2, 'floor') }}</td>
+                                        <td align="right" style="color:{{ request.max_threshold }}">{{ (request.max /1000.0)|round(2, 'floor') }}</td>
+                                    </tr>
+									<tr>
+                                        <td colspan="8" style="vertical-align:middle;padding-top:0;padding-bottom:0;">
+                                            <hr style="border:0;height:1px;background:#f0f0f0;margin:0;" />
+                                        </td>
+                                    </tr>
+									{% endfor %}
+								</tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                    </tr>
+					<tr>
+                        <td>
+                            <table border="0" align="center" cellpadding="0" cellspacing="0" style="width:100%;font-size:1px;table-layout: fixed;vertical-align:top;">
+                                <tr>
+                                    <td colspan="3" style="padding:10px;min-height:30px;text-align:left;background-color:#eee;color:#000;font-size:16px;font-weight:400">
+                                        Success Rate
+                                    </td>
+                                </tr>
+                            </table>
+							<table border="0" align="center" cellpadding="0" cellspacing="0" style="width:100%;font-size:14px;">
+                                <tr>
+                                    <td align="center">
+										<img src="cid:success_rate"/>
+									</td>
+								</tr>
+							</table>
 						</td>
 					</tr>
 					<tr>
-						<td>
-						    <div class="shadow" style="width: 80%; border-radius: 8px; margin: auto; background-color: white; max-width: 1000px; min-width: 500px;">
-								<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; border-top-left-radius: 8px; border-top-right-radius: 8px; padding-top: 10px !important;">
-									<span style="font-size: 16px; font-weight: 700;">Comparison vs latest builds</span>
-								</div>
-						        <div style="padding-bottom: 20px; font-size: 14px;">
-						            <table class="cellless" style="width: 100%; text-align: right;">
-						                <tr style="background-color: #82B1FF;">
-						                    <th colspan=2 style="min-width: 90px; padding: 5px 5px 5px 25px; text-align: left; ">Date</th>
-						                    <th>Ttl req, count</th>
-						                    <th>Diff, count</th>
-						                    <th>Thrghpt, req/sec</th>
-						                    <th>Diff, req/sec</th>
-						                    <th>Error rate, %</th>
-						                    <th>Diff, %</th>
-						                    <th>Pct95, sec</th>
-						                    <th colspan=2 style="padding-right: 5px;">Diff, sec</th>
-						                </tr>
-						                {% for metric in comparison %}
-						                <tr>
-											<td style="min-width: 10px;"></td>
-						                    <td style="text-align: left;">{{metric.date}}</td>
-						                    <td>{{metric.total}}</td>
-						                    <td>{{metric.total_diff}}</td>
-						                    <td>{{metric.throughput}}</td>
-						                    <td>{{metric.throughput_diff}}</td>
-						                    <td>{{metric.error_rate}}</td>
-						                    <td>{{metric.error_rate_diff}}</td>
-						                    <td>{{ (metric.pct95 / 1000.0)|round(2, 'floor') }}</td>
-						                    <td>{{metric.pct95_diff}}</td>
-											<td style="min-width: 10px;"></td>
-						                </tr>
-						                {% endfor %}
-						            </table>
-								</div>
-									<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; padding-top: 10px !important;">
-										<span style="font-size: 16px; font-weight: 700;">Results summary table</span>
-									</div>
-								<div style="padding-bottom: 20px; font-size: 14px;">
-						            <table class="cellless" style="width: 100%; text-align: right;">
-						                <tr style="background-color: #82B1FF;">
-						                    <th colspan=2 style="width: 30%; max-width: 180px; min-width: 120px; padding: 5px 5px 5px 25px;text-align: left; ">Name</th>
-						                    <th>Ttl req, count</th>
-						                    <th>Thrghpt, req/sec</th>
-						                    <th>Errors, count</th>
-						                    <th>Min, sec</th>
-						                    <th>Pct50, sec</th>
-						                    <th>Pct95, sec</th>
-						                    <th colspan=2 style="padding-right: 5px;">Max, sec</th>
-						                </tr>
-						                {% for request in summary %}
-						                <tr>
-											<td style="min-width: 10px;"></td>
-						                    <td style="text-align: left;">{{ request.request_name }}</td>
-						                    <td>{{ request.total }}</td>
-						                    <td>{{ request.throughput }}</td>
-						                    <td>{{ request.ko }}</td>
-						                    <td style="color:{{ request.min_threshold }}">{{ (request.min / 1000.0)|round(2, 'floor') }}</td>
-						                    <td style="color:{{ request.pct50_threshold }}">{{ (request.pct50 / 1000.0)|round(2, 'floor') }}</td>
-						                    <td style="color:{{ request.pct95_threshold }}">{{ (request.pct95 / 1000.0)|round(2, 'floor') }}</td>
-						                    <td style="color:{{ request.max_threshold }}">{{ (request.max /1000.0)|round(2, 'floor') }}</td>
-											<td style="min-width: 10px;"></td>
-						                </tr>
-						                {% endfor %}
-						            </table>
-						        </div>
-						    </div>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<div style="width: 80%; padding: 5px; margin: auto;"></div>
-						</td>
-					</tr>
-					<tr>
-						<td>
-						    <div class="shadow" style="width: 80%; border-radius: 8px; margin: auto; background-color: white; max-width: 1000px; min-width: 500px; min-height: 600px;">
-								<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; border-top-left-radius: 8px; border-top-right-radius: 8px; padding-top: 10px !important;">
-									<span style="font-size: 16px; font-weight: 700;">Success Rate</span>
-								</div>
-						        <div style="margin: 0 20px 0 20px; padding-top: 20px; padding-bottom: 20px; font-size: 14px;">
-						            <div style="text-align: center;">
-						                <img src="cid:success_rate" style="max-width: 100%; height: auto;" />
-						            </div>
-								</div>
-								<div style="padding-left: 20px; min-height: 30px; text-align: left; background-color: #536DFE; color: white; padding-top: 10px !important;">
-									<span style="font-size: 16px; font-weight: 700;">RPS/TPS Rate</span>
-								</div>
-						        <div style="margin: 0 20px 0 20px; padding-top: 20px; padding-bottom: 20px; font-size: 14px;">
-						            <div style="text-align: center;">
-						                    <img src="cid:throughput" style="max-width: 100%; height: auto;" />
-						            </div>
-						        </div>
-						    </div>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<div style="width: 80%; padding: 5px; margin: auto;"></div>
-						</td>
-					</tr>
-					<tr>
-						<td>
-						    <div style="width: 80%; margin: auto; padding-bottom: 5px; text-align: center; max-width: 1000px; min-width: 500px;">
-						        <p style="color: black; font-size: 12px;">Auto generated performance analysis report</p>
-						        <p style="color: black; font-size: 12px;">&#9400; https://getcarrier.io</p>
-						    </div>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
-	</table>
+                        <td>
+                            <table border="0" align="center" cellpadding="0" cellspacing="0" style="width:100%;font-size:1px;table-layout: fixed;vertical-align:top;">
+                                <tr>
+                                    <td colspan="3" style="padding:10px;min-height:30px;text-align:left;background-color:#eee;color:#000;font-size:16px;font-weight:400">
+                                        RPS/TPS Rate
+                                    </td>
+                                </tr>
+                            </table>
+							<table border="0" align="center" cellpadding="0" cellspacing="0" style="width:100%;font-size:14px;">
+                                <tr>
+                                    <td align="center">
+										<img src="cid:throughput"/>
+									</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:center;">
+                <p style="color:black;font-size:12px;margin:5px;">Auto generated performance analysis report</p>
+                <p style="color:black;font-size:12px;margin:5px;">&copy;&nbsp;<a href="https://getcarrier.io" target="_blank">https://getcarrier.io</a></p>
+            </td>
+        </tr>
+    </table>
 </body>
+</html>
