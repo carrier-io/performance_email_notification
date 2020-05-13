@@ -24,6 +24,8 @@ class EmailNotification:
         self.args = arguments
         self.data_manager = DataManager(arguments)
         self.report_builder = ReportBuilder()
+        
+        #TODO correct all parameters to be 'smtp' rather than 'smpt' which is incorrect
         self.smtp_config = {'host': arguments['smpt_host'],
                             'port': arguments['smpt_port'],
                             'user': arguments['smpt_user'],
