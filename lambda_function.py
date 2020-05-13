@@ -71,6 +71,7 @@ def parse_args(_event):
     args['smpt_port'] = event.get("smpt_port", 465)
     args['smpt_host'] = event.get("smpt_host", "smtp.gmail.com")
     args['smpt_user'] = environ.get('smpt_user') if not event.get('smpt_user') else event.get('smpt_user')
+    args['smpt_sender'] = event.get('smpt_user') if not event.get('smpt_sender') else event.get('smpt_sender')
     if not event.get('smpt_password'):
         args['smpt_password'] = environ.get("smpt_password")
     else:

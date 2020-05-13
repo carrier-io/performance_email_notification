@@ -32,19 +32,20 @@ You can pass the necessary parameters with the -d option. List of available para
 
 `'influx_host': '<influx_host_DNS_or_IP>'` - required for all type of notifications
 
-`'smpt_user': '<smpt_user_who_will_send_email>'` - required for all type of notifications
+`'smpt_user': '<smpt_user_who_will_login_to_the_the_host>'` - required for all type of notifications - note: parameter name `smpt` instead of `smtp`
 
-`'smpt_password': '<password>'` - required for all type of notifications
+`'smpt_password': '<password>'` - required for all type of notifications - note: parameter name `smpt` instead of `smtp`
+
+`'smpt_sender': '<sender_who_email_will_be_FROM>'` - optional: if not included then 'smpt_user' will be used - note: parameter name `smpt` instead of `smtp`
 
 `'user_list': '<list of recipients>'` - required for all type of notifications
 
 `'notification_type': '<test_type>'` - should be 'ui' or 'api'
 
+`'smpt_host': 'smtp.gmail.com'` - optional, default - 'smtp.gmail.com' - note: parameter name `smpt` instead of `smtp`
 
-`'smpt_host': 'smtp.gmail.com'` - optional, default - 'smtp.gmail.com'
- 
-`'smpt_port': 465` - optional, default - 465
- 
+`'smpt_port': 465` - optional, default - 465 - note: parameter name `smpt` instead of `smtp`
+
 `'influx_port': 8086` - optional, default - 8086
 
 `'influx_thresholds_database': 'thresholds'` - optional, default - 'thresholds'

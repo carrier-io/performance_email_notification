@@ -24,10 +24,14 @@ class EmailNotification:
         self.args = arguments
         self.data_manager = DataManager(arguments)
         self.report_builder = ReportBuilder()
+        
+        #TODO correct all parameters to be 'smtp' rather than 'smpt' which is incorrect
         self.smtp_config = {'host': arguments['smpt_host'],
                             'port': arguments['smpt_port'],
                             'user': arguments['smpt_user'],
-                            'password': arguments['smpt_password']}
+                            'password': arguments['smpt_password'],
+                            'sender': arguments['smpt_sender']
+                           }
 
     def email_notification(self):
         tests_data, last_test_data, baseline, violation, compare_with_thresholds = self.data_manager.get_api_test_info()
@@ -49,17 +53,22 @@ class EmailNotification:
         subject += "Test results for \"" + str(self.args['test'])
         subject += "\". Users count: " + str(self.args['users']) + ". From " + str(date) + "."
 
+        if smtp_config['sender'] is None:
+            smtp_config['sender'] = smtp_config['user']
+            
+        #TODO change 'user' to 'to_emails' to avoid confusion with smtp_config['user']
         for user in user_list:
             if all(i in user for i in ["<mailto:", "|"]):
                 user = user.split("|")[1].replace(">", "").replace("<", "")
             msg_root = MIMEMultipart('related')
             msg_root['Subject'] = subject
-            msg_root['From'] = smtp_config['user']
+            msg_root['From'] = smtp_config['sender']
             msg_root['To'] = user
             msg_alternative = MIMEMultipart('alternative')
             msg_alternative.attach(MIMEText(email_body, 'html'))
             msg_root.attach(msg_alternative)
             for chart in charts:
                 msg_root.attach(chart)
-            s.sendmail(smtp_config['user'], user, msg_root.as_string())
+                
+            s.sendmail(smtp_config['sender'], user, msg_root.as_string())
         s.quit()
