@@ -24,14 +24,11 @@ class EmailNotification:
         self.args = arguments
         self.data_manager = DataManager(arguments)
         self.report_builder = ReportBuilder()
-        
-        #TODO correct all parameters to be 'smtp' rather than 'smpt' which is incorrect
-        self.smtp_config = {'host': arguments['smpt_host'],
-                            'port': arguments['smpt_port'],
-                            'user': arguments['smpt_user'],
-                            'password': arguments['smpt_password'],
-                            'sender': arguments['smpt_sender']
-                           }
+        self.smtp_config = {'host': arguments['smtp_host'],
+                            'port': arguments['smtp_port'],
+                            'user': arguments['smtp_user'],
+                            'password': arguments['smtp_password'],
+                            'sender': arguments['smtp_sender']}
 
     def email_notification(self):
         tests_data, last_test_data, baseline, violation, compare_with_thresholds = self.data_manager.get_api_test_info()

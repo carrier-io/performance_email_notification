@@ -68,14 +68,14 @@ def parse_args(_event):
     args['influx_db'] = event.get("influx_db")
 
     # SMTP Config
-    args['smpt_port'] = event.get("smpt_port", 465)
-    args['smpt_host'] = event.get("smpt_host", "smtp.gmail.com")
-    args['smpt_user'] = environ.get('smpt_user') if not event.get('smpt_user') else event.get('smpt_user')
-    args['smpt_sender'] = event.get('smpt_user') if not event.get('smpt_sender') else event.get('smpt_sender')
-    if not event.get('smpt_password'):
-        args['smpt_password'] = environ.get("smpt_password")
+    args['smpt_port'] = event.get("smtp_port", 465)
+    args['smpt_host'] = event.get("smtp_host", "smtp.gmail.com")
+    args['smpt_user'] = environ.get('smtp_user') if not event.get('smtp_user') else event.get('smtp_user')
+    args['smpt_sender'] = args['smtp_user'] if not event.get('smtp_sender') else event.get('smtp_sender')
+    if not event.get('smtp_password'):
+        args['smtp_password'] = environ.get("smtp_password")
     else:
-        args['smpt_password'] = event.get('smpt_password')
+        args['smtp_password'] = event.get('smtp_password')
 
     # Test Config
     args['users'] = event.get('users', 1)
