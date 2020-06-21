@@ -22,8 +22,8 @@ def lambda_handler(event, context):
         args = parse_args(event)
 
         # Check required params
-        if not all([args['influx_host'], args['smpt_user'], args['test'], args['test_type'],
-                    args['notification_type'], args['smpt_password'], args['user_list']]):
+        if not all([args['influx_host'], args['smtp_user'], args['test'], args['test_type'],
+                    args['notification_type'], args['smtp_password'], args['user_list']]):
             raise Exception('Some required parameters not passed')
 
         # Send notification
