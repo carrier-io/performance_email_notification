@@ -68,10 +68,10 @@ def parse_args(_event):
     args['influx_db'] = event.get("influx_db")
 
     # SMTP Config
-    args['smpt_port'] = event.get("smtp_port", 465)
-    args['smpt_host'] = event.get("smtp_host", "smtp.gmail.com")
-    args['smpt_user'] = environ.get('smtp_user') if not event.get('smtp_user') else event.get('smtp_user')
-    args['smpt_sender'] = args['smtp_user'] if not event.get('smtp_sender') else event.get('smtp_sender')
+    args['smtp_port'] = event.get("smtp_port", 465)
+    args['smtp_host'] = event.get("smtp_host", "smtp.gmail.com")
+    args['smtp_user'] = environ.get('smtp_user') if not event.get('smtp_user') else event.get('smtp_user')
+    args['smtp_sender'] = args['smtp_user'] if not event.get('smtp_sender') else event.get('smtp_sender')
     if not event.get('smtp_password'):
         args['smtp_password'] = environ.get("smtp_password")
     else:
