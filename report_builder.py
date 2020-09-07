@@ -113,7 +113,7 @@ class ReportBuilder:
             color = GREEN
         else:
             color = RED
-        return status, color, failed_reasons
+        return test_status, color, failed_reasons
 
     @staticmethod
     def check_functional_issues(test):
