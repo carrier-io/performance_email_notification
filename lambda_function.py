@@ -3,9 +3,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -68,10 +68,10 @@ def parse_args(_event):
     args['influx_db'] = event.get("influx_db")
 
     # SMTP Config
-    args['smtp_port'] = event.get("smtp_port", 465)
-    args['smtp_host'] = event.get("smtp_host", "smtp.gmail.com")
+    args['smtp_port'] = environ.get("smtp_port", 465) if not event.get('smtp_port') else event.get('smtp_port')
+    args['smtp_host'] = environ.get("smtp_host", "smtp.gmail.com") if not event.get('smtp_host') else event.get('smtp_host')
     args['smtp_user'] = environ.get('smtp_user') if not event.get('smtp_user') else event.get('smtp_user')
-    args['smtp_sender'] = args['smtp_user'] if not event.get('smtp_sender') else event.get('smtp_sender')
+    args['smtp_sender'] = args['smtp_user'] if not environ.get('smtp_sender') else environ.get('smtp_sender')
     if not event.get('smtp_password'):
         args['smtp_password'] = environ.get("smtp_password")
     else:
