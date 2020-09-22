@@ -32,7 +32,7 @@ class EmailNotification:
 
     def email_notification(self):
         tests_data, last_test_data, baseline, violation, compare_with_thresholds = self.data_manager.get_api_test_info()
-        email_body, charts, date = self.report_builder.create_api_email_body(tests_data, last_test_data, baseline,
+        email_body, charts, date = self.report_builder.create_api_email_body(self.args, tests_data, last_test_data, baseline,
                                                                              self.args['comparison_metric'],
                                                                              violation, compare_with_thresholds)
         self.send_email(self.smtp_config, self.args['user_list'], email_body, charts, date)

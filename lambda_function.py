@@ -96,4 +96,9 @@ def parse_args(_event):
         args['test_type'] = event.get('test_type')
     args['type'] = args['test_type']
 
+    # Thresholds
+    args['error_rate'] = int(environ.get("error_rate", 10))
+    args['performance_degradation_rate'] = int(environ.get("performance_degradation_rate", 20))
+    args['missed_thresholds'] = int(environ.get("missed_thresholds", 50))
+
     return args
