@@ -3,9 +3,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,17 +26,18 @@ YELLOW = '#FFA400'
 RED = '#FF0000'
 GRAY = '#CCCCCC'
 
+
 class ReportBuilder:
 
-    def create_api_email_body(self, tests_data, last_test_data, baseline, comparison_metric,
+    def create_api_email_body(self, args, tests_data, last_test_data, baseline, comparison_metric,
                               violation, thresholds=None):
-        test_description = self.create_test_description(last_test_data, baseline, comparison_metric, violation)
+        test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation)
         builds_comparison = self.create_builds_comparison(tests_data)
         general_metrics = self.get_general_metrics(builds_comparison[0], baseline, thresholds)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
         baseline_and_thresholds = self.get_baseline_and_thresholds(last_test_data, baseline, comparison_metric,
                                                                    thresholds)
-        
+
         email_body = self.get_api_email_body(test_description, last_test_data, baseline, builds_comparison,
                                              baseline_and_thresholds, general_metrics)
         return email_body, charts, str(test_description['start']).split(" ")[0]
@@ -50,7 +51,7 @@ class ReportBuilder:
         email_body = self.get_ui_email_body(test_params, top_five_thresholds, builds_comparison, last_test_data)
         return email_body, charts, str(test_params['start_time']).split(" ")[0]
 
-    def create_test_description(self, test, baseline, comparison_metric, violation):
+    def create_test_description(self, args, test, baseline, comparison_metric, violation):
         params = ['simulation', 'users', 'duration']
         test_params = {}
         for param in params:
@@ -59,10 +60,10 @@ class ReportBuilder:
         timestamp = calendar.timegm(time.strptime(test_params['end'], '%Y-%m-%d %H:%M:%S'))
         test_params['start'] = datetime.datetime.utcfromtimestamp(int(timestamp) - int(float(test[0]['duration']))) \
             .strftime('%Y-%m-%d %H:%M:%S')
-        test_params['status'], test_params['color'], test_params['failed_reason'] = self.check_status(
+        test_params['status'], test_params['color'], test_params['failed_reason'] = self.check_status(args,
             test, baseline, comparison_metric, violation)
         return test_params
-        
+
     @staticmethod
     def create_ui_test_discription(test):
         description = {'start_time': datetime.datetime.utcfromtimestamp(int(test[0]['start_time']) / 1000).strftime(
@@ -94,17 +95,17 @@ class ReportBuilder:
         description['failed_reason'] = failed_reasons
         return description
 
-    def check_status(self, test, baseline, comparison_metric, violation):
+    def check_status(self, args, test, baseline, comparison_metric, violation):
         failed_reasons = []
-        test_status, failed_message = self.check_functional_issues(test)
+        test_status, failed_message = self.check_functional_issues(args["error_rate"], test)
         if failed_message != '':
             failed_reasons.append(failed_message)
-        status, failed_message = self.check_performance_degradation(test, baseline, comparison_metric)
+        status, failed_message = self.check_performance_degradation(args["performance_degradation_rate"], test, baseline, comparison_metric)
         if failed_message != '':
             failed_reasons.append(failed_message)
         if test_status is 'SUCCESS':
             test_status = status
-        status, failed_message = self.check_missed_thresholds(violation)
+        status, failed_message = self.check_missed_thresholds(args["missed_thresholds"], violation)
         if failed_message != '':
             failed_reasons.append(failed_message)
         if test_status is 'SUCCESS':
@@ -116,18 +117,18 @@ class ReportBuilder:
         return test_status, color, failed_reasons
 
     @staticmethod
-    def check_functional_issues(test):
+    def check_functional_issues(_error_rate, test):
         request_count, error_count = 0, 0
         for request in test:
             request_count += int(request['total'])
             error_count += int(request['ko'])
         error_rate = round(error_count * 100 / request_count, 2)
-        if error_rate > 10:
+        if error_rate > _error_rate:
             return 'FAILED', 'error rate - ' + str(error_rate) + ' %'
         return 'SUCCESS', ''
 
     @staticmethod
-    def check_performance_degradation(test, baseline, comparison_metric):
+    def check_performance_degradation(degradation_rate, test, baseline, comparison_metric):
         if baseline:
             request_count, performance_degradation = 0, 0
             for request in test:
@@ -137,7 +138,7 @@ class ReportBuilder:
                         if int(request[comparison_metric]) > int(baseline_request[comparison_metric]):
                             performance_degradation += 1
             performance_degradation_rate = round(performance_degradation * 100 / request_count, 2)
-            if performance_degradation_rate > 20:
+            if performance_degradation_rate > degradation_rate:
                 return 'FAILED', 'performance degradation rate - ' + str(performance_degradation_rate) + ' %'
             else:
                 return 'SUCCESS', ''
@@ -145,8 +146,8 @@ class ReportBuilder:
             return 'SUCCESS', ''
 
     @staticmethod
-    def check_missed_thresholds(violation):
-        if violation > 50:
+    def check_missed_thresholds(missed_thresholds, violation):
+        if violation > missed_thresholds:
             return 'FAILED', 'missed thresholds rate - ' + str(violation) + ' %'
         return 'SUCCESS', ''
 
@@ -196,7 +197,7 @@ class ReportBuilder:
                 param_diff = round(float(build[param]) - float(last_build.get(param, 0.0)), 2)
                 color = RED if param_diff < 0.0 else GREEN
             if param in ['pct95']:
-                param_diff = round((float(build[param]) - float(last_build[param]))/1000, 2)
+                param_diff = round((float(build[param]) - float(last_build[param])) / 1000, 2)
                 color = RED if param_diff > 0.0 else GREEN
             if param_diff is not None:
                 param_diff = f"+{param_diff}" if param_diff > 0 else str(param_diff)
@@ -439,7 +440,7 @@ class ReportBuilder:
             baseline_throughput = round(sum([tp['throughput'] for tp in baseline]), 2)
             baseline_ko_count = round(sum([tp['ko'] for tp in baseline]), 2)
             baseline_ok_count = round(sum([tp['ok'] for tp in baseline]), 2)
-            baseline_error_rate = round((baseline_ko_count / (baseline_ko_count+baseline_ok_count)) * 100, 2)
+            baseline_error_rate = round((baseline_ko_count / (baseline_ko_count + baseline_ok_count)) * 100, 2)
             baseline_tp_color = RED if baseline_throughput > current_tp else GREEN
             baseline_er_color = RED if current_error_rate > baseline_error_rate else GREEN
             baseline_throughput = round(current_tp - baseline_throughput, 2)
@@ -532,11 +533,11 @@ class ReportBuilder:
         exceeded_thresholds = sorted(exceeded_thresholds, key=lambda k: float(k['response_time']), reverse=True)
         hundered = 0
         for _ in range(len(exceeded_thresholds)):
-            if not(hundered):
+            if not (hundered):
                 exceeded_thresholds[_]['share'] = 100
                 hundered = float(exceeded_thresholds[_]['response_time'])
             else:
-                exceeded_thresholds[_]['share'] = int((100*float(exceeded_thresholds[_]['response_time']))/hundered)
+                exceeded_thresholds[_]['share'] = int((100 * float(exceeded_thresholds[_]['response_time'])) / hundered)
         return exceeded_thresholds
 
     def create_ui_builds_comparison(self, tests):
