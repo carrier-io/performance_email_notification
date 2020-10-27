@@ -53,6 +53,11 @@ def parse_args(_event):
     # Galloper or AWS Lambda service
     event = _event if not _event.get('body') else json.loads(_event['body'])
 
+    # Galloper
+    args['galloper_url'] = environ.get("galloper_url")
+    args['token'] = environ.get("token")
+    args['project_id'] = environ.get("project_id")
+
     # Influx Config
     args['influx_host'] = environ.get("influx_host") if not event.get('influx_host') else event.get('influx_host')
     args['influx_port'] = event.get("influx_port", 8086)
@@ -81,6 +86,7 @@ def parse_args(_event):
     args['users'] = event.get('users', 1)
     args['test'] = event.get('test')
     args['simulation'] = event.get('test')
+    args['env'] = event.get('env')
 
     # Notification Config
     args['user_list'] = event.get('user_list')

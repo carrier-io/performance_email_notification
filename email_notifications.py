@@ -22,7 +22,8 @@ from report_builder import ReportBuilder
 class EmailNotification:
     def __init__(self, arguments):
         self.args = arguments
-        self.data_manager = DataManager(arguments)
+        self.data_manager = DataManager(arguments, arguments["galloper_url"], arguments["token"],
+                                        arguments["project_id"])
         self.report_builder = ReportBuilder()
         self.smtp_config = {'host': arguments['smtp_host'],
                             'port': arguments['smtp_port'],
