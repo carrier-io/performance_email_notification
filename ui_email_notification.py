@@ -5,11 +5,6 @@ class UIEmailNotification(object):
 
     def __init__(self, arguments):
         self.test_name = arguments['test']
-        self.smtp_config = {'host': arguments['smtp_host'],
-                            'port': arguments['smtp_port'],
-                            'user': arguments['smtp_user'],
-                            'password': arguments['smtp_password'],
-                            'sender': arguments['smtp_sender']}
 
     def ui_email_notification(self):
         subject = ""
