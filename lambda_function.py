@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from os import environ
-from email_notifications import EmailNotification
 import json
+from os import environ
+
+from email_client import EmailClient
+from email_notifications import ApiEmailNotification
+from ui_email_notification import UIEmailNotification
 
 
 def lambda_handler(event, context):
@@ -23,6 +26,7 @@ def lambda_handler(event, context):
         if not args['notification_type']:
             raise Exception('notification_type parameter is not passed')
 
+        email = None
         # Send notification
         if args['notification_type'] == 'api':
             # Check required params
@@ -30,15 +34,18 @@ def lambda_handler(event, context):
                         args['notification_type'], args['smtp_password'], args['user_list']]):
                 raise Exception('Some required parameters not passed')
 
-            EmailNotification(args).email_notification()
+            email = ApiEmailNotification(args).email_notification()
         elif args['notification_type'] == 'ui':
             if not all([args['test_id'], args['report_id']]):
                 raise Exception('test_id and report_id are required for UI reports')
 
-            EmailNotification(args).ui_email_notification()
+            email = UIEmailNotification(args).ui_email_notification()
         else:
             raise Exception('Incorrect value for notification_type: {}. Must be api or ui'
                             .format(args['notification_type']))
+
+        EmailClient(args).send_email(args['user_list'], email)
+
     except Exception as e:
         from traceback import format_exc
         print(format_exc())
