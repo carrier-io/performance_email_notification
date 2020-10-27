@@ -1,6 +1,10 @@
+from email_notifications import Email
+
+
 class UIEmailNotification(object):
 
     def __init__(self, arguments):
+        self.test_name = arguments['test']
         self.smtp_config = {'host': arguments['smtp_host'],
                             'port': arguments['smtp_port'],
                             'user': arguments['smtp_user'],
@@ -8,5 +12,9 @@ class UIEmailNotification(object):
                             'sender': arguments['smtp_sender']}
 
     def ui_email_notification(self):
-        raise NotImplemented()
-        # send_email(self.smtp_config, self.args['user_list'], email_body, charts, date, self.args)
+        subject = ""
+        email_body = ""
+        date = ""
+        charts = ""
+        user_list = []
+        return Email(self.test_name, user_list, subject, email_body, charts, date)
