@@ -33,7 +33,8 @@ class Email(object):
 class ApiEmailNotification:
     def __init__(self, arguments):
         self.args = arguments
-        self.data_manager = DataManager(arguments)
+        self.data_manager = DataManager(arguments, arguments["galloper_url"], arguments["token"],
+                                        arguments["project_id"])
         self.report_builder = ReportBuilder()
 
     def email_notification(self):
