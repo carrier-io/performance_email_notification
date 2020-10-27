@@ -43,7 +43,7 @@ def lambda_handler(event, context):
             raise Exception('Incorrect value for notification_type: {}. Must be api or ui'
                             .format(args['notification_type']))
 
-        EmailClient(args).send_email(args['user_list'], email)
+        EmailClient(args).send_email(email)
 
     except Exception as e:
         from traceback import format_exc

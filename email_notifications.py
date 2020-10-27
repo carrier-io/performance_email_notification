@@ -22,12 +22,13 @@ from report_builder import ReportBuilder
 
 class Email(object):
 
-    def __init__(self, test_name, subject, email_body, charts, date):
+    def __init__(self, test_name, subject, users_to, email_body, charts, date):
         self.test_name = test_name
         self.subject = subject
         self.email_body = email_body
         self.charts = charts
         self.date = date
+        self.users_to = users_to
 
 
 class ApiEmailNotification:
@@ -48,4 +49,4 @@ class ApiEmailNotification:
         subject += "Test results for \"" + str(self.args['test'])
         subject += "\". Users count: " + str(self.args['users']) + ". From " + str(date) + "."
 
-        return Email(self.args['test'], subject, email_body, charts, date)
+        return Email(self.args['test'], self.args['user_list'], subject, email_body, charts, date)

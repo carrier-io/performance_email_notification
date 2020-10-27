@@ -14,12 +14,12 @@ class EmailClient(object):
         if self.sender is None:
             self.sender = self.user
 
-    def send_email(self, user_list, email):
+    def send_email(self, email):
         s = smtplib.SMTP_SSL(host=self.host, port=self.port)
         s.ehlo()
         s.login(self.user, self.password)
 
-        for recipient in user_list:
+        for recipient in email.users_to:
             if all(i in recipient for i in ["<mailto:", "|"]):
                 recipient = recipient.split("|")[1].replace(">", "").replace("<", "")
             msg_root = MIMEMultipart('related')
