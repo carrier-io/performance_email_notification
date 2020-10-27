@@ -26,7 +26,6 @@ def lambda_handler(event, context):
         if not args['notification_type']:
             raise Exception('notification_type parameter is not passed')
 
-        email = None
         # Send notification
         if args['notification_type'] == 'api':
             # Check required params
