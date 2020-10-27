@@ -1,6 +1,3 @@
-from email_client import send_email
-
-
 class UIEmailNotification(object):
 
     def __init__(self, arguments):
