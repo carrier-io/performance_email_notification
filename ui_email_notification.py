@@ -12,6 +12,7 @@ class UIEmailNotification(object):
         self.gelloper_url = arguments['galloper_url']
         self.gelloper_token = arguments['token']
         self.galloper_project_id = arguments['project_id']
+        self.report_id = arguments['report_id']
         self.test_name = arguments['test']
 
     def ui_email_notification(self):
