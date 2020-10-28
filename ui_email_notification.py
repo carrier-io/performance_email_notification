@@ -23,15 +23,22 @@ class UIEmailNotification(object):
         date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         subject = f"[UI] Test results for {info['name']}. From {date}."
 
+        report_info = self.__get_report_info()
+
+        status = "PASSED"
+        if not report_info['passed']:
+            status = "FAILED"
+
         t_params = {
-            "scenario": "DEMO",
-            "start_time": "12-2012",
-            "status": "PASSED",
-            "duration": 24,
-            "env": "DEV",
-            "browser": "Chrome",
-            "version": "86.0",
-            "view_port": "1920x1080"
+            "scenario": report_info['name'],
+            "start_time": report_info["start_time"],
+            "status": status,
+            "duration": report_info['duration'],
+            "env": report_info['environment'],
+            "browser": report_info['browser'].capitalize(),
+            "version": report_info['browser_version'],
+            "view_port": "1920x1080",
+            "loops": report_info["loops"]
         }
 
         email_body = self.__get_email_body(t_params)
@@ -44,8 +51,21 @@ class UIEmailNotification(object):
         return info['emails'].split(',')
 
     def __get_test_info(self):
+        return self.__get_url(
+            f"/tests/{self.galloper_project_id}/frontend/{self.test_id}?raw=1")
+
+    def __get_report_info(self):
+        return self.__get_url(f"/observer/{self.galloper_project_id}?report_id={self.report_id}")
+
+    def __get_email_body(self, t_params):
+        env = Environment(
+            loader=FileSystemLoader('/home/sergey/SynologyDrive/Github/performance_email_notification/templates'))
+        template = env.get_template("ui_email_template.html")
+        return template.render(t_params=t_params)
+
+    def __get_url(self, url):
         resp = requests.get(
-            f"{self.gelloper_url}/api/v1/tests/{self.galloper_project_id}/frontend/{self.test_id}?raw=1", headers={
+            f"{self.gelloper_url}/api/v1{url}", headers={
                 'Authorization': f'bearer {self.gelloper_token}',
                 'Content-type': 'application/json'
             })
@@ -54,9 +74,3 @@ class UIEmailNotification(object):
             raise Exception(f"Error {resp}")
 
         return resp.json()
-
-    def __get_email_body(self, t_params):
-        env = Environment(
-            loader=FileSystemLoader('/home/sergey/SynologyDrive/Github/performance_email_notification/templates'))
-        template = env.get_template("ui_email_template.html")
-        return template.render(t_params=t_params)
