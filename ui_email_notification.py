@@ -64,7 +64,7 @@ class UIEmailNotification(object):
 
     def __get_email_body(self, t_params, results_info):
         env = Environment(
-            loader=FileSystemLoader('/home/sergey/SynologyDrive/Github/performance_email_notification/templates'))
+            loader=FileSystemLoader('./templates'))
         template = env.get_template("ui_email_template.html")
         return template.render(t_params=t_params, results=results_info)
 
