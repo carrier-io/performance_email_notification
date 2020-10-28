@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import requests
+from jinja2 import Environment, FileSystemLoader
 
 from email_notifications import Email
 
@@ -22,7 +23,18 @@ class UIEmailNotification(object):
         date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         subject = f"[UI] Test results for {info['name']}. From {date}."
 
-        email_body = "Test"
+        t_params = {
+            "scenario": "DEMO",
+            "start_time": "12-2012",
+            "status": "PASSED",
+            "duration": 24,
+            "env": "DEV",
+            "browser": "Chrome",
+            "version": "86.0",
+            "view_port": "1920x1080"
+        }
+
+        email_body = self.__get_email_body(t_params)
 
         charts = []
 
@@ -42,3 +54,9 @@ class UIEmailNotification(object):
             raise Exception(f"Error {resp}")
 
         return resp.json()
+
+    def __get_email_body(self, t_params):
+        env = Environment(
+            loader=FileSystemLoader('/home/sergey/SynologyDrive/Github/performance_email_notification/templates'))
+        template = env.get_template("ui_email_template.html")
+        return template.render(t_params=t_params)
