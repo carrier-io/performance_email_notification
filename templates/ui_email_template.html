@@ -2,6 +2,17 @@
 <html xmlns="http://www.w3.org/1999/html">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style>
+        table.table-bordered, .table-bordered th, .table-bordered td {
+             border: 1px solid #e9ecef;
+             border-collapse: collapse;
+        }
+
+        th {
+            background-color: #f6f9fc;
+        }
+
+    </style>
 </head>
 
 <body style="margin: 0px;background-color: #efefef;font-family: Helvetica,Arial,sans-serif;font-size: 14px;line-height: 23px;border-collapse: collapse;">
@@ -42,53 +53,61 @@
         </table>
 
         <div>
-            <h2 style="font-size: 16px; color: #02a3d5;">Results summary table</h2>
+            <h2 style="font-size: 16px; color: #02a3d5;">Pages Speed Results</h2>
 
-<!--            <table style="font-family: Helvetica,Arial,sans-serif;font-size: 14px;line-height: 23px;border-collapse: collapse; width: 100%;">-->
-<!--                <thead style="background-color: #dcdbdb;">-->
-
-<!--                <th>Page name</th>-->
-<!--                <th>Page count</th>-->
-<!--                <th>Errors</th>-->
-<!--                <th>Latency, sec</th>-->
-<!--                <th>Transfer, sec</th>-->
-<!--                <th>tti, sec</th>-->
-<!--                <th>ttl, sec</th>-->
-<!--                <th>total_time, sec</th>-->
-<!--                </thead>-->
-<!--                {% for request in summary %}-->
-<!--                <tr align="center">-->
-<!--                    <td>{{ request.request_name }}</td>-->
-<!--                    <td>{{ request.count }}</td>-->
-<!--                    <td>{{ request.failed }}</td>-->
-<!--                    <td>{{ request.latency }}</td>-->
-<!--                    <td>{{ request.transfer }}</td>-->
-<!--                    <td>{{ request.tti }}</td>-->
-<!--                    <td>{{ request.ttl }}</td>-->
-<!--                    <td style="color:{{ request.time_threshold }}">{{ request.total_time }}</td>-->
-<!--                </tr>-->
-<!--                {% endfor %}-->
-<!--            </table>-->
+           <table id="summary_table" class="table table-bordered">
+               <thead class="thead-light">
+               <tr>
+                   <th style="" data-field="0">
+                       <div class="th-inner sortable both">Page Name</div>
+                       <div class="fht-cell"></div>
+                   </th>
+                   <th style="" data-field="speed_index">
+                       <div class="th-inner sortable both">Speed Index</div>
+                       <div class="fht-cell"></div></th>
+                   <th style="" data-field="total_time">
+                       <div class="th-inner sortable both">Total, sec</div>
+                       <div class="fht-cell"></div>
+                   </th>
+                   <th style="" data-field="first_bite">
+                       <div class="th-inner sortable both">FB, ms</div>
+                       <div class="fht-cell"></div>
+                   </th>
+                   <th style="" data-field="first_paint">
+                       <div class="th-inner sortable both">FP, ms</div>
+                       <div class="fht-cell"></div>
+                   </th>
+                   <th style="" data-field="content_load">
+                       <div class="th-inner sortable both">Content, ms</div>
+                       <div class="fht-cell"></div>
+                   </th>
+                   <th style="" data-field="dom_processing">
+                        <div class="th-inner sortable both">DOM, ms</div>
+                       <div class="fht-cell"></div>
+                   </th>
+                   <th style="" data-field="missed_thresholds">
+                       <div class="th-inner sortable both">Missed thresholds</div>
+                       <div class="fht-cell"></div>
+                   </th>
+               </tr>
+               </thead>
+               <tbody>
+               {% for result in results %}
+               <tr data-index="0" data-has-detail-view="true">
+                   <td style="">{{ result.name }}</td>
+                   <td style="">{{ result.speed_index }}</td>
+                   <td style="">{{ result.total_time }}</td>
+                   <td style="">{{ result.first_bite }}</td>
+                   <td style="">{{ result.first_paint }}</td>
+                   <td style="">{{ result.content_load }}</td>
+                   <td style="">{{ result.dom_processing }}</td>
+                   <td style="">{{ result.missed_thresholds }}</td>
+               </tr>
+               {% endfor %}
+           </tbody>
+           </table>
         </div>
-
-<!--        {% if comparison|length != 1 %}-->
-<!--        <h2 style="font-size: 16px; color: #02a3d5;">Success Rate</h2>-->
-<!--        <img src="cid:success_rate" style="width:900px;height:270px;">-->
-<!--        <h2 style="font-size: 16px; color: #02a3d5;">Page load time summary</h2>-->
-<!--        <img src="cid:comparison" style="width:900px;height:270px;">-->
-<!--        {% endif %}-->
-
-<!--        <div style="border-bottom: 2px solid #02a3d5;margin: 30px 0px 15px 0px;"></div>-->
-<!--        <p style="font-size: 11px; line-height: 12px; color: #666; margin: .2em 0; padding: 0;">-->
-<!--            Auto generated performance test run report-->
-<!--        </p>-->
-
-<!--        <p style="font-size: 10px; line-height: 12px; color: #999; margin: .2em 0; padding: 0;">-->
-<!--            (c) 2019 Carrier.-->
-<!--        </p>-->
-
     </div>
 </div>
-
 </body>
 </html>

@@ -24,6 +24,7 @@ class UIEmailNotification(object):
         subject = f"[UI] Test results for {info['name']}. From {date}."
 
         report_info = self.__get_report_info()
+        results_info = self.__get_results_info()
 
         status = "PASSED"
         if not report_info['passed']:
@@ -41,7 +42,7 @@ class UIEmailNotification(object):
             "loops": report_info["loops"]
         }
 
-        email_body = self.__get_email_body(t_params)
+        email_body = self.__get_email_body(t_params, results_info)
 
         charts = []
 
@@ -57,11 +58,14 @@ class UIEmailNotification(object):
     def __get_report_info(self):
         return self.__get_url(f"/observer/{self.galloper_project_id}?report_id={self.report_id}")
 
-    def __get_email_body(self, t_params):
+    def __get_results_info(self):
+        return self.__get_url(f"/visual/{self.galloper_project_id}/{self.report_id}?order=asc")
+
+    def __get_email_body(self, t_params, results_info):
         env = Environment(
             loader=FileSystemLoader('/home/sergey/SynologyDrive/Github/performance_email_notification/templates'))
         template = env.get_template("ui_email_template.html")
-        return template.render(t_params=t_params)
+        return template.render(t_params=t_params, results=results_info)
 
     def __get_url(self, url):
         resp = requests.get(
