@@ -39,7 +39,8 @@ class UIEmailNotification(object):
             "browser": report_info['browser'].capitalize(),
             "version": report_info['browser_version'],
             "view_port": "1920x1080",
-            "loops": report_info["loops"]
+            "loops": report_info["loops"],
+            "pages": len(results_info)
         }
 
         email_body = self.__get_email_body(t_params, results_info)

@@ -6,6 +6,7 @@
         table.table-bordered, .table-bordered th, .table-bordered td {
              border: 1px solid #e9ecef;
              border-collapse: collapse;
+             padding: 8px;
         }
 
         th {
@@ -41,6 +42,7 @@
                     <b style="color: #02a3d5;">Duration:</b> {{ t_params.duration }} s <br/>
                     <b style="color: #02a3d5;">Env:</b> {{ t_params.env }} <br/>
                     <b style="color: #02a3d5;">Loops:</b> {{ t_params.loops }} <br/>
+                    <b style="color: #02a3d5;">Pages:</b> {{ t_params.pages }} <br/>
                 </td>
                 <td style="vertical-align:top">
                     <b style="color: #02a3d5;">Base URL:</b> {{ t_params.base_url }} <br/>
@@ -58,42 +60,44 @@
            <table id="summary_table" class="table table-bordered">
                <thead class="thead-light">
                <tr>
-                   <th style="" data-field="0">
+                   <th>
+                       <div class="th-inner sortable both">#</div>
+                       <div class="fht-cell"></div>
+                   </th>
+                   <th>
                        <div class="th-inner sortable both">Page Name</div>
                        <div class="fht-cell"></div>
                    </th>
-                   <th style="" data-field="speed_index">
+                   <th>
                        <div class="th-inner sortable both">Speed Index</div>
                        <div class="fht-cell"></div></th>
-                   <th style="" data-field="total_time">
+                   <th>
                        <div class="th-inner sortable both">Total, sec</div>
                        <div class="fht-cell"></div>
                    </th>
-                   <th style="" data-field="first_bite">
+                   <th>
                        <div class="th-inner sortable both">FB, ms</div>
                        <div class="fht-cell"></div>
                    </th>
-                   <th style="" data-field="first_paint">
+                   <th>
                        <div class="th-inner sortable both">FP, ms</div>
                        <div class="fht-cell"></div>
                    </th>
-                   <th style="" data-field="content_load">
+                   <th>
                        <div class="th-inner sortable both">Content, ms</div>
-                       <div class="fht-cell"></div>
                    </th>
-                   <th style="" data-field="dom_processing">
-                        <div class="th-inner sortable both">DOM, ms</div>
-                       <div class="fht-cell"></div>
+                   <th>
+                       <div class="th-inner sortable both">DOM, ms</div>
                    </th>
-                   <th style="" data-field="missed_thresholds">
+                   <th>
                        <div class="th-inner sortable both">Missed thresholds</div>
-                       <div class="fht-cell"></div>
                    </th>
                </tr>
                </thead>
                <tbody>
                {% for result in results %}
-               <tr data-index="0" data-has-detail-view="true">
+               <tr>
+                   <td style="">{{ loop.index }}</td>
                    <td style="">{{ result.name }}</td>
                    <td style="">{{ result.speed_index }}</td>
                    <td style="">{{ result.total_time }}</td>
