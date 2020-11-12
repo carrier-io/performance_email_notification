@@ -76,11 +76,7 @@ def parse_args(_event):
     args['influx_password'] = event.get("influx_password", "")
 
     # Influx DBs
-    # TODO: Deprecate influx_thresholds_database influx_comparison_database and influx_ui_tests_database
-    args['influx_thresholds_database'] = event.get("influx_thresholds_database", "thresholds")
-    args['influx_comparison_database'] = event.get("influx_comparison_database", "comparison")
-    args['comparison_db'] = event.get("influx_comparison_database", event.get("comparison_db", "comparison"))
-    args['thresholds_db'] = event.get("influx_thresholds_database", event.get("thresholds_db", "thresholds"))
+    args['comparison_db'] = event.get("comparison_db")
     args['influx_db'] = event.get("influx_db")
 
     # SMTP Config
