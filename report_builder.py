@@ -154,25 +154,23 @@ class ReportBuilder:
     def create_builds_comparison(self, tests):
         builds_comparison = []
         for test in tests:
-            test_info = {}
-            request_count, total_request_count, avg_throughput, error_count, pct95 = 0, 0, 0, 0, 0
-            for request in test:
-                request_count += 1
-                total_request_count += int(request['total'])
-                avg_throughput += float(request['throughput'])
-                error_count += float(request['ko'])
-                pct95 += int(request['pct95'])
+            summary_request, test_info = {}, {}
+            for req in test:
+                if req["request_name"] == "All":
+                    summary_request = req
+
             date = str(test[0]['time']).replace("T", " ").replace("Z", "")
             try:
                 timestamp = calendar.timegm(time.strptime(date, '%Y-%m-%d %H:%M:%S'))
             except ValueError:
                 timestamp = calendar.timegm(time.strptime(date.split(".")[0], '%Y-%m-%d %H:%M:%S'))
-            test_info['date'] = datetime.datetime.utcfromtimestamp(int(timestamp)).strftime('%d-%b %H:%M')
-            test_info['total'] = total_request_count
-            test_info['throughput'] = round(avg_throughput, 2)
-            test_info['pct95'] = round(pct95 / request_count, 2)
-            test_info['error_rate'] = round((error_count / total_request_count) * 100, 2)
-            builds_comparison.append(test_info)
+            if summary_request:
+                test_info['date'] = datetime.datetime.utcfromtimestamp(int(timestamp)).strftime('%d-%b %H:%M')
+                test_info['total'] = summary_request["total"]
+                test_info['throughput'] = round(summary_request["throughput"], 2)
+                test_info['pct95'] = summary_request["pct95"]
+                test_info['error_rate'] = round((summary_request["ko"] / summary_request["total"]) * 100, 2)
+                builds_comparison.append(test_info)
         builds_comparison = self.calculate_diffs(builds_comparison)
 
         return builds_comparison
