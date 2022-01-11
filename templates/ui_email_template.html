@@ -13,6 +13,7 @@
             background-color: #f6f9fc;
         }
 
+
     </style>
 </head>
 
@@ -57,59 +58,73 @@
         <div>
             <h2 style="font-size: 16px; color: #02a3d5;">Pages Speed Results</h2>
 
-           <table id="summary_table" class="table table-bordered">
-               <thead class="thead-light">
-               <tr>
-                   <th>
-                       <div class="th-inner sortable both">#</div>
-                       <div class="fht-cell"></div>
-                   </th>
-                   <th>
-                       <div class="th-inner sortable both">Page Name</div>
-                       <div class="fht-cell"></div>
-                   </th>
-                   <th>
-                       <div class="th-inner sortable both">Speed Index</div>
-                       <div class="fht-cell"></div></th>
-                   <th>
-                       <div class="th-inner sortable both">Total, sec</div>
-                       <div class="fht-cell"></div>
-                   </th>
-                   <th>
-                       <div class="th-inner sortable both">FB, ms</div>
-                       <div class="fht-cell"></div>
-                   </th>
-                   <th>
-                       <div class="th-inner sortable both">FP, ms</div>
-                       <div class="fht-cell"></div>
-                   </th>
-                   <th>
-                       <div class="th-inner sortable both">Content, ms</div>
-                   </th>
-                   <th>
-                       <div class="th-inner sortable both">DOM, ms</div>
-                   </th>
-                   <th>
-                       <div class="th-inner sortable both">Missed thresholds</div>
-                   </th>
-               </tr>
-               </thead>
-               <tbody>
-               {% for result in results %}
-               <tr>
-                   <td style="">{{ loop.index }}</td>
-                   <td style="">{{ result.name }}</td>
-                   <td style="">{{ result.speed_index }}</td>
-                   <td style="">{{ result.total_time }}</td>
-                   <td style="">{{ result.first_bite }}</td>
-                   <td style="">{{ result.first_paint }}</td>
-                   <td style="">{{ result.content_load }}</td>
-                   <td style="">{{ result.dom_processing }}</td>
-                   <td style="">{{ result.missed_thresholds }}</td>
-               </tr>
-               {% endfor %}
-           </tbody>
-           </table>
+            <table id="summary_table" class="table table-bordered">
+                <thead class="thead-light">
+                <tr>
+                    <th>
+                        <div class="th-inner sortable both">#</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">Page Name</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">Speed Index</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">Total, sec</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">DOM, ms</div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">FCP, ms</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">LCP, ms</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">CLS, ms</div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">TBT, ms</div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">FVC, ms</div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">LVC, ms</div>
+                    </th>
+
+                    <th>
+                        <div class="th-inner sortable both">Missed thresholds</div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for result in results %}
+                <tr>
+                    <td style="">{{ loop.index }}</td>
+                    <td style="">{{ result.name }}</td>
+                    <td style="">{{ result.speed_index }}</td>
+                    <td style="">{{ result.total_time }}</td>
+                    <td style="">{{ result.dom_processing }}</td>
+                    <td style="">{{ result.fcp }}</td>
+                    <td style="">{{ result.lcp }}</td>
+                    <td style="">{{ result.cls }}</td>
+                    <td style="">{{ result.tbt }}</td>
+                    <td style="">{{ result.fvc }}</td>
+                    <td style="">{{ result.lvc }}</td>
+                    <td style="">{{ result.missed_thresholds }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
