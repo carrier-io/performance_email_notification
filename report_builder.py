@@ -495,7 +495,7 @@ class ReportBuilder:
                 req['request_name'] = str(request['request_name'])[:25] + "... "
             else:
                 req['request_name'] = str(request['request_name'])
-            if baseline:
+            if baseline and request['request_name'] in list(baseline_metrics.keys()):
                 req['baseline'] = round(
                     float(int(request[comparison_metric]) - baseline_metrics[request['request_name']]) / 1000, 2)
                 if req['baseline'] < 0:
