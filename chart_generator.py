@@ -120,3 +120,38 @@ def ui_comparison_linechart(datapoints):
     ax.set_xticks(datapoints['keys'])
     fig.savefig(datapoints['path_to_save'], bbox_inches='tight')
     plt.close()
+
+
+def ui_metrics_chart(datapoints):
+    fig, ax = plt.subplots(figsize=(datapoints['width'] * 1, datapoints['height'] * 1.5), dpi=72,
+                           facecolor='w')
+    y_max = 0
+    x_max = 0
+    x_max = max(datapoints['values']) if max(datapoints['values']) > x_max else x_max
+    y_max = max(datapoints['lvc']) if max(datapoints['lvc']) > y_max else y_max
+    _, = ax.plot(datapoints['values'], datapoints['total_time'], linewidth=2, label="Load time")
+    _, = ax.plot(datapoints['values'], datapoints['tti'], linewidth=2, label="TTI")
+    _, = ax.plot(datapoints['values'], datapoints['fvc'], linewidth=2, label="FVC")
+    _, = ax.plot(datapoints['values'], datapoints['lvc'], linewidth=2, label="LVC")
+    #_, = ax.plot(datapoints['values'], datapoints['keys'], 'o', linewidth=4, color=YELLOW)
+
+    for each in ["total_time", "tti", "fvc", "lvc"]:
+        for index, value in enumerate(datapoints[each]):
+            ax.annotate(str(value), xy=(datapoints['values'][index], value + y_max * 0.05))
+    ax.legend(loc='upper left')
+    ax.set_xlabel(datapoints['x_axis'])
+    ax.set_ylabel(datapoints['y_axis'])
+    # ax.set_title(datapoints['title'])
+    plt.xlim(0, x_max + 1)
+    plt.ylim(0, y_max + y_max * 0.15)
+    ax.grid(color="#E3E3E3")
+    ax.set_xticklabels(
+        [str(dp) for dp in datapoints['values']] if not datapoints.get('labels') else datapoints[
+            'labels'])
+    ax.set_xticks(datapoints['values'])
+    ax.spines['bottom'].set_color('#E3E3E3')
+    ax.spines['top'].set_color('#ffffff')
+    ax.spines['right'].set_color('#ffffff')
+    ax.spines['left'].set_color('#ffffff')
+    fig.savefig(datapoints['path_to_save'], bbox_inches='tight')
+    plt.close()
