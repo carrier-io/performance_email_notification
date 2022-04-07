@@ -17,6 +17,7 @@
 
 
 
+
     </style>
 </head>
 
@@ -73,7 +74,7 @@
                         <div class="fht-cell"></div>
                     </th>
                     <th>
-                        <div class="th-inner sortable both">Speed Index</div>
+                        <div class="th-inner sortable both">Type</div>
                         <div class="fht-cell"></div>
                     </th>
                     <th>
@@ -117,7 +118,7 @@
                 <tr>
                     <td style="">{{ loop.index }}</td>
                     <td style="">{{ result.name }}</td>
-                    <td style="">{{ result.speed_index }}</td>
+                    <td style="">{{ result.type }}</td>
                     <td style="">{{ result.total_time }}</td>
                     <td style="">{{ result.dom_processing }}</td>
                     <td style="">{{ result.fcp }}</td>
@@ -135,9 +136,9 @@
         </div>
 
         <div>
-            <h2 style="font-size: 16px; color: #02a3d5;">Comparison table</h2>
+            <h2 style="font-size: 16px; color: #02a3d5;">Comparison table. Pages</h2>
 
-            <table id="comparison_table" class="table table-bordered">
+            <table id="comparison_table_pages" class="table table-bordered">
                 <thead class="thead-light">
                 <tr>
                     <th>
@@ -165,7 +166,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% for result in t_comparison %}
+                {% for result in page_comparison %}
                 <tr>
                     <td style="">{{ result.date }}</td>
                     <td style="">{{ result.total_time }}</td>
@@ -178,9 +179,50 @@
                 </tbody>
             </table>
         </div>
-        <h2 style="font-size: 16px; color: #02a3d5;">UI metrics trend</h2>
+
+        <div>
+            <h2 style="font-size: 16px; color: #02a3d5;">Comparison table. Actions</h2>
+
+            <table id="comparison_table_actions" class="table table-bordered">
+                <thead class="thead-light">
+                <tr>
+                    <th>
+                        <div class="th-inner sortable both">Date</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">CLS</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">TBT, ms</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">Test Report</div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for result in action_comparison %}
+                <tr>
+                    <td style="">{{ result.date }}</td>
+                    <td style="">{{ result.cls }}</td>
+                    <td style="">{{ result.tbt }}</td>
+                    <td style=""><a href={{ result.report }}>{{ result.report }}</a></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <h2 style="font-size: 16px; color: #02a3d5;">UI metrics trend. Pages</h2>
         <div align="center">
-            <img src="cid:ui_metrics"/>
+            <img src="cid:ui_metrics_pages"/>
+        </div>
+
+        <h2 style="font-size: 16px; color: #02a3d5;">UI metrics trend. Actions</h2>
+        <div align="center">
+            <img src="cid:ui_metrics_actions"/>
         </div>
 
     </div>

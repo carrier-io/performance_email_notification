@@ -2,7 +2,7 @@ from datetime import datetime
 
 import requests
 from jinja2 import Environment, FileSystemLoader
-from chart_generator import ui_metrics_chart
+from chart_generator import ui_metrics_chart_pages, ui_metrics_chart_actions
 from email.mime.image import MIMEImage
 from email_notifications import Email
 
@@ -22,20 +22,36 @@ class UIEmailNotification(object):
         last_reports = self.__get_last_report(info['name'], 5)
         tests_data = []
         for each in last_reports:
+            report = {"pages": [], "actions": []}
             results_info = self.__get_results_info(each["uid"])
-            tests_data.append(results_info)
-        t_comparison = []
+            for result in results_info:
+                if result["type"] == "page":
+                    report["pages"].append(result)
+                else:
+                    report["actions"].append(result)
+            tests_data.append(report)
+
+        page_comparison, action_comparison = [], []
         for index, test in enumerate(tests_data):
             aggregated_test_data = {}
             for metric in ["total_time", "tti", "fvc", "lvc"]:
                 if metric == "total_time":
-                    _arr = [each[metric] * 1000 for each in test]
+                    _arr = [each[metric] * 1000 for each in test["pages"]]
                 else:
-                    _arr = [each[metric] for each in test]
+                    _arr = [each[metric] for each in test["pages"]]
                 aggregated_test_data[metric] = int(sum(_arr) / len(_arr))
             aggregated_test_data["date"] = last_reports[index]["start_time"][2:-3]
             aggregated_test_data["report"] = f"{self.gelloper_url}/visual/report?report_id={last_reports[index]['id']}"
-            t_comparison.append(aggregated_test_data)
+            page_comparison.append(aggregated_test_data)
+
+            aggregated_test_data = {}
+            for metric in ["cls", "tbt"]:
+                _arr = [each[metric] for each in test["actions"]]
+                aggregated_test_data[metric] = float(sum(_arr) / len(_arr))
+            aggregated_test_data["date"] = last_reports[index]["start_time"][2:-3]
+            aggregated_test_data["report"] = f"{self.gelloper_url}/visual/report?report_id={last_reports[index]['id']}"
+            action_comparison.append(aggregated_test_data)
+
         user_list = self.__extract_recipient_emails(info)
 
         date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
@@ -44,7 +60,6 @@ class UIEmailNotification(object):
         report_info = self.__get_report_info()
         results_info = self.__get_results_info(self.report_id)
         for each in results_info:
-            print(f"Results - {each}")
             each["report"] = f"{self.gelloper_url}{each['report']}"
 
         status = "PASSED"
@@ -63,10 +78,11 @@ class UIEmailNotification(object):
             "loops": report_info["loops"],
             "pages": len(results_info)
         }
-        email_body = self.__get_email_body(t_params, results_info, t_comparison)
+        email_body = self.__get_email_body(t_params, results_info, page_comparison, action_comparison)
 
         charts = []
-        charts.append(self.create_ui_metrics_chart(t_comparison))
+        charts.append(self.create_ui_metrics_chart_pages(page_comparison))
+        charts.append(self.create_ui_metrics_chart_actions(action_comparison))
 
         return Email(self.test_name, subject, user_list, email_body, charts, date)
 
@@ -86,11 +102,12 @@ class UIEmailNotification(object):
     def __get_results_info(self, report_id):
         return self.__get_url(f"/visual/{self.galloper_project_id}/{report_id}?order=asc")
 
-    def __get_email_body(self, t_params, results_info, t_comparison):
+    def __get_email_body(self, t_params, results_info, page_comparison, action_comparison):
         env = Environment(
             loader=FileSystemLoader('./templates'))
         template = env.get_template("ui_email_template.html")
-        return template.render(t_params=t_params, results=results_info, t_comparison=t_comparison)
+        return template.render(t_params=t_params, results=results_info, page_comparison=page_comparison,
+                               action_comparison=action_comparison)
 
     def __get_url(self, url):
         resp = requests.get(
@@ -105,7 +122,7 @@ class UIEmailNotification(object):
         return resp.json()
 
     @staticmethod
-    def create_ui_metrics_chart(builds):
+    def create_ui_metrics_chart_pages(builds):
         labels, x, total_time, tti, fvc, lvc = [], [], [], [], [], []
         count = 1
         for test in builds:
@@ -123,7 +140,7 @@ class UIEmailNotification(object):
             'y_axis': 'Time, ms',
             'width': 14,
             'height': 4,
-            'path_to_save': '/tmp/ui_metrics.png',
+            'path_to_save': '/tmp/ui_metrics_pages.png',
             'total_time': total_time[::-1],
             'tti': tti[::-1],
             'fvc': fvc[::-1],
@@ -131,9 +148,39 @@ class UIEmailNotification(object):
             'values': x,
             'labels': labels[::-1]
         }
-        ui_metrics_chart(datapoints)
-        fp = open('/tmp/ui_metrics.png', 'rb')
+        ui_metrics_chart_pages(datapoints)
+        fp = open('/tmp/ui_metrics_pages.png', 'rb')
         image = MIMEImage(fp.read())
-        image.add_header('Content-ID', '<ui_metrics>')
+        image.add_header('Content-ID', '<ui_metrics_pages>')
+        fp.close()
+        return image
+
+    @staticmethod
+    def create_ui_metrics_chart_actions(builds):
+        labels, x, cls, tbt = [], [], [], []
+        count = 1
+        for test in builds:
+            labels.append(test['date'])
+            cls.append(round(test['cls'], 6))
+            tbt.append(round(test['tbt'], 2))
+            x.append(count)
+            count += 1
+        datapoints = {
+            'title': 'UI metrics Actions',
+            'label': 'UI metrics Actions',
+            'x_axis': 'Test Runs',
+            'y_axis': 'Time, ms',
+            'width': 14,
+            'height': 4,
+            'path_to_save': '/tmp/ui_metrics_actions.png',
+            'cls': cls[::-1],
+            'tbt': tbt[::-1],
+            'values': x,
+            'labels': labels[::-1]
+        }
+        ui_metrics_chart_actions(datapoints)
+        fp = open('/tmp/ui_metrics_actions.png', 'rb')
+        image = MIMEImage(fp.read())
+        image.add_header('Content-ID', '<ui_metrics_actions>')
         fp.close()
         return image
