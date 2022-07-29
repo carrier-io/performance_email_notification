@@ -215,6 +215,113 @@
                 </tbody>
             </table>
         </div>
+
+
+        <div>
+            <h2 style="font-size: 16px; color: #02a3d5;">Baseline comparison. Pages</h2>
+
+            <table id="baseline_table_pages" class="table table-bordered">
+                <thead class="thead-light">
+                <tr>
+                    <th>
+                        <div class="th-inner sortable both">Name</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">Load time, s</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">BSL diff, s</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">TTI, ms</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">BSL diff, ms</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">FVC, ms</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">BSL diff, ms</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">LVC, ms</div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">BSL diff, ms</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for result in baseline_comparison_pages %}
+                <tr>
+                    <td style="">{{ result.name }}</td>
+                    <td style="">{{ result.total_time }}</td>
+                    <td style="{{ result.total_time_diff_color }}">{{ result.total_time_diff }}</td>
+                    <td style="">{{ result.tti }}</td>
+                    <td style="{{ result.tti_diff_color }}">{{ result.tti_diff }}</td>
+                    <td style="">{{ result.fvc }}</td>
+                    <td style="{{ result.fvc_diff_color }}">{{ result.fvc_diff }}</td>
+                    <td style="">{{ result.lvc }}</td>
+                    <td style="{{ result.lvc_diff_color }}">{{ result.lvc_diff }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <div>
+            <h2 style="font-size: 16px; color: #02a3d5;">Baseline comparison. Actions</h2>
+
+            <table id="baseline_table_actions" class="table table-bordered">
+                <thead class="thead-light">
+                <tr>
+                    <th>
+                        <div class="th-inner sortable both">Name</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">CLS</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">BSL diff</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">TBT, ms</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                    <th>
+                        <div class="th-inner sortable both">BSL diff, ms</div>
+                        <div class="fht-cell"></div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for result in baseline_comparison_actions %}
+                <tr>
+                    <td style="">{{ result.name }}</td>
+                    <td style="">{{ result.cls }}</td>
+                    <td style="{{ result.cls_diff_color }}">{{ result.cls_diff }}</td>
+                    <td style="">{{ result.tbt }}</td>
+                    <td style="{{ result.tbt_diff_color }}">{{ result.tbt_diff }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
         <h2 style="font-size: 16px; color: #02a3d5;">UI metrics trend. Pages</h2>
         <div align="center">
             <img src="cid:ui_metrics_pages"/>

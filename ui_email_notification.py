@@ -66,6 +66,45 @@ class UIEmailNotification(object):
         if not report_info['passed']:
             status = "FAILED"
 
+        baseline_id = self.__get_baseline_report(report_info['name'], report_info['environment'])
+        base_id = baseline_id["baseline_id"]
+        baseline_info = []
+        if base_id:
+            baseline_info = self.__get_results_info(base_id)
+        baseline_comparison_pages = []
+        baseline_comparison_actions = []
+        if baseline_info:
+            for current_result in results_info:
+                for baseline_result in baseline_info:
+                    if current_result["identifier"] == baseline_result["identifier"]:
+                        comparison = {"name": current_result["name"]}
+                        if current_result["type"] == "page":
+                            for each in ["total_time", "fvc", "lvc", "tti"]:
+                                comparison[each] = current_result[each]
+                                if isinstance(current_result[each], float):
+                                    comparison[f"{each}_diff"] = round(current_result[each] - baseline_result[each], 2)
+                                else:
+                                    comparison[f"{each}_diff"] = current_result[each] - baseline_result[each]
+                                if comparison[f"{each}_diff"] > 0:
+                                    comparison[f"{each}_diff"] = f'+{comparison[f"{each}_diff"]}'
+                                    comparison[f"{each}_diff_color"] = "color:red;"
+                                else:
+                                    comparison[f"{each}_diff_color"] = "color:green;"
+                            baseline_comparison_pages.append(comparison)
+                        else:
+                            for each in ["tbt", "cls"]:
+                                comparison[each] = current_result[each]
+                                if isinstance(current_result[each], float):
+                                    comparison[f"{each}_diff"] = round(current_result[each] - baseline_result[each], 4)
+                                else:
+                                    comparison[f"{each}_diff"] = current_result[each] - baseline_result[each]
+                                if comparison[f"{each}_diff"] > 0:
+                                    comparison[f"{each}_diff"] = f'+{comparison[f"{each}_diff"]}'
+                                    comparison[f"{each}_diff_color"] = "color:red;"
+                                else:
+                                    comparison[f"{each}_diff_color"] = "color:green;"
+                            baseline_comparison_actions.append(comparison)
+
         t_params = {
             "scenario": report_info['name'],
             "start_time": report_info["start_time"],
@@ -78,7 +117,8 @@ class UIEmailNotification(object):
             "loops": report_info["loops"],
             "pages": len(results_info)
         }
-        email_body = self.__get_email_body(t_params, results_info, page_comparison, action_comparison)
+        email_body = self.__get_email_body(t_params, results_info, page_comparison, action_comparison,
+                                           baseline_comparison_pages, baseline_comparison_actions)
 
         charts = []
         charts.append(self.create_ui_metrics_chart_pages(page_comparison))
@@ -93,6 +133,10 @@ class UIEmailNotification(object):
         return self.__get_url(
             f"/tests/{self.galloper_project_id}/frontend/{self.test_id}?raw=1")
 
+    def __get_baseline_report(self, name, env):
+        return self.__get_url(
+            f"/ui_baseline/{self.galloper_project_id}?test_name={name}&env={env}")
+
     def __get_last_report(self, name, count):
         return self.__get_url(f"/observer/{self.galloper_project_id}?name={name}&count={count}")
 
@@ -102,12 +146,14 @@ class UIEmailNotification(object):
     def __get_results_info(self, report_id):
         return self.__get_url(f"/visual/{self.galloper_project_id}/{report_id}?order=asc")
 
-    def __get_email_body(self, t_params, results_info, page_comparison, action_comparison):
+    def __get_email_body(self, t_params, results_info, page_comparison, action_comparison,
+                         baseline_comparison_pages, baseline_comparison_actions):
         env = Environment(
             loader=FileSystemLoader('./templates'))
         template = env.get_template("ui_email_template.html")
         return template.render(t_params=t_params, results=results_info, page_comparison=page_comparison,
-                               action_comparison=action_comparison)
+                               action_comparison=action_comparison, baseline_comparison_pages=baseline_comparison_pages,
+                               baseline_comparison_actions=baseline_comparison_actions)
 
     def __get_url(self, url):
         resp = requests.get(
