@@ -14,7 +14,6 @@
 
 import json
 from os import environ
-
 from email_client import EmailClient
 from email_notifications import ApiEmailNotification
 from ui_email_notification import UIEmailNotification
@@ -65,9 +64,9 @@ def parse_args(_event):
     event = _event if not _event.get('body') else json.loads(_event['body'])
 
     # Galloper
-    args['galloper_url'] = environ.get("galloper_url")
-    args['token'] = environ.get("token")
-    args['project_id'] = environ.get("project_id")
+    args['galloper_url'] = environ.get("galloper_url") if not event.get('galloper_url') else event.get('galloper_url')
+    args['token'] = environ.get("token") if not event.get('token') else event.get('token')
+    args['project_id'] = environ.get("project_id") if not event.get('project_id') else event.get('project_id')
 
     # Influx Config
     args['influx_host'] = environ.get("influx_host") if not event.get('influx_host') else event.get('influx_host')
@@ -84,7 +83,7 @@ def parse_args(_event):
     args['smtp_host'] = environ.get("smtp_host", "smtp.gmail.com") if not event.get('smtp_host') else event.get(
         'smtp_host')
     args['smtp_user'] = environ.get('smtp_user') if not event.get('smtp_user') else event.get('smtp_user')
-    args['smtp_sender'] = args['smtp_user'] if not environ.get('smtp_sender') else environ.get('smtp_sender')
+    args['smtp_sender'] = args['smtp_user'] if not event.get('smtp_sender') else event.get('smtp_sender')
     if not event.get('smtp_password'):
         args['smtp_password'] = environ.get("smtp_password")
     else:
@@ -111,9 +110,11 @@ def parse_args(_event):
     args['type'] = args['test_type']
 
     # Thresholds
-    args['error_rate'] = int(environ.get("error_rate", 10))
-    args['performance_degradation_rate'] = int(environ.get("performance_degradation_rate", 20))
-    args['missed_thresholds'] = int(environ.get("missed_thresholds", 50))
+    args['error_rate'] = int(environ.get("error_rate", 10)) if not event.get('error_rate') else event.get('error_rate')
+    args['performance_degradation_rate'] = int(environ.get("performance_degradation_rate", 20)) \
+        if not event.get('performance_degradation_rate') else event.get('performance_degradation_rate')
+    args['missed_thresholds'] = int(environ.get("missed_thresholds", 50)) \
+        if not event.get('missed_thresholds') else event.get('missed_thresholds')
 
     # ui data
     args['test_id'] = event.get('test_id')

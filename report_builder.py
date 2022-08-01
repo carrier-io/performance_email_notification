@@ -447,19 +447,15 @@ class ReportBuilder:
             for th in thresholds:
                 if th['request_name'] == 'all':
                     if th['target'] == 'error_rate':
-                        thresholds_error_rate = round(th["metric"] - th['yellow'], 2)
+                        thresholds_error_rate = round(th["metric"] - th['value'], 2)
                         if th['threshold'] == "red":
                             thresholds_er_color = RED
-                        elif th['threshold'] == "yellow":
-                            thresholds_er_color = YELLOW
                         else:
                             thresholds_er_color = GREEN
                     if th['target'] == 'throughput':
-                        thresholds_tp_rate = round(th["metric"] - th['yellow'], 2)
+                        thresholds_tp_rate = round(th["metric"] - th['value'], 2)
                         if th['threshold'] == "red":
                             thresholds_tp_color = RED
-                        elif th['threshold'] == "yellow":
-                            thresholds_tp_color = YELLOW
                         else:
                             thresholds_tp_color = GREEN
         return {
@@ -508,11 +504,9 @@ class ReportBuilder:
             if thresholds_metrics and thresholds_metrics.get(request['request_name']):
                 req['threshold'] = round(
                     float(int(request[comparison_metric]) -
-                          int(thresholds_metrics[request['request_name']]['yellow'])) / 1000, 2)
-                req['threshold_value'] = str(thresholds_metrics[request['request_name']]['yellow'])
-                if thresholds_metrics[request['request_name']]['threshold'] == 'yellow':
-                    req['threshold_color'] = YELLOW
-                elif thresholds_metrics[request['request_name']]['threshold'] == 'red':
+                          int(thresholds_metrics[request['request_name']]['value'])) / 1000, 2)
+                req['threshold_value'] = str(thresholds_metrics[request['request_name']]['value'])
+                if thresholds_metrics[request['request_name']]['threshold'] == 'red':
                     req['line_color'] = RED
                     req['threshold_color'] = RED
                 else:
