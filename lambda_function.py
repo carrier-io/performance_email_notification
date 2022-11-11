@@ -17,11 +17,13 @@ from os import environ
 from email_client import EmailClient
 from email_notifications import ApiEmailNotification
 from ui_email_notification import UIEmailNotification
+from time import sleep
 
 
 def lambda_handler(event, context):
     try:
         args = parse_args(event)
+        print(args)
         if not args['notification_type']:
             raise Exception('notification_type parameter is not passed')
 
@@ -84,10 +86,10 @@ def parse_args(_event):
         'smtp_host')
     args['smtp_user'] = environ.get('smtp_user') if not event.get('smtp_user') else event.get('smtp_user')
     args['smtp_sender'] = args['smtp_user'] if not event.get('smtp_sender') else event.get('smtp_sender')
-    if not event.get('smtp_password'):
+    if not event.get('smtp_password').get("value"):
         args['smtp_password'] = environ.get("smtp_password")
     else:
-        args['smtp_password'] = event.get('smtp_password')
+        args['smtp_password'] = event.get('smtp_password')["value"]
 
     # Test Config
     args['users'] = event.get('users', 1)
