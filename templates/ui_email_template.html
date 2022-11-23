@@ -2,342 +2,244 @@
 <html xmlns="http://www.w3.org/1999/html">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        table.table-bordered, .table-bordered th, .table-bordered td {
-             border: 1px solid #e9ecef;
-             border-collapse: collapse;
-             padding: 8px;
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: 'Open Sans', sans-serif;
+            line-height: 24px;
         }
-
-        th {
-            background-color: #f6f9fc;
-        }
-
-
-
-
-
-
-
-
-
-
     </style>
 </head>
 
-<body style="margin: 0px;background-color: #efefef;font-family: Helvetica,Arial,sans-serif;font-size: 14px;line-height: 23px;border-collapse: collapse;">
-<div style="font-family:arial,helvetica,sans-serif;margin: auto;width: 900px;background-color:white;padding: 30px 40px 30px 40px;">
-    <div>
-
-        <div style="
-    text-align: center;
-    font-family: Helvetica,Arial,sans-serif;
-    font-size: 29px;
-    color: #02a3d5;
-    font-weight: bolder;
-     padding-top: 12px;
-">UI PERFORMANCE NOTIFICATION
-        </div>
-
-
-        <div style="border-bottom: 2px solid #02a3d5;margin: 25px 0px 35px 0px;"></div>
-
-        <h2 style="color: #02a3d5;">Test Execution Summary:</h2>
-        <table style="border-spacing: 10px; width: 100%;">
+<body>
+<table style="color: #fff; background: #875FFC; padding: 31px; font-size: 16px; font-weight: 600;">
+    <tr>
+        <td>
+            <img src="../assets/images/email-logo.png">
+        </td>
+        <td style="margin-left: 8px; font-size: 14px; font-weight: 700; width: 100%">
+            UI Performance Report
+        </td>
+        <td>CARRIER</td>
+    </tr>
+</table>
+<div>
+    <p style="margin: 24px 0 20px 0; padding: 0 12px; font-weight: 700; color: #525F7F; font-size: 14px;">Execution Summary</p>
+    <table>
+        <tr>
+            <td style="padding: 4px 12px;">
+                <div style="color: #fff; font-size: 16px; font-weight: 600; background: #18B64D; border-radius: 4px">
+                    <span>Status:</span>
+                    <span>{{ t_params.status }}</span>
+                </div>
+            </td>
+            <td style="background: #F6F9FC; padding: 4px 12px;">
+                <div style="color: #32325D; font-size: 16px; font-weight: 400;">
+                    <span style="margin-right: 30px">Threshold: 0%</span>
+                    <img src="succeed.png" alt="">
+                </div>
+            </td>
+            <td style="background: #F6F9FC; padding: 4px 12px;">
+                <div style="color: #32325D; font-size: 16px; font-weight: 400;">
+                    <span style="margin-right: 30px">Baseline: 0%</span>
+                    <img src="succeed.png" alt="">
+                </div>
+            </td>
+        </tr>
+    </table>
+    <div style="margin-top: 24px;">
+        <table style="width: 100%;">
+            <tbody>
             <tr>
-                <td style="vertical-align:top">
-                    <b style="color: #02a3d5;">Scenario:</b> {{ t_params.scenario }} <br/>
-                    <b style="color: #02a3d5;">Duration:</b> {{ t_params.duration }} s <br/>
-                    <b style="color: #02a3d5;">Env:</b> {{ t_params.env }} <br/>
-                    <b style="color: #02a3d5;">Loops:</b> {{ t_params.loops }} <br/>
-                    <b style="color: #02a3d5;">Pages:</b> {{ t_params.pages }} <br/>
-                </td>
-                <td style="vertical-align:top">
-                    <b style="color: #02a3d5;">Status:</b> {{ t_params.status }}<br/>
-                    <b style="color: #02a3d5;">Reasons:</b> {{ error_message }}<br/>
-                    <b style="color: #02a3d5;">Start time:</b> {{ t_params.start_time }} <br/>
-                    <b style="color: #02a3d5;">Browser:</b> {{ t_params.browser }} <br/>
-                    <b style="color: #02a3d5;">Version:</b> {{ t_params.version }} <br/>
-                    <b style="color: #02a3d5;">View port:</b> {{ t_params.view_port }} <br/>
-                </td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Scenario:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.scenario }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">View port:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.view_port }}</td>
             </tr>
+            <tr>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Duration:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.duration }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Reasons:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ error_message }}</td>
+            </tr>
+            <tr>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Env:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.env }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Start time:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.start_time }}</td>
+            </tr>
+            <tr>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Loops:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.loops }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Browser:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.browser }}</td>
+            </tr>
+            <tr>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Pages:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.pages }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Version:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.version }}</td>
+            </tr>
+            </tbody>
         </table>
-
-        <div>
-            <h2 style="font-size: 16px; color: #02a3d5;">Pages Speed Results</h2>
-
-            <table id="summary_table" class="table table-bordered">
-                <thead class="thead-light">
-                <tr>
-                    <th>
-                        <div class="th-inner sortable both">#</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">Page Name</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">Type</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">Loop</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">Load time, sec</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">DOM, ms</div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">FCP, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">LCP, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">CLS</div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">TBT, ms</div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">FVC, ms</div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">LVC, ms</div>
-                    </th>
-
-                    <th>
-                        <div class="th-inner sortable both">HTML report</div>
-                    </th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for result in results %}
-                <tr>
-                    <td style="">{{ loop.index }}</td>
-                    <td style="">{{ result.name }}</td>
-                    <td style="">{{ result.type }}</td>
-                    <td style="">{{ result.loop }}</td>
-                    <td style="">{{ result.load_time }}</td>
-                    <td style="">{{ result.dom }}</td>
-                    <td style="">{{ result.fcp }}</td>
-                    <td style="">{{ result.lcp }}</td>
-                    <td style="">{{ result.cls }}</td>
-                    <td style="">{{ result.tbt }}</td>
-                    <td style="">{{ result.fvc }}</td>
-                    <td style="">{{ result.lvc }}</td>
-                    <td style=""><a href={{ result.report }}>Report</a></td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div>
-            <h2 style="font-size: 16px; color: #02a3d5;">Comparison table. Pages</h2>
-
-            <table id="comparison_table_pages" class="table table-bordered">
-                <thead class="thead-light">
-                <tr>
-                    <th>
-                        <div class="th-inner sortable both">Date</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">Load time, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">TTI, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">FVC, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">LVC, ms</div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">Test Report</div>
-                    </th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for result in page_comparison %}
-                <tr>
-                    <td style="">{{ result.date }}</td>
-                    <td style="">{{ result.load_time }}</td>
-                    <td style="">{{ result.tti }}</td>
-                    <td style="">{{ result.fvc }}</td>
-                    <td style="">{{ result.lvc }}</td>
-                    <td style=""><a href={{ result.report }}>{{ result.report }}</a></td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div>
-            <h2 style="font-size: 16px; color: #02a3d5;">Comparison table. Actions</h2>
-
-            <table id="comparison_table_actions" class="table table-bordered">
-                <thead class="thead-light">
-                <tr>
-                    <th>
-                        <div class="th-inner sortable both">Date</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">CLS</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">TBT, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">Test Report</div>
-                    </th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for result in action_comparison %}
-                <tr>
-                    <td style="">{{ result.date }}</td>
-                    <td style="">{{ result.cls }}</td>
-                    <td style="">{{ result.tbt }}</td>
-                    <td style=""><a href={{ result.report }}>{{ result.report }}</a></td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        {% if baseline_comparison_pages %}
-        <div>
-            <h2 style="font-size: 16px; color: #02a3d5;">Baseline comparison. Pages</h2>
-
-            <table id="baseline_table_pages" class="table table-bordered">
-                <thead class="thead-light">
-                <tr>
-                    <th>
-                        <div class="th-inner sortable both">Name</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">Load time, s</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">BSL diff, s</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">TTI, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">BSL diff, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">FVC, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">BSL diff, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">LVC, ms</div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">BSL diff, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for result in baseline_comparison_pages %}
-                <tr>
-                    <td style="">{{ result.name }}</td>
-                    <td style="">{{ result.load_time }}</td>
-                    <td style="{{ result.load_time_diff_color }}">{{ result.load_time_diff }}</td>
-                    <td style="">{{ result.tti }}</td>
-                    <td style="{{ result.tti_diff_color }}">{{ result.tti_diff }}</td>
-                    <td style="">{{ result.fvc }}</td>
-                    <td style="{{ result.fvc_diff_color }}">{{ result.fvc_diff }}</td>
-                    <td style="">{{ result.lvc }}</td>
-                    <td style="{{ result.lvc_diff_color }}">{{ result.lvc_diff }}</td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
-        {% if baseline_comparison_actions %}
-        <div>
-            <h2 style="font-size: 16px; color: #02a3d5;">Baseline comparison. Actions</h2>
-
-            <table id="baseline_table_actions" class="table table-bordered">
-                <thead class="thead-light">
-                <tr>
-                    <th>
-                        <div class="th-inner sortable both">Name</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">CLS</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">BSL diff</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">TBT, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                    <th>
-                        <div class="th-inner sortable both">BSL diff, ms</div>
-                        <div class="fht-cell"></div>
-                    </th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for result in baseline_comparison_actions %}
-                <tr>
-                    <td style="">{{ result.name }}</td>
-                    <td style="">{{ result.cls }}</td>
-                    <td style="{{ result.cls_diff_color }}">{{ result.cls_diff }}</td>
-                    <td style="">{{ result.tbt }}</td>
-                    <td style="{{ result.tbt_diff_color }}">{{ result.tbt_diff }}</td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
-
-        <h2 style="font-size: 16px; color: #02a3d5;">UI metrics trend. Pages</h2>
+    </div>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">UI metrics trend. Pages</p>
+    <div>
         <div align="center">
             <img src="cid:ui_metrics_pages"/>
         </div>
-
-        <h2 style="font-size: 16px; color: #02a3d5;">UI metrics trend. Actions</h2>
+    </div>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">UI metrics trend. Actions</p>
+    <div>
         <div align="center">
             <img src="cid:ui_metrics_actions"/>
         </div>
-
     </div>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Page Speed Results</p>
+    <table style=" width: 100%;">
+        <thead>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Page Name</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Type</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Loop</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Load time, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">DOM, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">FCP, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">LCP, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">CLS, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">TBT, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">FVC, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">LVC, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">HTML report</th>
+        </tr>
+        </thead>
+        <tbody>
+                {% for result in results %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.name }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.type }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.load_time }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.dom }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.fcp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.lcp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.fvc }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.lvc }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>Report</a></td>
+        </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Comparison table. Pages</p>
+    <table style="width: 100%;">
+        <thead>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Date</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Load time, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">TTI, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">FVC, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">LVC, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Test Report</th>
+        </tr>
+        </thead>
+        <tbody>
+                {% for result in page_comparison %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.date }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.load_time }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.tti }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.fvc }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.lvc }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.report }}</a></td>
+        </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Comparison table. Actions</p>
+    <table style="width: 100%;">
+        <thead>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Date</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">CLS, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">TBT, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Test Report</th>
+        </tr>
+        </thead>
+        <tbody>
+                {% for result in action_comparison %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.date }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.report }}</a></td>
+        </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+        {% if baseline_comparison_pages %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Baseline comparison. Pages</p>
+    <table style="width: 100%;">
+        <thead>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Name</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Load time, s</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">BSL diff, s</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">TTI, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">BSL diff, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">FVC, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">BSL diff, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">LVC, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">BSL diff, ms</th>
+        </tr>
+        </thead>
+        <tbody>
+                {% for result in baseline_comparison_pages %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.name }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.load_time }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF; {{ result.load_time_diff_color }}">{{ result.load_time_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.tti }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF; {{ result.tti_diff_color }}">{{ result.tti_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.fvc }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF; {{ result.fvc_diff_color }}">{{ result.fvc_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.lvc }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF; {{ result.lvc_diff_color }}">{{ result.lvc_diff }}</td>
+        </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+        {% endif %}
+        {% if baseline_comparison_actions %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Baseline comparison. Actions</p>
+    <table style="width: 100%;">
+        <thead>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Name</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">CLS</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">BSL diff</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">TBT, ms</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">BSL diff, ms</th>
+        </tr>
+        </thead>
+        <tbody>
+                {% for result in baseline_comparison_actions %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.name }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF; {{ result.cls_diff_color }}">{{ result.cls_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF; {{ result.tbt_diff_color }}">{{ result.tbt_diff }}</td>
+        </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+        {% endif %}
 </div>
 </body>
 </html>
