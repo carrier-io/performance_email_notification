@@ -97,15 +97,18 @@ class ReportBuilder:
 
     def check_status(self, args, test, baseline, comparison_metric, violation):
         failed_reasons = []
-        test_status, failed_message = self.check_functional_issues(args["error_rate"], test)
+        error_rate = args.get("error_rate") if args.get("error_rate") is not None else -1
+        test_status, failed_message = self.check_functional_issues(error_rate, test)
         if failed_message != '':
             failed_reasons.append(failed_message)
-        status, failed_message = self.check_performance_degradation(args["performance_degradation_rate"], test, baseline, comparison_metric)
+        performance_degradation_rate = args.get("performance_degradation_rate") if args.get("performance_degradation_rate") is not None else -1
+        status, failed_message = self.check_performance_degradation(performance_degradation_rate, test, baseline, comparison_metric)
         if failed_message != '':
             failed_reasons.append(failed_message)
         if test_status is 'SUCCESS':
             test_status = status
-        status, failed_message = self.check_missed_thresholds(args["missed_thresholds"], violation)
+        missed_thresholds = args.get("missed_thresholds") if args.get("missed_thresholds") is not None else -1
+        status, failed_message = self.check_missed_thresholds(missed_thresholds, violation)
         if failed_message != '':
             failed_reasons.append(failed_message)
         if test_status is 'SUCCESS':
@@ -118,6 +121,8 @@ class ReportBuilder:
 
     @staticmethod
     def check_functional_issues(_error_rate, test):
+        if _error_rate == -1:
+            return 'SUCCESS', ''
         request_count, error_count = 0, 0
         for request in test:
             request_count += int(request['total'])
@@ -129,6 +134,8 @@ class ReportBuilder:
 
     @staticmethod
     def check_performance_degradation(degradation_rate, test, baseline, comparison_metric):
+        if degradation_rate == -1:
+            return 'SUCCESS', ''
         if baseline:
             request_count, performance_degradation = 0, 0
             for request in test:
@@ -147,6 +154,8 @@ class ReportBuilder:
 
     @staticmethod
     def check_missed_thresholds(missed_thresholds, violation):
+        if missed_thresholds == -1:
+            return 'SUCCESS', ''
         if violation > missed_thresholds:
             return 'FAILED', 'missed thresholds rate - ' + str(violation) + ' %'
         return 'SUCCESS', ''
