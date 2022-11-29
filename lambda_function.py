@@ -64,7 +64,6 @@ def parse_args(_event):
 
     # Galloper or AWS Lambda service
     event = _event if not _event.get('body') else json.loads(_event['body'])
-
     # Galloper
     args['galloper_url'] = environ.get("galloper_url") if not event.get('galloper_url') else event.get('galloper_url')
     args['token'] = environ.get("token") if not event.get('token') else event.get('token')
@@ -112,14 +111,11 @@ def parse_args(_event):
     args['type'] = args['test_type']
 
     # Thresholds
-    args['error_rate'] = int(environ.get("error_rate", 10)) if not event.get('error_rate') else event.get('error_rate')
-    args['performance_degradation_rate'] = int(environ.get("performance_degradation_rate", 20)) \
-        if not event.get('performance_degradation_rate') else event.get('performance_degradation_rate')
-    args['missed_thresholds'] = int(environ.get("missed_thresholds", 50)) \
-        if not event.get('missed_thresholds') else event.get('missed_thresholds')
+    args['error_rate'] = event.get('error_rate')
+    args['performance_degradation_rate'] = event.get('performance_degradation_rate')
+    args['missed_thresholds'] = event.get('missed_thresholds')
 
     # ui data
     args['test_id'] = event.get('test_id')
     args['report_id'] = event.get('report_id')
-
     return args

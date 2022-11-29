@@ -182,11 +182,10 @@ class UIEmailNotification(object):
             degradation_rate = round(float(_failed/_count) * 100, 2) if _count else 0
 
         status = "PASSED"
-        error_message = ""
-        # TODO get thresholds value from quality gate integration
-        if degradation_rate > 1 or missed_thresholds > 1:
+        if self.args.get("performance_degradation_rate") and degradation_rate > self.args["performance_degradation_rate"]:
             status = "FAILED"
-            error_message = f"degradation_rate > 20 %"
+        if self.args.get("missed_thresholds") and missed_thresholds > self.args["missed_thresholds"]:
+            status = "FAILED"
         t_params = {
             "scenario": report_info['name'],
             "start_time": report_info["start_time"],
@@ -203,7 +202,7 @@ class UIEmailNotification(object):
         }
         email_body = self.__get_email_body(t_params, results_info, page_comparison, action_comparison,
                                            baseline_comparison_pages, baseline_comparison_actions, degradation_rate,
-                                           missed_thresholds, error_message)
+                                           missed_thresholds)
 
         charts = []
         charts.append(self.create_ui_metrics_chart_pages(page_comparison))
@@ -232,16 +231,14 @@ class UIEmailNotification(object):
         return self.__get_url(f"/ui_performance/results/{self.galloper_project_id}/{report_id}?order=asc")
 
     def __get_email_body(self, t_params, results_info, page_comparison, action_comparison,
-                         baseline_comparison_pages, baseline_comparison_actions, degradation_rate, missed_thresholds,
-                         error_message):
+                         baseline_comparison_pages, baseline_comparison_actions, degradation_rate, missed_thresholds):
         env = Environment(
             loader=FileSystemLoader('./templates'))
         template = env.get_template("ui_email_template.html")
         return template.render(t_params=t_params, results=results_info, page_comparison=page_comparison,
                                action_comparison=action_comparison, baseline_comparison_pages=baseline_comparison_pages,
                                baseline_comparison_actions=baseline_comparison_actions,
-                               degradation_rate=degradation_rate, missed_thresholds=missed_thresholds,
-                               error_message=error_message)
+                               degradation_rate=degradation_rate, missed_thresholds=missed_thresholds)
 
     def __get_url(self, url):
         resp = requests.get(
