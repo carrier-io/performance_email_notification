@@ -85,16 +85,16 @@ def parse_args(_event):
         'smtp_host')
     args['smtp_user'] = environ.get('smtp_user') if not event.get('smtp_user') else event.get('smtp_user')
     args['smtp_sender'] = args['smtp_user'] if not event.get('smtp_sender') else event.get('smtp_sender')
-    if not event.get('smtp_password').get("value"):
-        args['smtp_password'] = environ.get("smtp_password")
-    else:
-        args['smtp_password'] = event.get('smtp_password')["value"]
+    args['smtp_password'] = event.get('smtp_password')
 
     # Test Config
     args['users'] = event.get('users', 1)
     args['test'] = event.get('test')
     args['simulation'] = event.get('test')
     args['env'] = event.get('env')
+
+    # summary data
+    args["test_data"] = event.get('test_data', {})
 
     # Notification Config
     args['user_list'] = event.get('user_list')
