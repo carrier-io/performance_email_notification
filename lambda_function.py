@@ -85,8 +85,22 @@ def parse_args(_event):
         'smtp_host')
     args['smtp_user'] = environ.get('smtp_user') if not event.get('smtp_user') else event.get('smtp_user')
     args['smtp_sender'] = args['smtp_user'] if not event.get('smtp_sender') else event.get('smtp_sender')
-    args['smtp_password'] = event.get('smtp_password')
 
+    if not event.get('notification_type'):
+        args['notification_type'] = environ.get('notification_type')
+    else:
+        args['notification_type'] = event.get('notification_type')
+    if args['notification_type'] == 'ui':
+        args['test_type'] = event.get('test_suite')
+    if args['notification_type'] == 'api':
+        args['test_type'] = event.get('test_type')
+
+    args['type'] = args['test_type']
+
+    if args['notification_type'] == "api":
+        args['smtp_password'] = event.get("smtp_password")
+    else:
+        args['smtp_password'] = event.get('smtp_password')["value"]
     # Test Config
     args['users'] = event.get('users', 1)
     args['test'] = event.get('test')
@@ -100,15 +114,6 @@ def parse_args(_event):
     args['user_list'] = event.get('user_list')
     args['test_limit'] = event.get("test_limit", 5)
     args['comparison_metric'] = event.get("comparison_metric", 'pct95')
-    if not event.get('notification_type'):
-        args['notification_type'] = environ.get('notification_type')
-    else:
-        args['notification_type'] = event.get('notification_type')
-    if args['notification_type'] == 'ui':
-        args['test_type'] = event.get('test_suite')
-    if args['notification_type'] == 'api':
-        args['test_type'] = event.get('test_type')
-    args['type'] = args['test_type']
 
     # Thresholds
     args['error_rate'] = event.get('error_rate')
