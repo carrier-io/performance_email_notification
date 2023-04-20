@@ -61,9 +61,14 @@ def lambda_handler(event, context):
 
 def parse_args(_event):
     args = {}
+    
+    try:
+        _event = json.loads(_event)[0]
+    except TypeError:
+        _event = _event[0]
 
     # Galloper or AWS Lambda service
-    event = _event if not _event.get('body') else json.loads(_event['body'])
+    event = _event if not _event.get('body') else _event['body']
     # Galloper
     args['galloper_url'] = environ.get("galloper_url") if not event.get('galloper_url') else event.get('galloper_url')
     args['token'] = environ.get("token") if not event.get('token') else event.get('token')
