@@ -63,7 +63,7 @@ def parse_args(_event):
     args = {}
 
     # Galloper or AWS Lambda service
-    event = _event if not _event.get('body') else json.loads(_event['body'])
+    event = _event[0] if not _event[0].get('body') else json.loads(_event[0]['body'])
     # Galloper
     args['galloper_url'] = environ.get("galloper_url") if not event.get('galloper_url') else event.get('galloper_url')
     args['token'] = environ.get("token") if not event.get('token') else event.get('token')
