@@ -20,13 +20,15 @@ jobs:
     env:
       ARTIFACT_NAME: "performance_email_notification.zip"
       DEFAULT_TAG: "latest"
-      LAMBDA_BUILDER: "lambci/lambda:build-python3.8"
     steps:
     - uses: actions/checkout@v3
     - name: remove unwanted folders
       run: rm -rf ./package ./tests
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
     - name: setting up docker builder
-      run: docker run --rm -v $(pwd):/var/task $LAMBDA_BUILDER pip install -r requirements.txt -t /var/task/ --no-cache-dir --compile
+      run: pip install -r requirements.txt -t ./ --no-cache-dir --compile
     - name: zipping
       run: zip -r -9 $ARTIFACT_NAME .
 #    - name: Create artifact
