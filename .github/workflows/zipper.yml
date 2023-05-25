@@ -25,7 +25,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: setting up docker builder
       run: |
-        rf -rf ./package ./tests
+        rm -rf ./package ./tests
         docker run --rm -v .:/var/task $LAMBDA_BUILDER pip install -r requirements.txt -t /var/task/ --no-cache-dir --compile
     - name: zipping
       run: zip -r -9 $ARTIFACT_NAME .
