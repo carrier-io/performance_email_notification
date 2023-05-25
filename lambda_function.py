@@ -18,10 +18,13 @@ from email_client import EmailClient
 from email_notifications import ApiEmailNotification
 from ui_email_notification import UIEmailNotification
 from time import sleep
+from typing import Union
 
 
-def lambda_handler(event, context):
+def lambda_handler(event: Union[list, dict], context=None):
     try:
+        if isinstance(event, list):
+            event = event[0]
         args = parse_args(event)
         print(args)
         if not args['notification_type']:
@@ -59,7 +62,7 @@ def lambda_handler(event, context):
     }
 
 
-def parse_args(_event):
+def parse_args(_event: dict):
     args = {}
 
     # Galloper or AWS Lambda service
