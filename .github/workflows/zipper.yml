@@ -26,7 +26,7 @@ jobs:
     - name: setting up docker builder
       run: |
         rm -rf ./package ./tests
-        docker run --rm -v .:/var/task $LAMBDA_BUILDER pip install -r requirements.txt -t /var/task/ --no-cache-dir --compile
+        docker run --rm -v $(pwd):/var/task $LAMBDA_BUILDER pip install -r requirements.txt -t /var/task/ --no-cache-dir --compile
     - name: zipping
       run: zip -r -9 $ARTIFACT_NAME .
 #    - name: Create artifact
