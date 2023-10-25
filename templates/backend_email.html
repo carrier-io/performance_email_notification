@@ -30,7 +30,7 @@
         </style>
         <tr>
             <td style="background:#4d1c93;">
-                <h1 style="text-align:center;margin:20px 0 10px;color:#ffffff;font-weight:400;font-size:24px;">Performance Notification</h1>
+                <h1 style="text-align:center;margin:20px 0 10px;color:#ffffff;font-weight:400;font-size:24px;">Performance Test Notification</h1>
                 <table border="0" cellpadding="0" cellspacing="0" align="center" style="width:80%;">
                     <tr>
                         <td>
@@ -82,7 +82,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding-top:15px;padding-bottom:15px;">vUser count</td>
+                                    <td style="padding-top:15px;padding-bottom:15px;">vUser Count</td>
                                     <td style="padding-top:15px;padding-bottom:15px;text-align:right;">{{ t_params.users }}</td>
                                 </tr>
                                 <tr>
@@ -91,7 +91,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding-top:15px;padding-bottom:15px;">Start time</td>
+                                    <td style="padding-top:15px;padding-bottom:15px;">Start Time</td>
                                     <td style="padding-top:15px;padding-bottom:15px;text-align:right;">{{ t_params.start }}</td>
                                 </tr>
                                 <tr>
@@ -100,7 +100,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding-top:15px;padding-bottom:15px;">End time</td>
+                                    <td style="padding-top:15px;padding-bottom:15px;">End Time</td>
                                     <td style="padding-top:15px;padding-bottom:15px;text-align:right;">{{ t_params.end }}</td>
                                 </tr>
                                 <tr>
@@ -110,7 +110,7 @@
                                 </tr>
                                 <tr>
                                     <td style="padding-top:15px;padding-bottom:15px;">Duration</td>
-                                    <td style="padding-top:15px;padding-bottom:15px;text-align:right;">{{ t_params.duration }} sec</td>
+                                    <td style="padding-top:15px;padding-bottom:15px;text-align:right;">{{ t_params.duration }} s</td>
                                 </tr>
                             </table>
                         </td>
@@ -137,18 +137,18 @@
                                 <tbody>
                                     <tr style="background-color:#f3f3f3;vertical-align:top;">
                                         <th align="left" style="font-weight:400; font-size: 14px;">Metric</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Baseline diff</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Threshold diff</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Current value</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Baseline Diff</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Threshold Diff</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Current Value</th>
                                     </tr>
                                     <tr>
                                         <td align="left">Throughput</td>
                                         <td align="right" style="color:{{ general_metrics.baseline_tp_color }}">
 											{% if general_metrics.baseline_tp is not string %}
 												{% if general_metrics.baseline_tp > 0 %}
-													+ {{ general_metrics.baseline_tp }} req/sec
+													+ {{ general_metrics.baseline_tp }} req/s
 												{% else %}
-													{{ general_metrics.baseline_tp }} req/sec
+													{{ general_metrics.baseline_tp }} req/s
 												{% endif %}
 											{% else %}
 												{{ general_metrics.baseline_tp }}
@@ -157,15 +157,15 @@
                                         <td align="right" style="color:{{ general_metrics.threshold_tp_color }}">
 											{% if general_metrics.threshold_tp is not string %}
 												{% if general_metrics.threshold_tp > 0 %}
-													+ {{ general_metrics.threshold_tp }} req/sec
+													+ {{ general_metrics.threshold_tp }} req/s
 												{% else %}
-													{{ general_metrics.threshold_tp }} req/sec
+													{{ general_metrics.threshold_tp }} req/s
 												{% endif %}
 											{% else %}
 												{{ general_metrics.threshold_tp }}
 											{% endif %}
 										</td>
-                                        <td align="right">{{ general_metrics.current_tp }} req/sec</td>
+                                        <td align="right">{{ general_metrics.current_tp }} req/s</td>
                                     </tr>
                                     <tr>
                                         <td colspan="4" style="vertical-align:middle;padding-top:0;padding-bottom:0;">
@@ -173,7 +173,7 @@
                                         </td>
                                     </tr>
                                     <tr style="background-color: #fbfbfb">
-                                        <td align="left">Error rate</td>
+                                        <td align="left">Error Rate</td>
                                         <td align="right" style="color:{{ general_metrics.baseline_er_color }}">
 											{% if general_metrics.baseline_er is not string %}
 												{% if general_metrics.baseline_er > 0 %}
@@ -217,11 +217,11 @@
                             <table border="0" align="center" cellpadding="10" cellspacing="0" style="width:100%;font-size:13px; background-color: #fbfbfb">
                                 <thead>
                                     <tr style="background-color:#f3f3f3;vertical-align:top;">
-                                        <th align="left" style="width:30%; font-weight:400; font-size: 14px;">Name</th>
-                                        <th align="right" style="width:10%; font-weight:400; font-size: 14px;">Baseline diff, sec</th>
-                                        <th align="right" style="width:10%; font-weight:400; font-size: 14px;">Threshold diff, sec</th>
-                                        <th align="right" style="width:10%; font-weight:400; font-size: 14px;">Current, sec</th>
-                                        <th align="left" style="width:40%; font-weight:400; font-size: 14px;">Representation</th>
+                                        <th align="left" style="width:60%; font-weight:400; font-size: 14px;">Endpoint</th>
+                                        <th align="right" style="width:10%; font-weight:400; font-size: 14px;">Baseline Diff, s</th>
+                                        <th align="right" style="width:10%; font-weight:400; font-size: 14px;">Threshold Diff, s</th>
+                                        <th align="right" style="width:10%; font-weight:400; font-size: 14px;">Current, s</th>
+                                        <th align="left" style="width:10%; font-weight:400; font-size: 14px;">Representation</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -268,7 +268,7 @@
                             <table border="0" align="center" cellpadding="0" cellspacing="0" style="width:100%;font-size:1px;table-layout: fixed;vertical-align:top;">
                                 <tr>
                                     <td colspan="3" style="padding:10px;min-height:30px;text-align:left;background-color:#eee;color:#000;font-size:16px;font-weight:400">
-                                        Comparison vs latest builds
+                                        Comparison vs Latest 5 Runs
                                     </td>
                                 </tr>
                             </table>
@@ -276,14 +276,14 @@
                                 <thead>
                                     <tr style="background-color:#f3f3f3;vertical-align:top;">
                                         <th style="text-align:left;font-weight:400;font-size: 14px;">Date</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Ttl req, count</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Samples, count</th>
                                         <th align="right" style="font-weight:400; font-size: 14px;">Diff, count</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Thrghpt, req/sec</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Diff, req/sec</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Error rate, %</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">TPS, req/s</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Diff, req/s</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Error Rate, %</th>
                                         <th align="right" style="font-weight:400; font-size: 14px;">Diff, %</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Pct95, sec</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Diff, sec</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">P95, s</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Diff, s</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -325,21 +325,21 @@
                             <table border="0" align="center" cellpadding="0" cellspacing="0" style="width:100%;font-size:1px;table-layout: fixed;vertical-align:top;">
                                 <tr>
                                     <td colspan="3" style="padding:10px;min-height:30px;text-align:left;background-color:#eee;color:#000;font-size:16px;font-weight:400">
-                                        Results summary table
+                                        Results Summary Table
                                     </td>
                                 </tr>
                             </table>
 							<table border="0" align="center" cellpadding="10" cellspacing="0" layout="fixed" style="width:100%;font-size:14px;background-color: #fbfbfb">
                                 <thead>
                                     <tr style="background-color:#f3f3f3;vertical-align:top;">
-                                        <th style="width:30%;text-align:left;font-weight:400;font-size: 14px;">Name</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Ttl req, count</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Thrghpt, req/sec</th>
+                                        <th style="width:30%;text-align:left;font-weight:400;font-size: 14px;">Endpoint</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Samples, count</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">TPS, req/s</th>
                                         <th align="right" style="font-weight:400; font-size: 14px;">Errors, count</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Min, sec</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Pct50, sec</th>
-                                        <th align="right" style="font-weight:400; font-size: 14px;">Pct95, sec</th>
-                                        <th style="padding-right:5px;text-align:right;font-weight:400; font-size: 14px;">Max, sec</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">Min, s</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">P50, s</th>
+                                        <th align="right" style="font-weight:400; font-size: 14px;">P95, s</th>
+                                        <th style="padding-right:5px;text-align:right;font-weight:400; font-size: 14px;">Max, s</th>
                                     </tr>
                                 </thead>
                                 <tbody>

@@ -496,8 +496,8 @@ class ReportBuilder:
         for request in last_test_data:
             req = {}
             req['response_time'] = str(round(float(request[comparison_metric]) / 1000, 2))
-            if len(str(request['request_name'])) > 25:
-                req['request_name'] = str(request['request_name'])[:25] + "... "
+            if len(str(request['request_name'])) > 80:
+                req['request_name'] = str(request['request_name'])[:80] + "..."
             else:
                 req['request_name'] = str(request['request_name'])
             if baseline and request['request_name'] in list(baseline_metrics.keys()):
