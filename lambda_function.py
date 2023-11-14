@@ -21,10 +21,9 @@ from time import sleep
 from typing import Union
 
 
-def lambda_handler(event: Union[list, dict], context=None):
+
+def lambda_handler(event: Union[list, dict], context):
     try:
-        if isinstance(event, list):
-            event = event[0]
         args = parse_args(event)
         print(args)
         if not args['notification_type']:
@@ -62,7 +61,11 @@ def lambda_handler(event: Union[list, dict], context=None):
     }
 
 
-def parse_args(_event: dict):
+def parse_args(event: Union[list, dict]):
+    if isinstance(event, list):
+        _event = event
+    else:
+        _event = [event]
     args = {}
 
     # Galloper or AWS Lambda service
@@ -118,12 +121,17 @@ def parse_args(_event: dict):
     args['test_limit'] = event.get("test_limit", 5)
     args['comparison_metric'] = event.get("comparison_metric", 'pct95')
 
-    # Thresholds
-    args['error_rate'] = event.get('error_rate')
-    args['performance_degradation_rate'] = event.get('performance_degradation_rate')
-    args['missed_thresholds'] = event.get('missed_thresholds')
-
     # ui data
     args['test_id'] = event.get('test_id')
     args['report_id'] = event.get('report_id')
+
+    # SLA's
+    args['performance_degradation_rate'] = event.get('performance_degradation_rate')
+    args['missed_threshold_rate'] = event.get('missed_threshold_rate')
+    args['reasons_to_fail_report'] = event.get('reasons_to_fail_report')
+
+    args['performance_degradation_rate_qg'] = event.get('performance_degradation_rate_qg')
+    args['missed_thresholds_qg'] = event.get('missed_thresholds_qg')
+    args['status'] = event.get('status')
+    args['quality_gate_config'] = event.get('quality_gate_config')
     return args

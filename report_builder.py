@@ -26,6 +26,11 @@ YELLOW = '#FFA400'
 RED = '#FF0000'
 GRAY = '#CCCCCC'
 
+STATUS_COLOR = {
+    "success": GREEN,
+    "failed": RED,
+    "finished": GRAY
+}
 
 class ReportBuilder:
 
@@ -35,16 +40,17 @@ class ReportBuilder:
         builds_comparison = self.create_builds_comparison(tests_data)
         general_metrics = self.get_general_metrics(builds_comparison[0], baseline, thresholds)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
-        baseline_and_thresholds = self.get_baseline_and_thresholds(last_test_data, baseline, comparison_metric,
+        baseline_and_thresholds = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric,
                                                                    thresholds)
 
-        email_body = self.get_api_email_body(test_description, last_test_data, baseline, builds_comparison,
+        email_body = self.get_api_email_body(args, test_description, last_test_data, baseline, builds_comparison,
                                              baseline_and_thresholds, general_metrics)
         return email_body, charts, str(test_description['start']).split(" ")[0]
 
     def create_ui_email_body(self, tests_data, last_test_data):
         test_params = self.create_ui_test_discription(last_test_data)
-        top_five_thresholds = self.get_baseline_and_thresholds(last_test_data, None, 'time')
+        #top_five_thresholds = self.get_baseline_and_thresholds(last_test_data, None, 'time')
+        top_five_thresholds = []
         builds_comparison = self.create_ui_builds_comparison(tests_data)
         charts = self.create_ui_charts(last_test_data, builds_comparison)
         last_test_data = self.aggregate_last_test_results(last_test_data)
@@ -53,15 +59,19 @@ class ReportBuilder:
 
     def create_test_description(self, args, test, baseline, comparison_metric, violation):
         params = ['simulation', 'users', 'duration']
-        test_params = {}
+        test_params = {"test_type": args["test_type"], "env": args["env"],
+                       "performance_degradation_rate": args["performance_degradation_rate"],
+                       "missed_threshold_rate": args["missed_threshold_rate"],
+                       "reasons_to_fail_report": args["reasons_to_fail_report"], "status": args["status"],
+                       "color": STATUS_COLOR[args["status"].lower()]}
         for param in params:
             test_params[param] = test[0][param]
         test_params['end'] = str(test[0]['time']).replace("T", " ").replace("Z", "")
         timestamp = calendar.timegm(time.strptime(test_params['end'], '%Y-%m-%d %H:%M:%S'))
         test_params['start'] = datetime.datetime.utcfromtimestamp(int(timestamp) - int(float(test[0]['duration']))) \
             .strftime('%Y-%m-%d %H:%M:%S')
-        test_params['status'], test_params['color'], test_params['failed_reason'] = self.check_status(args,
-            test, baseline, comparison_metric, violation)
+        # test_params['status'], test_params['color'], test_params['failed_reason'] = self.check_status(args,
+        #     test, baseline, comparison_metric, violation)
         return test_params
 
     @staticmethod
@@ -481,15 +491,15 @@ class ReportBuilder:
         }
 
     @staticmethod
-    def get_baseline_and_thresholds(last_test_data, baseline, comparison_metric, thresholds):
+    def get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric, thresholds):
         exceeded_thresholds = []
         baseline_metrics = {}
         thresholds_metrics = {}
-        if baseline:
+        if baseline and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
             for request in baseline:
                 baseline_metrics[request['request_name']] = int(request[comparison_metric])
 
-        if thresholds:
+        if thresholds and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
             for th in thresholds:
                 if th['target'] == 'response_time':
                     thresholds_metrics[th['request_name']] = th
@@ -643,11 +653,31 @@ class ReportBuilder:
             test_data.append(page_info)
         return test_data
 
-    def get_api_email_body(self, test_params, last_test_data, baseline, builds_comparison, baseline_and_thresholds,
+    def get_api_email_body(self, args, test_params, last_test_data, baseline, builds_comparison, baseline_and_thresholds,
                            general_metrics):
         env = Environment(loader=FileSystemLoader('./templates/'))
-        template = env.get_template("backend_email.html")
+        template = env.get_template("backend_email_template.html")
         last_test_data = self.reprocess_test_data(last_test_data, ['total', 'throughput'])
+        if args.get("performance_degradation_rate_qg", None):
+            if test_params["performance_degradation_rate"] > args["performance_degradation_rate_qg"]:
+                test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
+                test_params["baseline_status"] = "failed"
+            else:
+                test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
+                test_params["baseline_status"] = "success"
+        else:
+            test_params["performance_degradation_rate"] = f'-'
+            test_params["baseline_status"] = "N/A"
+        if args.get("missed_thresholds_qg", None):
+            if test_params["missed_threshold_rate"] > args["missed_thresholds_qg"]:
+                test_params["missed_threshold_rate"] = f'{test_params["missed_threshold_rate"]}%'
+                test_params["threshold_status"] = "failed"
+            else:
+                test_params["missed_threshold_rate"] = f'{test_params["missed_threshold_rate"]}%'
+                test_params["threshold_status"] = "success"
+        else:
+            test_params["missed_threshold_rate"] = f'-'
+            test_params["threshold_status"] = "N/A"
         html = template.render(t_params=test_params, summary=last_test_data, baseline=baseline,
                                comparison=builds_comparison,
                                baseline_and_thresholds=baseline_and_thresholds, general_metrics=general_metrics)
