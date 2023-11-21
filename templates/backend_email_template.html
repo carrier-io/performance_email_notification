@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: 'Open Sans', sans-serif;
+            line-height: 24px;
+        }
+    </style>
+</head>
+
+<body>
+<table style="color: #fff; background: #875FFC; padding: 31px; font-size: 16px; font-weight: 600;">
+    <tr>
+        <td>
+            <img style="color: #ff0000; padding-right: 15px;"
+                    src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABQAAAAYCAYAAAD6S912AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAFdSURBVHgBrVQLccMwDHV2AxAGG4OGQVsE2xAEQiEEQiH0iqBj4A5Bx8BjEAia1JOvyoucpp93p4scy0+WLCmEmSCiOjwDTPTOElkSSxseBZNslCxD9I9bCORGW3sb/bejIWT9NkVUs3QsvTm0dZxFIO5GxHIbIOqn8qX2CdLQ5s0IRB2+qOTMc+BElMJUTni9BIfRsZE0HLKBJVxBPndAFEvO1bFPyN+FCSOBo5YuuRObBglfxykPtcqxqqp1Dks+vN6z/sP6ydgN8BLK+FMyKeIka8mV6sU2nCLMaIz+ec14DuGe5ZvlyPKlXw+/LGvvUZbmQUY9q/u9PYMGSIglcy4RGrfdgbxeRkLzv6Fhe2VE72Z683OnpOL1w6D23P4m6CY7mlZqIIXdwSFJA/a3O9JCwSNRYUKTP+ZiKUIvd6IvTPg97PlEM8I5GV1IN+FWOMTuvLyHWAasX3eAf8SBG7h4AQZrAAAAAElFTkSuQmCC">
+        </td>
+        <td style="margin-left: 8px; font-size: 14px; font-weight: 700; width: 100%">
+            Backend Performance Report
+        </td>
+        <td>CARRIER</td>
+    </tr>
+</table>
+<div>
+    <p style="margin: 24px 0 20px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Execution Summary</p>
+    <table style="border-spacing: 10px;">
+        <tr>
+            <td style="border-radius: 4px; padding: 4px 12px; background: {{ t_params.color }};">
+                <div style="color: #fff; font-size: 16px; font-weight: 600;">
+                    <span>Status:</span>
+                    <span>{{ t_params.status }}</span>
+                </div>
+            </td>
+            <td style="background: #F6F9FC; padding: 4px 12px; border-radius: 4px;">
+                <div style="color: #32325D; font-size: 16px; font-weight: 400;">
+                    <span style="margin-right: 30px">SLA failed rate: {{ t_params.missed_threshold_rate }}</span>
+                    {% if t_params.threshold_status == 'success' %}
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMS4xNjY3IDZDMTEuMTY2NyA5LjAzNzU3IDguNzA0MzEgMTEuNSA1LjY2Njc1IDExLjVDMi42MjkxOCAxMS41IDAuMTY2NzQ4IDkuMDM3NTcgMC4xNjY3NDggNkMwLjE2Njc0OCAyLjk2MjQzIDIuNjI5MTggMC41IDUuNjY2NzUgMC41QzguNzA0MzEgMC41IDExLjE2NjcgMi45NjI0MyAxMS4xNjY3IDZaTTguNjAyMDUgNS4wNTkwMUM4Ljg0MTc1IDQuODMwMjEgOC44NTA1OCA0LjQ1MDQyIDguNjIxNzggNC4yMTA3MkM4LjM5Mjk3IDMuOTcxMDIgOC4wMTMxOCAzLjk2MjE4IDcuNzczNDggNC4xOTA5OUw0LjgyNjYzIDcuMDAzODZMMy41NjAzOCA1Ljc5NTE2QzMuMzIwNjggNS41NjYzNSAyLjk0MDg5IDUuNTc1MTggMi43MTIwOCA1LjgxNDg4QzIuNDgzMjggNi4wNTQ1OCAyLjQ5MjExIDYuNDM0MzcgMi43MzE4MSA2LjY2MzE4TDQuNDEyMzQgOC4yNjczNEM0LjY0NDIgOC40ODg2NiA1LjAwOTA2IDguNDg4NjYgNS4yNDA5MSA4LjI2NzM1TDguNjAyMDUgNS4wNTkwMVoiIGZpbGw9IiMxMzlBNDEiLz4KPC9zdmc+Cg==">
+                    {% endif %}
+                    {% if t_params.threshold_status == 'failed' %}
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01LjgzMzM3IDExLjVDMi43OTU4MSAxMS41IDAuMzMzMzc0IDkuMDM3NTcgMC4zMzMzNzQgNkMwLjMzMzM3NCAyLjk2MjQzIDIuNzk1ODEgMC41IDUuODMzMzcgMC41QzguODcwOTQgMC41IDExLjMzMzQgMi45NjI0MyAxMS4zMzM0IDZDMTEuMzMzNCA5LjAzNzU3IDguODcwOTQgMTEuNSA1LjgzMzM3IDExLjVaTTguMzMzMzcgNi42QzguNjY0NzQgNi42IDguOTMzMzcgNi4zMzEzNyA4LjkzMzM3IDZDOC45MzMzNyA1LjY2ODYzIDguNjY0NzQgNS40IDguMzMzMzcgNS40TDMuMzMzMzcgNS40QzMuMDAyIDUuNCAyLjczMzM3IDUuNjY4NjMgMi43MzMzNyA2QzIuNzMzMzcgNi4zMzEzNyAzLjAwMiA2LjYgMy4zMzMzNyA2LjZMOC4zMzMzNyA2LjZaIiBmaWxsPSIjRjMyNjI2Ii8+Cjwvc3ZnPgo=">
+                    {% endif %}
+                    {% if t_params.threshold_status == 'N/A' %}
+                    N/A
+                    {% endif %}
+                </div>
+            </td>
+            <td style="background: #F6F9FC; padding: 4px 12px; border-radius: 4px;">
+                <div style="color: #32325D; font-size: 16px; font-weight: 400;">
+                    <span style="margin-right: 30px">Baseline failed rate: {{ t_params.performance_degradation_rate }}</span>
+                    {% if t_params.baseline_status == 'success' %}
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMS4xNjY3IDZDMTEuMTY2NyA5LjAzNzU3IDguNzA0MzEgMTEuNSA1LjY2Njc1IDExLjVDMi42MjkxOCAxMS41IDAuMTY2NzQ4IDkuMDM3NTcgMC4xNjY3NDggNkMwLjE2Njc0OCAyLjk2MjQzIDIuNjI5MTggMC41IDUuNjY2NzUgMC41QzguNzA0MzEgMC41IDExLjE2NjcgMi45NjI0MyAxMS4xNjY3IDZaTTguNjAyMDUgNS4wNTkwMUM4Ljg0MTc1IDQuODMwMjEgOC44NTA1OCA0LjQ1MDQyIDguNjIxNzggNC4yMTA3MkM4LjM5Mjk3IDMuOTcxMDIgOC4wMTMxOCAzLjk2MjE4IDcuNzczNDggNC4xOTA5OUw0LjgyNjYzIDcuMDAzODZMMy41NjAzOCA1Ljc5NTE2QzMuMzIwNjggNS41NjYzNSAyLjk0MDg5IDUuNTc1MTggMi43MTIwOCA1LjgxNDg4QzIuNDgzMjggNi4wNTQ1OCAyLjQ5MjExIDYuNDM0MzcgMi43MzE4MSA2LjY2MzE4TDQuNDEyMzQgOC4yNjczNEM0LjY0NDIgOC40ODg2NiA1LjAwOTA2IDguNDg4NjYgNS4yNDA5MSA4LjI2NzM1TDguNjAyMDUgNS4wNTkwMVoiIGZpbGw9IiMxMzlBNDEiLz4KPC9zdmc+Cg==">
+                    {% endif %}
+                    {% if t_params.baseline_status == 'failed' %}
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01LjgzMzM3IDExLjVDMi43OTU4MSAxMS41IDAuMzMzMzc0IDkuMDM3NTcgMC4zMzMzNzQgNkMwLjMzMzM3NCAyLjk2MjQzIDIuNzk1ODEgMC41IDUuODMzMzcgMC41QzguODcwOTQgMC41IDExLjMzMzQgMi45NjI0MyAxMS4zMzM0IDZDMTEuMzMzNCA5LjAzNzU3IDguODcwOTQgMTEuNSA1LjgzMzM3IDExLjVaTTguMzMzMzcgNi42QzguNjY0NzQgNi42IDguOTMzMzcgNi4zMzEzNyA4LjkzMzM3IDZDOC45MzMzNyA1LjY2ODYzIDguNjY0NzQgNS40IDguMzMzMzcgNS40TDMuMzMzMzcgNS40QzMuMDAyIDUuNCAyLjczMzM3IDUuNjY4NjMgMi43MzMzNyA2QzIuNzMzMzcgNi4zMzEzNyAzLjAwMiA2LjYgMy4zMzMzNyA2LjZMOC4zMzMzNyA2LjZaIiBmaWxsPSIjRjMyNjI2Ii8+Cjwvc3ZnPgo=">
+                    {% endif %}
+                    {% if t_params.baseline_status == 'N/A' %}
+                    N/A
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+    </table>
+    {% if t_params.status == 'failed' %}
+    <div style="margin-top: 24px;">
+        <p style="margin: 24px 0 0px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Failed reasons:</p>
+        <ul style="padding-left: 25px;">
+        {% for reason in t_params.reasons_to_fail_report %}
+            <li style="list-style: none">
+                <span style="margin-right: 5px;"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01LjgzMzM3IDExLjVDMi43OTU4MSAxMS41IDAuMzMzMzc0IDkuMDM3NTcgMC4zMzMzNzQgNkMwLjMzMzM3NCAyLjk2MjQzIDIuNzk1ODEgMC41IDUuODMzMzcgMC41QzguODcwOTQgMC41IDExLjMzMzQgMi45NjI0MyAxMS4zMzM0IDZDMTEuMzMzNCA5LjAzNzU3IDguODcwOTQgMTEuNSA1LjgzMzM3IDExLjVaTTguMzMzMzcgNi42QzguNjY0NzQgNi42IDguOTMzMzcgNi4zMzEzNyA4LjkzMzM3IDZDOC45MzMzNyA1LjY2ODYzIDguNjY0NzQgNS40IDguMzMzMzcgNS40TDMuMzMzMzcgNS40QzMuMDAyIDUuNCAyLjczMzM3IDUuNjY4NjMgMi43MzMzNyA2QzIuNzMzMzcgNi4zMzEzNyAzLjAwMiA2LjYgMy4zMzMzNyA2LjZMOC4zMzMzNyA2LjZaIiBmaWxsPSIjRjMyNjI2Ii8+Cjwvc3ZnPgo=">
+                </span>{{ reason }}
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 24px;">
+        <table style="width: 100%;">
+            <tbody>
+            <tr>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Test name:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.simulation }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;"></td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;"></td>
+            </tr>
+            <tr>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Duration:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.duration }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">VUsers:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.users }}</td>
+            </tr>
+            <tr>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Started:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.start }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Environment:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.env }}</td>
+            </tr>
+            <tr>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Ended:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.end }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Test type:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.test_type }}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">General metrics</p>
+    <table style=" width: 100%;">
+        <thead>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Metric</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Baseline diff</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">SLA diff</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Current value</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Troughput</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.baseline_tp_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_tp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_tp_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_tp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_tp }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Error rate</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.baseline_er_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_er }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_er_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_er }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_er }}</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Request metrics</p>
+    <table style=" width: 100%;">
+        <thead>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Request name</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Baseline diff, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Threshold diff, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Current, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Representation</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for baseline_result in baseline_and_thresholds %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.request_name }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ baseline_result.baseline_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.baseline }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ baseline_result.threshold_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.threshold }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.response_time }}</td>
+            <td style="padding: 8px 12px; text-align: left; border-bottom: solid 1px #EAEDEF;"><span style="background: {{ baseline_result.line_color}}; width: 25px; height: 25px; display: inline-block"></span></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Comparison vs latest builds</p>
+    <table style=" width: 100%;">
+        <thead>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Date</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Ttl req, count</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Diff, count</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Thrghpt, req/sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Diff, req/sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Err. rate, %</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Diff, %</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Pct95, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Diff, sec</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for comparison_result in comparison %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.date }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.total }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.total_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.throughput }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.throughput_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.error_rate }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.error_rate_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.pct95 }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.pct95_diff }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Results summary table</p>
+    <table style=" width: 100%;">
+        <thead>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Request name</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Ttl req, count</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Thrpt, req/sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Error, count</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Min, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Pct95, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Pct90, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Max, sec</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for summary_result in summary %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.request_name }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.total }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.throughput }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.ko }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.min }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.max }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.pct90 }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.pct95 }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Success Rate</p>
+    <div>
+        <div align="center">
+            <img src="cid:success_rate"/>
+        </div>
+    </div>
+
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">RPS/TPS Rate</p>
+    <div>
+        <div align="center">
+            <img src="cid:throughput"/>
+        </div>
+    </div>
+</div>
+</body>
+</html>
