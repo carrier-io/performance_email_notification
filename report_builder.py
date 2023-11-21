@@ -38,7 +38,7 @@ class ReportBuilder:
                               violation, thresholds=None):
         test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation)
         builds_comparison = self.create_builds_comparison(tests_data)
-        general_metrics = self.get_general_metrics(builds_comparison[0], baseline, thresholds)
+        general_metrics = self.get_general_metrics(args, builds_comparison[0], baseline, thresholds)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
         baseline_and_thresholds = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric,
                                                                    thresholds)
@@ -442,7 +442,7 @@ class ReportBuilder:
         return image
 
     @staticmethod
-    def get_general_metrics(build_data, baseline, thresholds=None):
+    def get_general_metrics(args, build_data, baseline, thresholds=None):
         current_tp = build_data['throughput']
         current_error_rate = build_data['error_rate']
         baseline_throughput = "N/A"
@@ -453,7 +453,7 @@ class ReportBuilder:
         thresholds_er_color = GRAY
         baseline_tp_color = GRAY
         baseline_er_color = GRAY
-        if baseline:
+        if baseline and args.get("quality_gate_config", {}).get("baseline", {}).get("checked"):
             baseline_throughput = round(sum([tp['throughput'] for tp in baseline]), 2)
             baseline_ko_count = round(sum([tp['ko'] for tp in baseline]), 2)
             baseline_ok_count = round(sum([tp['ok'] for tp in baseline]), 2)
@@ -462,7 +462,7 @@ class ReportBuilder:
             baseline_er_color = RED if current_error_rate > baseline_error_rate else GREEN
             baseline_throughput = round(current_tp - baseline_throughput, 2)
             baseline_error_rate = round(current_error_rate - baseline_error_rate, 2)
-        if thresholds:
+        if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked"):
             for th in thresholds:
                 if th['request_name'] == 'all':
                     if th['target'] == 'error_rate':
