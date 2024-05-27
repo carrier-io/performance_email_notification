@@ -42,7 +42,10 @@ class UIEmailNotification(object):
             aggregated_test_data = {}
             for metric in ["load_time", "tti", "fvc", "lvc"]:
                 _arr = [int(each[metric]) for each in test["pages"]]
-                aggregated_test_data[metric] = int(sum(_arr) / len(_arr))
+                try:
+                    aggregated_test_data[metric] = int(sum(_arr) / len(_arr))
+                except:
+                    aggregated_test_data[metric] = 0
             aggregated_test_data["date"] = last_reports[index]["start_time"][2:-3]
             aggregated_test_data["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             page_comparison.append(aggregated_test_data)
