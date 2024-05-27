@@ -77,8 +77,13 @@ class UIEmailNotification(object):
             print(e)
             base_id = None
         baseline_info = []
+        baseline_test_url = ""
+        baseline_test_date = ""
         if base_id:
+            baseline_report_info = self.__get_url(f"/ui_performance/reports/{self.galloper_project_id}?report_id={base_id}")
             baseline_info = self.__get_results_info(base_id)
+            baseline_test_url = f"{self.gelloper_url}/-/performance/ui/results?result_id={baseline_report_info['id']}"
+            baseline_test_date = baseline_report_info['start_time']
         baseline_comparison_pages = []
         baseline_comparison_actions = []
         aggregated_baseline, aggregated_current_results = [], []
@@ -198,6 +203,8 @@ class UIEmailNotification(object):
             color = RED
         t_params = {
             "scenario": report_info['name'],
+            "baseline_test_url": baseline_test_url,
+            "baseline_test_date": baseline_test_date,
             "start_time": report_info["start_time"],
             "status": status,
             "color": color,
