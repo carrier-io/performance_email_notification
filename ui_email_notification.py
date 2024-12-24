@@ -51,7 +51,7 @@ class UIEmailNotification(object):
             for metric in ["cls", "tbt"]:
                 if metric == "cls":
                     _arr = [float(each[metric]) for each in test["actions"]]
-                    aggregated_test_data[metric] = float(sum(_arr) / len(_arr)) if len(_arr) else 0
+                    aggregated_test_data[metric] = round(sum(_arr) / len(_arr),4) if len(_arr) else 0
                 else:
                     _arr = [int(each[metric]) for each in test["actions"]]
                     aggregated_test_data[metric] = int(sum(_arr) / len(_arr)) if len(_arr) else 0
@@ -100,7 +100,7 @@ class UIEmailNotification(object):
                             if metric == "tbt":
                                 _baseline_results[each["identifier"]][metric] = [int(each[metric])]
                             else:
-                                _baseline_results[each["identifier"]][metric] = [float(each[metric])]
+                                _baseline_results[each["identifier"]][metric] = [round(each[metric], 4)]
                 else:
                     if each["type"] == "page":
                         for metric in ["load_time", "fcp", "lcp", "tbt"]:
@@ -110,13 +110,13 @@ class UIEmailNotification(object):
                             if metric == "tbt":
                                 _baseline_results[each["identifier"]][metric].append(int(each[metric]))
                             else:
-                                _baseline_results[each["identifier"]][metric].append(float(each[metric]))
+                                _baseline_results[each["identifier"]][metric].append(round(each[metric], 4))
             for each in _baseline_results:
                 _ = {"identifier": each, "name": _baseline_results[each]["name"], "type": _baseline_results[each]["type"]}
                 for metric in ["load_time", "fcp", "lcp", "tbt", "tbt", "cls"]:
                     if metric in _baseline_results[each].keys():
                         if metric == "cls":
-                            _[metric] = float(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]))
+                            _[metric] = round(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]), 4)
                         else:
                             _[metric] = int(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]))
                 aggregated_baseline.append(_)
@@ -134,7 +134,7 @@ class UIEmailNotification(object):
                             if metric == "tbt":
                                 _current_results[each["identifier"]][metric] = [int(each[metric])]
                             else:
-                                _current_results[each["identifier"]][metric] = [float(each[metric])]
+                                _current_results[each["identifier"]][metric] = [round(each[metric], 4)]
                 else:
                     if each["type"] == "page":
                         for metric in ["load_time", "fcp", "lcp", "tbt"]:
@@ -144,13 +144,13 @@ class UIEmailNotification(object):
                             if metric == "tbt":
                                 _current_results[each["identifier"]][metric].append(int(each[metric]))
                             else:
-                                _current_results[each["identifier"]][metric].append(float(each[metric]))
+                                _current_results[each["identifier"]][metric].append(round(each[metric], 4))
             for each in _current_results:
                 _ = {"identifier": each, "name": _current_results[each]["name"], "type": _current_results[each]["type"]}
                 for metric in ["load_time", "fcp", "lcp", "tbt", "tbt", "cls"]:
                     if metric in _current_results[each].keys():
                         if metric == "cls":
-                            _[metric] = sum(_current_results[each][metric]) / len(_current_results[each][metric])
+                            _[metric] = round(sum(_current_results[each][metric]) / len(_current_results[each][metric]), 4)
                         else:
                             _[metric] = int(sum(_current_results[each][metric]) / len(_current_results[each][metric]))
                 aggregated_current_results.append(_)
@@ -309,7 +309,7 @@ class UIEmailNotification(object):
         count = 1
         for test in builds:
             labels.append(test['date'])
-            cls.append(test['cls'])
+            cls.append(round(test['cls'], 4))
             tbt.append(round(test['tbt'], 2))
             x.append(count)
             count += 1
