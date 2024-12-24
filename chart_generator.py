@@ -101,15 +101,15 @@ def ui_comparison_linechart(datapoints):
     b1 = ax.bar(datapoints['keys'], datapoints['latency_values'], color='#7EB26D')
     b2 = ax.bar(datapoints['keys'], datapoints['transfer_values'],
                 bottom=datapoints['latency_values'], color='#EAB839')
-    b3 = ax.bar(datapoints['keys'], datapoints['tti_values'],
+    b3 = ax.bar(datapoints['keys'], datapoints['tbt_values'],
                 bottom=[x + y for x, y in zip(datapoints['transfer_values'], datapoints['latency_values'])],
                 color='#6ED0E0')
     b4 = ax.bar(datapoints['keys'], datapoints['ttl_values'],
                 bottom=[x + y + z for x, y, z in zip(datapoints['transfer_values'],
                                                      datapoints['latency_values'],
-                                                     datapoints['tti_values'])],
+                                                     datapoints['tbt_values'])],
                 color='#EF843C')
-    ax.legend((b1[0], b2[0], b3[0], b4[0]), ('latency', 'transfer', 'tti', 'ttl'), loc='upper right')
+    ax.legend((b1[0], b2[0], b3[0], b4[0]), ('latency', 'transfer', 'tbt', 'ttl'), loc='upper right')
     ax.set_xlabel(datapoints['x_axis'])
     ax.set_ylabel(datapoints['y_axis'])
     ax.set_title(datapoints['title'])
@@ -128,15 +128,15 @@ def ui_metrics_chart_pages(datapoints):
     y_max = 0
     x_max = 0
     x_max = max(datapoints['values']) if max(datapoints['values']) > x_max else x_max
-    for each in ["total_time", "tti", "fvc", "lvc"]:
+    for each in ["total_time", "tbt", "fcp", "lcp"]:
         y_max = max(datapoints[each]) if max(datapoints[each]) > y_max else y_max
     _, = ax.plot(datapoints['values'], datapoints['total_time'], linewidth=2, label="Load time")
-    _, = ax.plot(datapoints['values'], datapoints['tti'], linewidth=2, label="TTI")
-    _, = ax.plot(datapoints['values'], datapoints['fvc'], linewidth=2, label="FVC")
-    _, = ax.plot(datapoints['values'], datapoints['lvc'], linewidth=2, label="LVC")
+    _, = ax.plot(datapoints['values'], datapoints['tbt'], linewidth=2, label="TBT")
+    _, = ax.plot(datapoints['values'], datapoints['fcp'], linewidth=2, label="FCP")
+    _, = ax.plot(datapoints['values'], datapoints['lcp'], linewidth=2, label="LCP")
     #_, = ax.plot(datapoints['values'], datapoints['keys'], 'o', linewidth=4, color=YELLOW)
 
-    for each in ["total_time", "tti", "fvc", "lvc"]:
+    for each in ["total_time", "tbt", "fcp", "lcp"]:
         for index, value in enumerate(datapoints[each]):
             ax.annotate(str(value), xy=(datapoints['values'][index], value + y_max * 0.05))
     ax.legend(loc='upper left')
