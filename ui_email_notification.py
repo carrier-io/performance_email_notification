@@ -100,7 +100,7 @@ class UIEmailNotification(object):
                             if metric == "tbt":
                                 _baseline_results[each["identifier"]][metric] = [int(each[metric])]
                             else:
-                                _baseline_results[each["identifier"]][metric] = [round(each[metric], 4)]
+                                _baseline_results[each["identifier"]][metric] = [round(float(each[metric]), 4)]
                 else:
                     if each["type"] == "page":
                         for metric in ["load_time", "fcp", "lcp", "tbt"]:
@@ -110,7 +110,7 @@ class UIEmailNotification(object):
                             if metric == "tbt":
                                 _baseline_results[each["identifier"]][metric].append(int(each[metric]))
                             else:
-                                _baseline_results[each["identifier"]][metric].append(round(each[metric], 4))
+                                _baseline_results[each["identifier"]][metric].append(round(float(each[metric]),4))
             for each in _baseline_results:
                 _ = {"identifier": each, "name": _baseline_results[each]["name"], "type": _baseline_results[each]["type"]}
                 for metric in ["load_time", "fcp", "lcp", "tbt", "tbt", "cls"]:
@@ -134,7 +134,7 @@ class UIEmailNotification(object):
                             if metric == "tbt":
                                 _current_results[each["identifier"]][metric] = [int(each[metric])]
                             else:
-                                _current_results[each["identifier"]][metric] = [round(each[metric], 4)]
+                                _current_results[each["identifier"]][metric] = [round(float(each[metric]), 4)]
                 else:
                     if each["type"] == "page":
                         for metric in ["load_time", "fcp", "lcp", "tbt"]:
@@ -144,7 +144,7 @@ class UIEmailNotification(object):
                             if metric == "tbt":
                                 _current_results[each["identifier"]][metric].append(int(each[metric]))
                             else:
-                                _current_results[each["identifier"]][metric].append(round(each[metric], 4))
+                                _current_results[each["identifier"]][metric].append(round(float(each[metric]), 4))
             for each in _current_results:
                 _ = {"identifier": each, "name": _current_results[each]["name"], "type": _current_results[each]["type"]}
                 for metric in ["load_time", "fcp", "lcp", "tbt", "tbt", "cls"]:
