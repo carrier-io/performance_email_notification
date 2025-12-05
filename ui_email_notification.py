@@ -200,6 +200,12 @@ class UIEmailNotification(object):
         if self.args.get("missed_thresholds") and missed_thresholds > self.args["missed_thresholds"]:
             status = "FAILED"
             color = RED
+        # Get browser version - try report_info first, then fall back to results_info
+        browser_version = report_info.get('browser_version')
+        if not browser_version or browser_version == 'undefined':
+            browser_version = results_info[0]['browser_version'] if results_info else 'Unknown'
+        print(f"[BROWSER VERSION] Parsed version: {browser_version}")
+        
         t_params = {
             "scenario": report_info['name'],
             "baseline_test_url": baseline_test_url,
@@ -212,8 +218,7 @@ class UIEmailNotification(object):
             "duration": report_info['duration'],
             "env": report_info['environment'],
             "browser": report_info['browser'].capitalize(),
-            "version": report_info['browser_version'],
-            "view_port": "1920x1080",
+            "version": browser_version,
             "loops": report_info["loops"],
             "pages": len(results_info)
         }
