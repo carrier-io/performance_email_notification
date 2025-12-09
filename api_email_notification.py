@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from datetime import datetime
+import requests
 from perfreporter.data_manager import DataManager
 from report_builder import ReportBuilder
 from email_notifications import Email
@@ -81,6 +82,9 @@ class ApiEmailNotification:
         tests_data, last_test_data, baseline, violation, compare_with_thresholds = \
             self.data_manager.get_api_test_info()
 
+        # Fetch report data for start_time and end_time
+        report_data = self._get_report_data()
+
         # Generate email body with charts
         email_body, charts, date = self.report_builder.create_api_email_body(
             self.args, 
@@ -89,7 +93,8 @@ class ApiEmailNotification:
             baseline,
             self.args['comparison_metric'],
             violation, 
-            compare_with_thresholds
+            compare_with_thresholds,
+            report_data
         )
 
         # Create email subject
@@ -120,3 +125,26 @@ class ApiEmailNotification:
         subject += f"Users count: {self.args['users']}. "
         subject += f"From {date}."
         return subject
+
+    def _get_report_data(self):
+        """
+        Fetch report data from Galloper API to get accurate start_time and end_time.
+        
+        Returns:
+            dict: Report data containing start_time and end_time, or None if request fails
+        """
+        headers = {'Authorization': f'bearer {self.args["token"]}'} if self.args.get("token") else {}
+        report_url = f"{self.args['galloper_url']}/api/v1/backend_performance/reports/{self.args['project_id']}?"
+        report_url += f"name={self.args['test']}&limit=1"
+        
+        try:
+            response = requests.get(report_url, headers={**headers, 'Content-type': 'application/json'})
+            response.raise_for_status()
+            data = response.json()
+            
+            if data.get('rows') and len(data['rows']) > 0:
+                return data['rows'][0]
+            return None
+        except Exception as e:
+            print(f"Failed to fetch report data: {e}")
+            return None

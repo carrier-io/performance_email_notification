@@ -35,8 +35,8 @@ STATUS_COLOR = {
 class ReportBuilder:
 
     def create_api_email_body(self, args, tests_data, last_test_data, baseline, comparison_metric,
-                              violation, thresholds=None):
-        test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation)
+                              violation, thresholds=None, report_data=None):
+        test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation, report_data)
         builds_comparison = self.create_builds_comparison(tests_data)
         general_metrics = self.get_general_metrics(args, builds_comparison[0], baseline, thresholds)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
@@ -57,7 +57,7 @@ class ReportBuilder:
         email_body = self.get_ui_email_body(test_params, top_five_thresholds, builds_comparison, last_test_data)
         return email_body, charts, str(test_params['start_time']).split(" ")[0]
 
-    def create_test_description(self, args, test, baseline, comparison_metric, violation):
+    def create_test_description(self, args, test, baseline, comparison_metric, violation, report_data=None):
         params = ['simulation', 'users', 'duration']
         test_params = {"test_type": args["test_type"], "env": args["env"],
                        "performance_degradation_rate": args["performance_degradation_rate"],
@@ -66,10 +66,18 @@ class ReportBuilder:
                        "color": STATUS_COLOR[args["status"].lower()]}
         for param in params:
             test_params[param] = test[0][param]
-        test_params['end'] = str(test[0]['time']).replace("T", " ").replace("Z", "")
-        timestamp = calendar.timegm(time.strptime(test_params['end'], '%Y-%m-%d %H:%M:%S'))
-        test_params['start'] = datetime.datetime.utcfromtimestamp(int(timestamp) - int(float(test[0]['duration']))) \
-            .strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Use start_time and end_time from report_data if available (for API tests)
+        if report_data and 'start_time' in report_data and 'end_time' in report_data:
+            # Format: "2025-12-08T10:08:17.315000Z" -> "2025-12-08 10:08:17"
+            test_params['start'] = str(report_data['start_time']).replace("T", " ").split(".")[0]
+            test_params['end'] = str(report_data['end_time']).replace("T", " ").split(".")[0]
+        else:
+            # Fallback to old calculation method (for backward compatibility)
+            test_params['end'] = str(test[0]['time']).replace("T", " ").replace("Z", "")
+            timestamp = calendar.timegm(time.strptime(test_params['end'], '%Y-%m-%d %H:%M:%S'))
+            test_params['start'] = datetime.datetime.utcfromtimestamp(int(timestamp) - int(float(test[0]['duration']))) \
+                .strftime('%Y-%m-%d %H:%M:%S')
         # test_params['status'], test_params['color'], test_params['failed_reason'] = self.check_status(args,
         #     test, baseline, comparison_metric, violation)
         return test_params
