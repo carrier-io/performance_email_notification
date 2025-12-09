@@ -43,12 +43,14 @@
                     <img src="succeed.png" alt="">
                 </div>
             </td>
+            {% if baseline_comparison_actions %}
             <td style="background: #F6F9FC; padding: 4px 12px;">
                 <div style="color: #32325D; font-size: 16px; font-weight: 400;">
                     <span style="margin-right: 30px">Baseline: {{ t_params.degradation_rate }}%</span>
                     <img src="succeed.png" alt="">
                 </div>
             </td>
+            {% endif %}
         </tr>
     </table>
     <div style="margin-top: 24px;">
@@ -57,20 +59,14 @@
             <tr>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Scenario:</td>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.scenario }}</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">View port:</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.view_port }}</td>
-            </tr>
-            <tr>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Duration:</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.duration }}</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Reasons:</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ error_message }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Start time:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.start_time }}</td>
             </tr>
             <tr>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Env:</td>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.env }}</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Start time:</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.start_time }}</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Duration:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.duration }}</td>
             </tr>
             <tr>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Loops:</td>
