@@ -16,6 +16,7 @@
 import time
 import calendar
 import datetime
+import pytz
 from chart_generator import alerts_linechart, barchart, ui_comparison_linechart
 from email.mime.image import MIMEImage
 import statistics
@@ -69,9 +70,23 @@ class ReportBuilder:
         
         # Use start_time and end_time from report_data if available (for API tests)
         if report_data and 'start_time' in report_data and 'end_time' in report_data:
-            # Format: "2025-12-08T10:08:17.315000Z" -> "2025-12-08 10:08:17"
-            test_params['start'] = str(report_data['start_time']).replace("T", " ").split(".")[0]
-            test_params['end'] = str(report_data['end_time']).replace("T", " ").split(".")[0]
+            # Convert from UTC to CET
+            utc_tz = pytz.UTC
+            cet_tz = pytz.timezone('CET')
+            
+            # Parse start_time: "2025-12-08T10:08:17.315000Z"
+            start_time_str = str(report_data['start_time']).replace("Z", "").split(".")[0]
+            start_dt_utc = datetime.datetime.strptime(start_time_str, '%Y-%m-%dT%H:%M:%S')
+            start_dt_utc = utc_tz.localize(start_dt_utc)
+            start_dt_cet = start_dt_utc.astimezone(cet_tz)
+            test_params['start'] = start_dt_cet.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Parse end_time: "2025-12-08T10:10:22.219000Z"
+            end_time_str = str(report_data['end_time']).replace("Z", "").split(".")[0]
+            end_dt_utc = datetime.datetime.strptime(end_time_str, '%Y-%m-%dT%H:%M:%S')
+            end_dt_utc = utc_tz.localize(end_dt_utc)
+            end_dt_cet = end_dt_utc.astimezone(cet_tz)
+            test_params['end'] = end_dt_cet.strftime('%Y-%m-%d %H:%M:%S')
         else:
             # Fallback to old calculation method (for backward compatibility)
             test_params['end'] = str(test[0]['time']).replace("T", " ").replace("Z", "")
