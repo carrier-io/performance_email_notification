@@ -133,16 +133,22 @@
         </thead>
         <tbody>
         <tr>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Troughput</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Throughput, req/sec</td>
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.baseline_tp_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_tp }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_tp_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_tp }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_tp }}</td>
         </tr>
         <tr>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Error rate</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Error rate, %</td>
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.baseline_er_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_er }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_er_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_er }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_er }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Response time (pct95), sec</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.baseline_rt_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_rt }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_rt_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_rt }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_rt }}</td>
         </tr>
         </tbody>
     </table>
@@ -212,9 +218,9 @@
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Thrpt, req/sec</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Error, count</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Min, sec</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Pct95, sec</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Pct90, sec</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Max, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Pct90, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Pct95, sec</th>
         </tr>
         </thead>
         <tbody>

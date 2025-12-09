@@ -468,14 +468,19 @@ class ReportBuilder:
     def get_general_metrics(args, build_data, baseline, thresholds=None):
         current_tp = build_data['throughput']
         current_error_rate = build_data['error_rate']
+        current_rt = build_data['pct95']
         baseline_throughput = "N/A"
         baseline_error_rate = "N/A"
+        baseline_rt = "N/A"
         thresholds_tp_rate = "N/A"
         thresholds_error_rate = "N/A"
+        thresholds_rt = "N/A"
         thresholds_tp_color = GRAY
         thresholds_er_color = GRAY
+        thresholds_rt_color = GRAY
         baseline_tp_color = GRAY
         baseline_er_color = GRAY
+        baseline_rt_color = GRAY
         if baseline and args.get("quality_gate_config", {}).get("baseline", {}).get("checked"):
             baseline_throughput = round(sum([tp['throughput'] for tp in baseline]), 2)
             baseline_ko_count = round(sum([tp['ko'] for tp in baseline]), 2)
@@ -485,6 +490,9 @@ class ReportBuilder:
             baseline_er_color = RED if current_error_rate > baseline_error_rate else GREEN
             baseline_throughput = round(current_tp - baseline_throughput, 2)
             baseline_error_rate = round(current_error_rate - baseline_error_rate, 2)
+            baseline_pct95 = round(sum([b['pct95'] for b in baseline]) / len(baseline), 2)
+            baseline_rt_color = RED if current_rt > baseline_pct95 else GREEN
+            baseline_rt = round((current_rt - baseline_pct95) / 1000, 2)
         if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked"):
             for th in thresholds:
                 if th['request_name'] == 'all':
@@ -500,6 +508,9 @@ class ReportBuilder:
                             thresholds_tp_color = RED
                         else:
                             thresholds_tp_color = GREEN
+                    if th['target'] == 'response_time':
+                        thresholds_rt = round((th["metric"] - th['value']) / 1000, 2)
+                        thresholds_rt_color = RED if th['threshold'] == "red" else GREEN
         return {
             "current_tp": current_tp,
             "baseline_tp": baseline_throughput,
@@ -510,7 +521,12 @@ class ReportBuilder:
             "baseline_er": baseline_error_rate,
             "baseline_er_color": baseline_er_color,
             "threshold_er": thresholds_error_rate,
-            "threshold_er_color": thresholds_er_color
+            "threshold_er_color": thresholds_er_color,
+            "current_rt": round(current_rt / 1000, 2),
+            "baseline_rt": baseline_rt,
+            "baseline_rt_color": baseline_rt_color,
+            "threshold_rt": thresholds_rt,
+            "threshold_rt_color": thresholds_rt_color
         }
 
     @staticmethod
