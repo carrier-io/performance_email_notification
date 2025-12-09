@@ -15,7 +15,7 @@
 import json
 from os import environ
 from email_client import EmailClient
-from email_notifications import ApiEmailNotification
+from api_email_notification import ApiEmailNotification
 from ui_email_notification import UIEmailNotification
 from time import sleep
 from typing import Union
@@ -36,7 +36,7 @@ def lambda_handler(event: Union[list, dict], context):
                         args['notification_type'], args['smtp_password'], args['user_list']]):
                 raise Exception('Some required parameters not passed')
 
-            email = ApiEmailNotification(args).email_notification()
+            email = ApiEmailNotification(args).api_email_notification()
         elif args['notification_type'] == 'ui':
             if not all([args['test_id'], args['report_id']]):
                 raise Exception('test_id and report_id are required for UI reports')
