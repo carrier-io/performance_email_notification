@@ -250,6 +250,7 @@ class ReportBuilder:
         if len(builds) > 1:
             charts.append(self.create_success_rate_chart(builds))
             charts.append(self.create_throughput_chart(builds))
+            charts.append(self.create_response_time_chart(builds))
         return charts
 
     @staticmethod
@@ -305,6 +306,34 @@ class ReportBuilder:
         fp = open('/tmp/throughput.png', 'rb')
         image = MIMEImage(fp.read())
         image.add_header('Content-ID', '<throughput>')
+        fp.close()
+        return image
+
+    @staticmethod
+    def create_response_time_chart(builds):
+        labels, keys, values = [], [], []
+        count = 1
+        for test in builds:
+            labels.append(test['date'])
+            keys.append(test['pct95'])
+            values.append(count)
+            count += 1
+        datapoints = {
+            'title': 'Response Time (pct95)',
+            'label': 'Response Time, ms',
+            'x_axis': 'Test Runs',
+            'y_axis': 'Response Time, ms',
+            'width': 10,
+            'height': 3,
+            'path_to_save': '/tmp/response_time.png',
+            'keys': keys[::-1],
+            'values': values,
+            'labels': labels[::-1]
+        }
+        alerts_linechart(datapoints)
+        fp = open('/tmp/response_time.png', 'rb')
+        image = MIMEImage(fp.read())
+        image.add_header('Content-ID', '<response_time>')
         fp.close()
         return image
 
