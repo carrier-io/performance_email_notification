@@ -17,10 +17,36 @@ import time
 import calendar
 import datetime
 import pytz
+import requests
 from chart_generator import alerts_linechart, barchart, ui_comparison_linechart
 from email.mime.image import MIMEImage
 import statistics
 from jinja2 import Environment, FileSystemLoader
+
+
+def convert_utc_to_cet(utc_datetime_str, output_format='%Y-%m-%d %H:%M:%S'):
+    """
+    Convert UTC datetime string to CET/CEST timezone.
+    
+    Args:
+        utc_datetime_str: UTC datetime string in format 'YYYY-MM-DD HH:MM:SS'
+        output_format: Output format for datetime string
+    
+    Returns:
+        Datetime string in CET/CEST timezone
+    """
+    utc_tz = pytz.UTC
+    cet_tz = pytz.timezone('Europe/Paris')  # CET/CEST timezone
+    
+    # Parse UTC datetime string
+    utc_dt = datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S')
+    utc_dt = utc_tz.localize(utc_dt)
+    
+    # Convert to CET
+    cet_dt = utc_dt.astimezone(cet_tz)
+    
+    return cet_dt.strftime(output_format)
+
 
 GREEN = '#028003'
 YELLOW = '#FFA400'
@@ -35,10 +61,69 @@ STATUS_COLOR = {
 
 class ReportBuilder:
 
+    @staticmethod
+    def fetch_api_reports(galloper_url, galloper_project_id, name, limit, token):
+        """
+        Get API reports from Galloper.
+        Return total, rows, start_time, end_time from reports.
+        """
+        url = f"{galloper_url}/api/v1/backend_performance/reports/{galloper_project_id}?name={name}&limit={limit}"
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        total = data.get("total", 0)
+        rows = data.get("rows", [])
+        start_time = None
+        end_time = None
+        if rows and isinstance(rows, list):
+            first_row = rows[0]
+            start_time = first_row.get("start_time")
+            end_time = first_row.get("end_time")
+        return total, rows, start_time, end_time
+    
+    def fetch_api_reports_for_comparison(self, args):
+        """
+        Fetch API reports to get start_time for historical tests.
+        end_time is only included for the latest (first) report.
+        Returns a dict mapping build_id to report data.
+        """
+        try:
+            test_name = args.get('test') or args.get('simulation')
+            galloper_url = args.get('galloper_url')
+            project_id = args.get('project_id')
+            token = args.get('token')
+            limit = args.get('test_limit', 5)
+            
+            if not all([galloper_url, project_id, token, test_name]):
+                return {}
+            
+            _, rows, _, _ = self.fetch_api_reports(galloper_url, project_id, test_name, limit, token)
+            
+            # Create a mapping of build_id to report data
+            reports_map = {}
+            for idx, row in enumerate(rows):
+                build_id = row.get('build_id')
+                if build_id:
+                    report_data = {
+                        'start_time': row.get('start_time'),
+                        'duration': row.get('duration')
+                    }
+                    # Only include end_time for the first (latest) report
+                    if idx == 0:
+                        report_data['end_time'] = row.get('end_time')
+                    reports_map[build_id] = report_data
+            return reports_map
+        except Exception as e:
+            print(f"Warning: Could not fetch API reports for comparison: {e}")
+            return {}
+
     def create_api_email_body(self, args, tests_data, last_test_data, baseline, comparison_metric,
                               violation, thresholds=None, report_data=None):
         test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation, report_data)
-        builds_comparison = self.create_builds_comparison(tests_data)
+        # Fetch API reports to get start_time for historical tests
+        api_reports = self.fetch_api_reports_for_comparison(args)
+        builds_comparison = self.create_builds_comparison(tests_data, args, api_reports)
         general_metrics = self.get_general_metrics(args, builds_comparison[0], baseline, thresholds)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
         baseline_and_thresholds = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric,
@@ -193,21 +278,35 @@ class ReportBuilder:
             return 'FAILED', 'missed thresholds rate - ' + str(violation) + ' %'
         return 'SUCCESS', ''
 
-    def create_builds_comparison(self, tests):
+    def create_builds_comparison(self, tests, args, api_reports=None):
         builds_comparison = []
+        if api_reports is None:
+            api_reports = {}
+            
         for test in tests:
             summary_request, test_info = {}, {}
             for req in test:
                 if req["request_name"] == "All":
                     summary_request = req
 
-            date = str(test[0]['time']).replace("T", " ").replace("Z", "")
-            try:
-                timestamp = calendar.timegm(time.strptime(date, '%Y-%m-%d %H:%M:%S'))
-            except ValueError:
-                timestamp = calendar.timegm(time.strptime(date.split(".")[0], '%Y-%m-%d %H:%M:%S'))
             if summary_request:
-                test_info['date'] = datetime.datetime.utcfromtimestamp(int(timestamp)).strftime('%d-%b %H:%M')
+                # Try to get start_time from API first
+                build_id = test[0].get('build_id')
+                api_data = api_reports.get(build_id, {})
+                
+                if api_data and api_data.get('start_time'):
+                    # Use start_time from API
+                    utc_date = str(api_data['start_time']).replace("T", " ").replace("Z", "").split(".")[0]
+                else:
+                    # Fallback: Calculate start_time from time field and duration
+                    time_str = str(test[0]['time']).replace("T", " ").replace("Z", "").split(".")[0]
+                    time_dt = datetime.datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
+                    duration_seconds = int(test[0].get('duration', 0))
+                    start_dt = time_dt - datetime.timedelta(seconds=duration_seconds)
+                    utc_date = start_dt.strftime('%Y-%m-%d %H:%M:%S')
+                
+                test_info['date'] = convert_utc_to_cet(utc_date, '%d-%b %H:%M')
+                test_info['date_img'] = convert_utc_to_cet(utc_date, '%d-%b\n%H:%M')
                 test_info['total'] = summary_request["total"]
                 test_info['throughput'] = round(summary_request["throughput"], 2)
                 test_info['pct95'] = summary_request["pct95"]
@@ -228,7 +327,7 @@ class ReportBuilder:
     @staticmethod
     def compare_builds(build, last_build):
         build_info = {}
-        for param in ['date', 'error_rate', 'pct95', 'total', 'throughput']:
+        for param in ['date', 'date_img', 'error_rate', 'pct95', 'total', 'throughput']:
             param_diff = None
             if param in ['error_rate']:
                 param_diff = round(float(build[param]) - float(last_build.get(param, 0.0)), 2)
@@ -258,7 +357,7 @@ class ReportBuilder:
         labels, keys, values = [], [], []
         count = 1
         for test in builds:
-            labels.append(test['date'])
+            labels.append(test.get('date_img', test.get('date', '')))
             keys.append(round(100 - test['error_rate'], 2))
             values.append(count)
             count += 1
@@ -286,7 +385,7 @@ class ReportBuilder:
         labels, keys, values = [], [], []
         count = 1
         for test in builds:
-            labels.append(test['date'])
+            labels.append(test.get('date_img', test.get('date', '')))
             keys.append(test['throughput'])
             values.append(count)
             count += 1
@@ -314,7 +413,7 @@ class ReportBuilder:
         labels, keys, values = [], [], []
         count = 1
         for test in builds:
-            labels.append(test['date'])
+            labels.append(test.get('date_img', test.get('date', '')))
             keys.append(test['pct95'])
             values.append(count)
             count += 1
