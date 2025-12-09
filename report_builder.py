@@ -654,7 +654,9 @@ class ReportBuilder:
             "baseline_rt": baseline_rt,
             "baseline_rt_color": baseline_rt_color,
             "threshold_rt": thresholds_rt,
-            "threshold_rt_color": thresholds_rt_color
+            "threshold_rt_color": thresholds_rt_color,
+            "show_baseline_column": baseline_throughput != "N/A" or baseline_error_rate != "N/A" or baseline_rt != "N/A",
+            "show_threshold_column": thresholds_tp_rate != "N/A" or thresholds_error_rate != "N/A" or thresholds_rt != "N/A"
         }
 
     @staticmethod
@@ -716,7 +718,18 @@ class ReportBuilder:
                 hundered = float(exceeded_thresholds[_]['response_time'])
             else:
                 exceeded_thresholds[_]['share'] = int((100 * float(exceeded_thresholds[_]['response_time'])) / hundered)
-        return exceeded_thresholds
+        
+        # Determine column visibility for Request metrics table
+        show_baseline = any(req.get('baseline') != "N/A" for req in exceeded_thresholds)
+        show_threshold = any(req.get('threshold') != "N/A" for req in exceeded_thresholds)
+        show_representation = show_baseline or show_threshold
+        
+        return {
+            "requests": exceeded_thresholds,
+            "show_baseline_column": show_baseline,
+            "show_threshold_column": show_threshold,
+            "show_representation_column": show_representation
+        }
 
     def create_ui_builds_comparison(self, tests):
         comparison, builds_info = [], []
