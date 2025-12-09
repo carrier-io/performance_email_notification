@@ -685,6 +685,9 @@ class ReportBuilder:
             if test_params["performance_degradation_rate"] > args["performance_degradation_rate_qg"]:
                 test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
                 test_params["baseline_status"] = "failed"
+            elif test_params["performance_degradation_rate"] > 0:
+                test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
+                test_params["baseline_status"] = "warning"
             else:
                 test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
                 test_params["baseline_status"] = "success"
@@ -695,6 +698,9 @@ class ReportBuilder:
             if test_params["missed_threshold_rate"] > args["missed_thresholds_qg"]:
                 test_params["missed_threshold_rate"] = f'{test_params["missed_threshold_rate"]}%'
                 test_params["threshold_status"] = "failed"
+            elif test_params["missed_threshold_rate"] > 0:
+                test_params["missed_threshold_rate"] = f'{test_params["missed_threshold_rate"]}%'
+                test_params["threshold_status"] = "warning"
             else:
                 test_params["missed_threshold_rate"] = f'{test_params["missed_threshold_rate"]}%'
                 test_params["threshold_status"] = "success"

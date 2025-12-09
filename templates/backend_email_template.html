@@ -19,8 +19,11 @@
 <table style="color: #fff; background: #875FFC; padding: 31px; font-size: 16px; font-weight: 600;">
     <tr>
         <td>
-            <img style="color: #ff0000; padding-right: 15px;"
-                    src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABQAAAAYCAYAAAD6S912AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAFdSURBVHgBrVQLccMwDHV2AxAGG4OGQVsE2xAEQiEEQiH0iqBj4A5Bx8BjEAia1JOvyoucpp93p4scy0+WLCmEmSCiOjwDTPTOElkSSxseBZNslCxD9I9bCORGW3sb/bejIWT9NkVUs3QsvTm0dZxFIO5GxHIbIOqn8qX2CdLQ5s0IRB2+qOTMc+BElMJUTni9BIfRsZE0HLKBJVxBPndAFEvO1bFPyN+FCSOBo5YuuRObBglfxykPtcqxqqp1Dks+vN6z/sP6ydgN8BLK+FMyKeIka8mV6sU2nCLMaIz+ec14DuGe5ZvlyPKlXw+/LGvvUZbmQUY9q/u9PYMGSIglcy4RGrfdgbxeRkLzv6Fhe2VE72Z683OnpOL1w6D23P4m6CY7mlZqIIXdwSFJA/a3O9JCwSNRYUKTP+ZiKUIvd6IvTPg97PlEM8I5GV1IN+FWOMTuvLyHWAasX3eAf8SBG7h4AQZrAAAAAElFTkSuQmCC">
+            <img style="color: #ff0000; padding-right: 15px; display: inline-block;"
+                    alt="Logo"
+                    width="20"
+                    height="24"
+                    src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAYCAYAAAD6S912AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAFdSURBVHgBrVQLccMwDHV2AxAGG4OGQVsE2xAEQiEEQiH0iqBj4A5Bx8BjEAia1JOvyoucpp93p4scy0+WLCmEmSCiOjwDTPTOElkSSxseBZNslCxD9I9bCORGW3sb/bejIWT9NkVUs3QsvTm0dZxFIO5GxHIbIOqn8qX2CdLQ5s0IRB2+qOTMc+BElMJUTni9BIfRsZE0HLKBJVxBPndAFEvO1bFPyN+FCSOBo5YuuRObBglfxykPtcqxqqp1Dks+vN6z/sP6ydgN8BLK+FMyKeIka8mV6sU2nCLMaIz+ec14DuGe5ZvlyPKlXw+/LGvvUZbmQUY9q/u9PYMGSIglcy4RGrfdgbxeRkLzv6Fhe2VE72Z683OnpOL1w6D23P4m6CY7mlZqIIXdwSFJA/a3O9JCwSNRYUKTP+ZiKUIvd6IvTPg97PlEM8I5GV1IN+FWOMTuvLyHWAasX3eAf8SBG7h4AQZrAAAAAElFTkSuQmCC">
         </td>
         <td style="margin-left: 8px; font-size: 14px; font-weight: 700; width: 100%">
             Backend Performance Report
@@ -40,29 +43,35 @@
             </td>
             <td style="background: #F6F9FC; padding: 4px 12px; border-radius: 4px;">
                 <div style="color: #32325D; font-size: 16px; font-weight: 400;">
-                    <span style="margin-right: 30px">SLA failed rate: {{ t_params.missed_threshold_rate }}</span>
+                    <span style="margin-right: 10px">SLA failed rate: {{ t_params.missed_threshold_rate }}</span>
                     {% if t_params.threshold_status == 'success' %}
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMS4xNjY3IDZDMTEuMTY2NyA5LjAzNzU3IDguNzA0MzEgMTEuNSA1LjY2Njc1IDExLjVDMi42MjkxOCAxMS41IDAuMTY2NzQ4IDkuMDM3NTcgMC4xNjY3NDggNkMwLjE2Njc0OCAyLjk2MjQzIDIuNjI5MTggMC41IDUuNjY2NzUgMC41QzguNzA0MzEgMC41IDExLjE2NjcgMi45NjI0MyAxMS4xNjY3IDZaTTguNjAyMDUgNS4wNTkwMUM4Ljg0MTc1IDQuODMwMjEgOC44NTA1OCA0LjQ1MDQyIDguNjIxNzggNC4yMTA3MkM4LjM5Mjk3IDMuOTcxMDIgOC4wMTMxOCAzLjk2MjE4IDcuNzczNDggNC4xOTA5OUw0LjgyNjYzIDcuMDAzODZMMy41NjAzOCA1Ljc5NTE2QzMuMzIwNjggNS41NjYzNSAyLjk0MDg5IDUuNTc1MTggMi43MTIwOCA1LjgxNDg4QzIuNDgzMjggNi4wNTQ1OCAyLjQ5MjExIDYuNDM0MzcgMi43MzE4MSA2LjY2MzE4TDQuNDEyMzQgOC4yNjczNEM0LjY0NDIgOC40ODg2NiA1LjAwOTA2IDguNDg4NjYgNS4yNDA5MSA4LjI2NzM1TDguNjAyMDUgNS4wNTkwMVoiIGZpbGw9IiMxMzlBNDEiLz4KPC9zdmc+Cg==">
+                    <span style="color: #139A41; font-size: 16px; font-weight: bold;">✓</span>
+                    {% endif %}
+                    {% if t_params.threshold_status == 'warning' %}
+                    <span style="color: #FFA500; font-size: 16px; font-weight: bold;">⚠</span>
                     {% endif %}
                     {% if t_params.threshold_status == 'failed' %}
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01LjgzMzM3IDExLjVDMi43OTU4MSAxMS41IDAuMzMzMzc0IDkuMDM3NTcgMC4zMzMzNzQgNkMwLjMzMzM3NCAyLjk2MjQzIDIuNzk1ODEgMC41IDUuODMzMzcgMC41QzguODcwOTQgMC41IDExLjMzMzQgMi45NjI0MyAxMS4zMzM0IDZDMTEuMzMzNCA5LjAzNzU3IDguODcwOTQgMTEuNSA1LjgzMzM3IDExLjVaTTguMzMzMzcgNi42QzguNjY0NzQgNi42IDguOTMzMzcgNi4zMzEzNyA4LjkzMzM3IDZDOC45MzMzNyA1LjY2ODYzIDguNjY0NzQgNS40IDguMzMzMzcgNS40TDMuMzMzMzcgNS40QzMuMDAyIDUuNCAyLjczMzM3IDUuNjY4NjMgMi43MzMzNyA2QzIuNzMzMzcgNi4zMzEzNyAzLjAwMiA2LjYgMy4zMzMzNyA2LjZMOC4zMzMzNyA2LjZaIiBmaWxsPSIjRjMyNjI2Ii8+Cjwvc3ZnPgo=">
+                    <span style="color: #F32626; font-size: 16px; font-weight: bold;">✗</span>
                     {% endif %}
                     {% if t_params.threshold_status == 'N/A' %}
-                    N/A
+                    <span style="color: #757F99;">N/A</span>
                     {% endif %}
                 </div>
             </td>
             <td style="background: #F6F9FC; padding: 4px 12px; border-radius: 4px;">
                 <div style="color: #32325D; font-size: 16px; font-weight: 400;">
-                    <span style="margin-right: 30px">Baseline failed rate: {{ t_params.performance_degradation_rate }}</span>
+                    <span style="margin-right: 10px">Baseline failed rate: {{ t_params.performance_degradation_rate }}</span>
                     {% if t_params.baseline_status == 'success' %}
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMS4xNjY3IDZDMTEuMTY2NyA5LjAzNzU3IDguNzA0MzEgMTEuNSA1LjY2Njc1IDExLjVDMi42MjkxOCAxMS41IDAuMTY2NzQ4IDkuMDM3NTcgMC4xNjY3NDggNkMwLjE2Njc0OCAyLjk2MjQzIDIuNjI5MTggMC41IDUuNjY2NzUgMC41QzguNzA0MzEgMC41IDExLjE2NjcgMi45NjI0MyAxMS4xNjY3IDZaTTguNjAyMDUgNS4wNTkwMUM4Ljg0MTc1IDQuODMwMjEgOC44NTA1OCA0LjQ1MDQyIDguNjIxNzggNC4yMTA3MkM4LjM5Mjk3IDMuOTcxMDIgOC4wMTMxOCAzLjk2MjE4IDcuNzczNDggNC4xOTA5OUw0LjgyNjYzIDcuMDAzODZMMy41NjAzOCA1Ljc5NTE2QzMuMzIwNjggNS41NjYzNSAyLjk0MDg5IDUuNTc1MTggMi43MTIwOCA1LjgxNDg4QzIuNDgzMjggNi4wNTQ1OCAyLjQ5MjExIDYuNDM0MzcgMi43MzE4MSA2LjY2MzE4TDQuNDEyMzQgOC4yNjczNEM0LjY0NDIgOC40ODg2NiA1LjAwOTA2IDguNDg4NjYgNS4yNDA5MSA4LjI2NzM1TDguNjAyMDUgNS4wNTkwMVoiIGZpbGw9IiMxMzlBNDEiLz4KPC9zdmc+Cg==">
+                    <span style="color: #139A41; font-size: 16px; font-weight: bold;">✓</span>
+                    {% endif %}
+                    {% if t_params.baseline_status == 'warning' %}
+                    <span style="color: #FFA500; font-size: 16px; font-weight: bold;">⚠</span>
                     {% endif %}
                     {% if t_params.baseline_status == 'failed' %}
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01LjgzMzM3IDExLjVDMi43OTU4MSAxMS41IDAuMzMzMzc0IDkuMDM3NTcgMC4zMzMzNzQgNkMwLjMzMzM3NCAyLjk2MjQzIDIuNzk1ODEgMC41IDUuODMzMzcgMC41QzguODcwOTQgMC41IDExLjMzMzQgMi45NjI0MyAxMS4zMzM0IDZDMTEuMzMzNCA5LjAzNzU3IDguODcwOTQgMTEuNSA1LjgzMzM3IDExLjVaTTguMzMzMzcgNi42QzguNjY0NzQgNi42IDguOTMzMzcgNi4zMzEzNyA4LjkzMzM3IDZDOC45MzMzNyA1LjY2ODYzIDguNjY0NzQgNS40IDguMzMzMzcgNS40TDMuMzMzMzcgNS40QzMuMDAyIDUuNCAyLjczMzM3IDUuNjY4NjMgMi43MzMzNyA2QzIuNzMzMzcgNi4zMzEzNyAzLjAwMiA2LjYgMy4zMzMzNyA2LjZMOC4zMzMzNyA2LjZaIiBmaWxsPSIjRjMyNjI2Ii8+Cjwvc3ZnPgo=">
+                    <span style="color: #F32626; font-size: 16px; font-weight: bold;">✗</span>
                     {% endif %}
                     {% if t_params.baseline_status == 'N/A' %}
-                    N/A
+                    <span style="color: #757F99;">N/A</span>
                     {% endif %}
                 </div>
             </td>
@@ -74,8 +83,7 @@
         <ul style="padding-left: 25px;">
         {% for reason in t_params.reasons_to_fail_report %}
             <li style="list-style: none">
-                <span style="margin-right: 5px;"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik01LjgzMzM3IDExLjVDMi43OTU4MSAxMS41IDAuMzMzMzc0IDkuMDM3NTcgMC4zMzMzNzQgNkMwLjMzMzM3NCAyLjk2MjQzIDIuNzk1ODEgMC41IDUuODMzMzcgMC41QzguODcwOTQgMC41IDExLjMzMzQgMi45NjI0MyAxMS4zMzM0IDZDMTEuMzMzNCA5LjAzNzU3IDguODcwOTQgMTEuNSA1LjgzMzM3IDExLjVaTTguMzMzMzcgNi42QzguNjY0NzQgNi42IDguOTMzMzcgNi4zMzEzNyA4LjkzMzM3IDZDOC45MzMzNyA1LjY2ODYzIDguNjY0NzQgNS40IDguMzMzMzcgNS40TDMuMzMzMzcgNS40QzMuMDAyIDUuNCAyLjczMzM3IDUuNjY4NjMgMi43MzMzNyA2QzIuNzMzMzcgNi4zMzEzNyAzLjAwMiA2LjYgMy4zMzMzNyA2LjZMOC4zMzMzNyA2LjZaIiBmaWxsPSIjRjMyNjI2Ii8+Cjwvc3ZnPgo=">
-                </span>{{ reason }}
+                <span style="color: #F32626; font-size: 14px; font-weight: bold; margin-right: 5px;">✗</span>{{ reason }}
             </li>
         {% endfor %}
         </ul>
