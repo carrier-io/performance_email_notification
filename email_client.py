@@ -16,8 +16,8 @@ class EmailClient(object):
             self.sender = self.user
 
     def send_email(self, email):
-        with smtplib.SMTP_SSL(host=self.host, port=self.port) as server:
-            server.ehlo()
+        with smtplib.SMTP(host=self.host, port=self.port) as server:
+            server.starttls()
             server.login(self.user, self.password)
 
             for recipient in email.users_to:
