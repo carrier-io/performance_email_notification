@@ -16,10 +16,37 @@
 import time
 import calendar
 import datetime
+import pytz
+import requests
 from chart_generator import alerts_linechart, barchart, ui_comparison_linechart
 from email.mime.image import MIMEImage
 import statistics
 from jinja2 import Environment, FileSystemLoader
+
+
+def convert_utc_to_cet(utc_datetime_str, output_format='%Y-%m-%d %H:%M:%S'):
+    """
+    Convert UTC datetime string to CET/CEST timezone.
+    
+    Args:
+        utc_datetime_str: UTC datetime string in format 'YYYY-MM-DD HH:MM:SS'
+        output_format: Output format for datetime string
+    
+    Returns:
+        Datetime string in CET/CEST timezone
+    """
+    utc_tz = pytz.UTC
+    cet_tz = pytz.timezone('Europe/Paris')  # CET/CEST timezone
+    
+    # Parse UTC datetime string
+    utc_dt = datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S')
+    utc_dt = utc_tz.localize(utc_dt)
+    
+    # Convert to CET
+    cet_dt = utc_dt.astimezone(cet_tz)
+    
+    return cet_dt.strftime(output_format)
+
 
 GREEN = '#028003'
 YELLOW = '#FFA400'
@@ -34,10 +61,69 @@ STATUS_COLOR = {
 
 class ReportBuilder:
 
+    @staticmethod
+    def fetch_api_reports(galloper_url, galloper_project_id, name, limit, token):
+        """
+        Get API reports from Galloper.
+        Return total, rows, start_time, end_time from reports.
+        """
+        url = f"{galloper_url}/api/v1/backend_performance/reports/{galloper_project_id}?name={name}&limit={limit}"
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        total = data.get("total", 0)
+        rows = data.get("rows", [])
+        start_time = None
+        end_time = None
+        if rows and isinstance(rows, list):
+            first_row = rows[0]
+            start_time = first_row.get("start_time")
+            end_time = first_row.get("end_time")
+        return total, rows, start_time, end_time
+    
+    def fetch_api_reports_for_comparison(self, args):
+        """
+        Fetch API reports to get start_time for historical tests.
+        end_time is only included for the latest (first) report.
+        Returns a dict mapping build_id to report data.
+        """
+        try:
+            test_name = args.get('test') or args.get('simulation')
+            galloper_url = args.get('galloper_url')
+            project_id = args.get('project_id')
+            token = args.get('token')
+            limit = args.get('test_limit', 5)
+            
+            if not all([galloper_url, project_id, token, test_name]):
+                return {}
+            
+            _, rows, _, _ = self.fetch_api_reports(galloper_url, project_id, test_name, limit, token)
+            
+            # Create a mapping of build_id to report data
+            reports_map = {}
+            for idx, row in enumerate(rows):
+                build_id = row.get('build_id')
+                if build_id:
+                    report_data = {
+                        'start_time': row.get('start_time'),
+                        'duration': row.get('duration')
+                    }
+                    # Only include end_time for the first (latest) report
+                    if idx == 0:
+                        report_data['end_time'] = row.get('end_time')
+                    reports_map[build_id] = report_data
+            return reports_map
+        except Exception as e:
+            print(f"Warning: Could not fetch API reports for comparison: {e}")
+            return {}
+
     def create_api_email_body(self, args, tests_data, last_test_data, baseline, comparison_metric,
-                              violation, thresholds=None):
-        test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation)
-        builds_comparison = self.create_builds_comparison(tests_data)
+                              violation, thresholds=None, report_data=None):
+        test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation, report_data)
+        # Fetch API reports to get start_time for historical tests
+        api_reports = self.fetch_api_reports_for_comparison(args)
+        builds_comparison = self.create_builds_comparison(tests_data, args, api_reports)
         general_metrics = self.get_general_metrics(args, builds_comparison[0], baseline, thresholds)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
         baseline_and_thresholds = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric,
@@ -57,7 +143,7 @@ class ReportBuilder:
         email_body = self.get_ui_email_body(test_params, top_five_thresholds, builds_comparison, last_test_data)
         return email_body, charts, str(test_params['start_time']).split(" ")[0]
 
-    def create_test_description(self, args, test, baseline, comparison_metric, violation):
+    def create_test_description(self, args, test, baseline, comparison_metric, violation, report_data=None):
         params = ['simulation', 'users', 'duration']
         test_params = {"test_type": args["test_type"], "env": args["env"],
                        "performance_degradation_rate": args["performance_degradation_rate"],
@@ -66,10 +152,32 @@ class ReportBuilder:
                        "color": STATUS_COLOR[args["status"].lower()]}
         for param in params:
             test_params[param] = test[0][param]
-        test_params['end'] = str(test[0]['time']).replace("T", " ").replace("Z", "")
-        timestamp = calendar.timegm(time.strptime(test_params['end'], '%Y-%m-%d %H:%M:%S'))
-        test_params['start'] = datetime.datetime.utcfromtimestamp(int(timestamp) - int(float(test[0]['duration']))) \
-            .strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Use start_time and end_time from report_data if available (for API tests)
+        if report_data and 'start_time' in report_data and 'end_time' in report_data:
+            # Convert from UTC to CET
+            utc_tz = pytz.UTC
+            cet_tz = pytz.timezone('CET')
+            
+            # Parse start_time: "2025-12-08T10:08:17.315000Z"
+            start_time_str = str(report_data['start_time']).replace("Z", "").split(".")[0]
+            start_dt_utc = datetime.datetime.strptime(start_time_str, '%Y-%m-%dT%H:%M:%S')
+            start_dt_utc = utc_tz.localize(start_dt_utc)
+            start_dt_cet = start_dt_utc.astimezone(cet_tz)
+            test_params['start'] = start_dt_cet.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Parse end_time: "2025-12-08T10:10:22.219000Z"
+            end_time_str = str(report_data['end_time']).replace("Z", "").split(".")[0]
+            end_dt_utc = datetime.datetime.strptime(end_time_str, '%Y-%m-%dT%H:%M:%S')
+            end_dt_utc = utc_tz.localize(end_dt_utc)
+            end_dt_cet = end_dt_utc.astimezone(cet_tz)
+            test_params['end'] = end_dt_cet.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            # Fallback to old calculation method (for backward compatibility)
+            test_params['end'] = str(test[0]['time']).replace("T", " ").replace("Z", "")
+            timestamp = calendar.timegm(time.strptime(test_params['end'], '%Y-%m-%d %H:%M:%S'))
+            test_params['start'] = datetime.datetime.utcfromtimestamp(int(timestamp) - int(float(test[0]['duration']))) \
+                .strftime('%Y-%m-%d %H:%M:%S')
         # test_params['status'], test_params['color'], test_params['failed_reason'] = self.check_status(args,
         #     test, baseline, comparison_metric, violation)
         return test_params
@@ -170,21 +278,35 @@ class ReportBuilder:
             return 'FAILED', 'missed thresholds rate - ' + str(violation) + ' %'
         return 'SUCCESS', ''
 
-    def create_builds_comparison(self, tests):
+    def create_builds_comparison(self, tests, args, api_reports=None):
         builds_comparison = []
+        if api_reports is None:
+            api_reports = {}
+            
         for test in tests:
             summary_request, test_info = {}, {}
             for req in test:
                 if req["request_name"] == "All":
                     summary_request = req
 
-            date = str(test[0]['time']).replace("T", " ").replace("Z", "")
-            try:
-                timestamp = calendar.timegm(time.strptime(date, '%Y-%m-%d %H:%M:%S'))
-            except ValueError:
-                timestamp = calendar.timegm(time.strptime(date.split(".")[0], '%Y-%m-%d %H:%M:%S'))
             if summary_request:
-                test_info['date'] = datetime.datetime.utcfromtimestamp(int(timestamp)).strftime('%d-%b %H:%M')
+                # Try to get start_time from API first
+                build_id = test[0].get('build_id')
+                api_data = api_reports.get(build_id, {})
+                
+                if api_data and api_data.get('start_time'):
+                    # Use start_time from API
+                    utc_date = str(api_data['start_time']).replace("T", " ").replace("Z", "").split(".")[0]
+                else:
+                    # Fallback: Calculate start_time from time field and duration
+                    time_str = str(test[0]['time']).replace("T", " ").replace("Z", "").split(".")[0]
+                    time_dt = datetime.datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
+                    duration_seconds = int(test[0].get('duration', 0))
+                    start_dt = time_dt - datetime.timedelta(seconds=duration_seconds)
+                    utc_date = start_dt.strftime('%Y-%m-%d %H:%M:%S')
+                
+                test_info['date'] = convert_utc_to_cet(utc_date, '%d-%b %H:%M')
+                test_info['date_img'] = convert_utc_to_cet(utc_date, '%d-%b\n%H:%M')
                 test_info['total'] = summary_request["total"]
                 test_info['throughput'] = round(summary_request["throughput"], 2)
                 test_info['pct95'] = summary_request["pct95"]
@@ -205,7 +327,7 @@ class ReportBuilder:
     @staticmethod
     def compare_builds(build, last_build):
         build_info = {}
-        for param in ['date', 'error_rate', 'pct95', 'total', 'throughput']:
+        for param in ['date', 'date_img', 'error_rate', 'pct95', 'total', 'throughput']:
             param_diff = None
             if param in ['error_rate']:
                 param_diff = round(float(build[param]) - float(last_build.get(param, 0.0)), 2)
@@ -227,6 +349,7 @@ class ReportBuilder:
         if len(builds) > 1:
             charts.append(self.create_success_rate_chart(builds))
             charts.append(self.create_throughput_chart(builds))
+            charts.append(self.create_response_time_chart(builds))
         return charts
 
     @staticmethod
@@ -234,7 +357,7 @@ class ReportBuilder:
         labels, keys, values = [], [], []
         count = 1
         for test in builds:
-            labels.append(test['date'])
+            labels.append(test.get('date_img', test.get('date', '')))
             keys.append(round(100 - test['error_rate'], 2))
             values.append(count)
             count += 1
@@ -262,7 +385,7 @@ class ReportBuilder:
         labels, keys, values = [], [], []
         count = 1
         for test in builds:
-            labels.append(test['date'])
+            labels.append(test.get('date_img', test.get('date', '')))
             keys.append(test['throughput'])
             values.append(count)
             count += 1
@@ -282,6 +405,34 @@ class ReportBuilder:
         fp = open('/tmp/throughput.png', 'rb')
         image = MIMEImage(fp.read())
         image.add_header('Content-ID', '<throughput>')
+        fp.close()
+        return image
+
+    @staticmethod
+    def create_response_time_chart(builds):
+        labels, keys, values = [], [], []
+        count = 1
+        for test in builds:
+            labels.append(test.get('date_img', test.get('date', '')))
+            keys.append(test['pct95'])
+            values.append(count)
+            count += 1
+        datapoints = {
+            'title': 'Response Time (pct95)',
+            'label': 'Response Time, ms',
+            'x_axis': 'Test Runs',
+            'y_axis': 'Response Time, ms',
+            'width': 10,
+            'height': 3,
+            'path_to_save': '/tmp/response_time.png',
+            'keys': keys[::-1],
+            'values': values,
+            'labels': labels[::-1]
+        }
+        alerts_linechart(datapoints)
+        fp = open('/tmp/response_time.png', 'rb')
+        image = MIMEImage(fp.read())
+        image.add_header('Content-ID', '<response_time>')
         fp.close()
         return image
 
@@ -445,14 +596,19 @@ class ReportBuilder:
     def get_general_metrics(args, build_data, baseline, thresholds=None):
         current_tp = build_data['throughput']
         current_error_rate = build_data['error_rate']
+        current_rt = build_data['pct95']
         baseline_throughput = "N/A"
         baseline_error_rate = "N/A"
+        baseline_rt = "N/A"
         thresholds_tp_rate = "N/A"
         thresholds_error_rate = "N/A"
+        thresholds_rt = "N/A"
         thresholds_tp_color = GRAY
         thresholds_er_color = GRAY
+        thresholds_rt_color = GRAY
         baseline_tp_color = GRAY
         baseline_er_color = GRAY
+        baseline_rt_color = GRAY
         if baseline and args.get("quality_gate_config", {}).get("baseline", {}).get("checked"):
             baseline_throughput = round(sum([tp['throughput'] for tp in baseline]), 2)
             baseline_ko_count = round(sum([tp['ko'] for tp in baseline]), 2)
@@ -462,6 +618,9 @@ class ReportBuilder:
             baseline_er_color = RED if current_error_rate > baseline_error_rate else GREEN
             baseline_throughput = round(current_tp - baseline_throughput, 2)
             baseline_error_rate = round(current_error_rate - baseline_error_rate, 2)
+            baseline_pct95 = round(sum([b['pct95'] for b in baseline]) / len(baseline), 2)
+            baseline_rt_color = RED if current_rt > baseline_pct95 else GREEN
+            baseline_rt = round((current_rt - baseline_pct95) / 1000, 2)
         if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked"):
             for th in thresholds:
                 if th['request_name'] == 'all':
@@ -477,6 +636,9 @@ class ReportBuilder:
                             thresholds_tp_color = RED
                         else:
                             thresholds_tp_color = GREEN
+                    if th['target'] == 'response_time':
+                        thresholds_rt = round((th["metric"] - th['value']) / 1000, 2)
+                        thresholds_rt_color = RED if th['threshold'] == "red" else GREEN
         return {
             "current_tp": current_tp,
             "baseline_tp": baseline_throughput,
@@ -487,7 +649,14 @@ class ReportBuilder:
             "baseline_er": baseline_error_rate,
             "baseline_er_color": baseline_er_color,
             "threshold_er": thresholds_error_rate,
-            "threshold_er_color": thresholds_er_color
+            "threshold_er_color": thresholds_er_color,
+            "current_rt": round(current_rt / 1000, 2),
+            "baseline_rt": baseline_rt,
+            "baseline_rt_color": baseline_rt_color,
+            "threshold_rt": thresholds_rt,
+            "threshold_rt_color": thresholds_rt_color,
+            "show_baseline_column": baseline_throughput != "N/A" or baseline_error_rate != "N/A" or baseline_rt != "N/A",
+            "show_threshold_column": thresholds_tp_rate != "N/A" or thresholds_error_rate != "N/A" or thresholds_rt != "N/A"
         }
 
     @staticmethod
@@ -549,7 +718,18 @@ class ReportBuilder:
                 hundered = float(exceeded_thresholds[_]['response_time'])
             else:
                 exceeded_thresholds[_]['share'] = int((100 * float(exceeded_thresholds[_]['response_time'])) / hundered)
-        return exceeded_thresholds
+        
+        # Determine column visibility for Request metrics table
+        show_baseline = any(req.get('baseline') != "N/A" for req in exceeded_thresholds)
+        show_threshold = any(req.get('threshold') != "N/A" for req in exceeded_thresholds)
+        show_representation = show_baseline or show_threshold
+        
+        return {
+            "requests": exceeded_thresholds,
+            "show_baseline_column": show_baseline,
+            "show_threshold_column": show_threshold,
+            "show_representation_column": show_representation
+        }
 
     def create_ui_builds_comparison(self, tests):
         comparison, builds_info = [], []
@@ -662,6 +842,9 @@ class ReportBuilder:
             if test_params["performance_degradation_rate"] > args["performance_degradation_rate_qg"]:
                 test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
                 test_params["baseline_status"] = "failed"
+            elif test_params["performance_degradation_rate"] > 0:
+                test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
+                test_params["baseline_status"] = "warning"
             else:
                 test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
                 test_params["baseline_status"] = "success"
@@ -672,6 +855,9 @@ class ReportBuilder:
             if test_params["missed_threshold_rate"] > args["missed_thresholds_qg"]:
                 test_params["missed_threshold_rate"] = f'{test_params["missed_threshold_rate"]}%'
                 test_params["threshold_status"] = "failed"
+            elif test_params["missed_threshold_rate"] > 0:
+                test_params["missed_threshold_rate"] = f'{test_params["missed_threshold_rate"]}%'
+                test_params["threshold_status"] = "warning"
             else:
                 test_params["missed_threshold_rate"] = f'{test_params["missed_threshold_rate"]}%'
                 test_params["threshold_status"] = "success"
