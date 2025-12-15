@@ -223,7 +223,7 @@ class UIEmailNotification(object):
             "scenario": report_info['name'],
             "baseline_test_url": baseline_test_url,
             "baseline_test_date": baseline_test_date,
-            "start_time": self.convert_short_date_to_cet(report_info["start_time"]) + ' CET',
+            "start_time": self.convert_short_date_to_cet(report_info["start_time"]),
             "status": status,
             "color": color,
             "missed_thresholds": missed_thresholds,
