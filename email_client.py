@@ -18,13 +18,11 @@ class EmailClient(object):
     def send_email(self, email):
         if self.port == 465:
             server = smtplib.SMTP_SSL(host=self.host, port=self.port)
+            server.ehlo()
         else:
             server = smtplib.SMTP(host=self.host, port=self.port)
+            server.starttls()
         try:
-            server.ehlo()
-            if self.port != 465:
-                server.starttls()
-                server.ehlo()
             server.login(self.user, self.password)
 
             for recipient in email.users_to:
