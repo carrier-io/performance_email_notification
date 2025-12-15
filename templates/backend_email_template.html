@@ -74,6 +74,13 @@
             </td>
             {% endif %}
         </tr>
+        {% if t_params.baseline_status != 'N/A' and t_params.baseline_report_url %}
+        <tr>
+            <td colspan="3" style="padding: 8px 12px;">
+                <a href="{{ t_params.baseline_report_url }}" style="color: #875FFC; text-decoration: none; font-size: 14px;">View baseline test report →</a>
+            </td>
+        </tr>
+        {% endif %}
     </table>
     {% if t_params.status == 'failed' %}
     <div style="margin-top: 24px;">
@@ -94,24 +101,28 @@
             <tr>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Test name:</td>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.simulation }}</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;"></td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;"></td>
             </tr>
             <tr>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Duration, sec:</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.duration }}</td>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">VUsers:</td>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.users }}</td>
             </tr>
             <tr>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Started:</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.start }} CET</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Duration, sec:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.duration }}</td>
+            </tr>
+            <tr>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Started, CET:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.start }}</td>
+            </tr>
+            <tr>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Ended, CET:</td>
+                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.end }}</td>
+            </tr>
+            <tr>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Environment:</td>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.env }}</td>
             </tr>
             <tr>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Ended:</td>
-                <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.end }} CET</td>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #32325D; padding: 4px 12px; font-weight: 600; width: 25%;">Test type:</td>
                 <td style="border-bottom: solid 1px #EAEDEF; color: #525F7F; padding: 4px 12px; width: 25%;">{{ t_params.test_type }}</td>
             </tr>
@@ -242,7 +253,13 @@
         <tbody>
         {% for comparison_result in comparison %}
         <tr>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.date }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">
+                {% if comparison_result.report_url %}
+                <a href="{{ comparison_result.report_url }}" style="color: #875FFC; text-decoration: none;">{{ comparison_result.date }}</a>
+                {% else %}
+                {{ comparison_result.date }}
+                {% endif %}
+            </td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.total }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.total_diff }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.throughput }}</td>
@@ -267,7 +284,7 @@
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Min, sec</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Max, sec</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Pct90, sec</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Pct95, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">{{ comparison_metric|upper }}, sec</th>
         </tr>
         </thead>
         <tbody>
@@ -280,7 +297,7 @@
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.min }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.max }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.pct90 }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result.pct95 }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ summary_result[comparison_metric] }}</td>
         </tr>
         {% endfor %}
         </tbody>

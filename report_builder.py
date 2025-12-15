@@ -82,6 +82,39 @@ class ReportBuilder:
             end_time = first_row.get("end_time")
         return total, rows, start_time, end_time
     
+    @staticmethod
+    def _get_baseline_api_report_id(args, baseline_build_id):
+        """
+        Get report_id for baseline API test by its build_id.
+        Returns report_id (int) or None if not found.
+        """
+        try:
+            test_name = args.get('test') or args.get('simulation')
+            galloper_url = args.get('galloper_url')
+            project_id = args.get('project_id')
+            token = args.get('token')
+            
+            if not all([galloper_url, project_id, token, test_name]):
+                return None
+            
+            # Fetch all reports to find the one with matching build_id
+            url = f"{galloper_url}/api/v1/backend_performance/reports/{project_id}?name={test_name}&limit=100"
+            headers = {"Authorization": f"Bearer {token}"}
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            rows = data.get("rows", [])
+            
+            # Find report with matching build_id
+            for row in rows:
+                if row.get('build_id') == baseline_build_id:
+                    return row.get('id')
+            
+            return None
+        except Exception as e:
+            print(f"Warning: Could not fetch baseline report_id: {e}")
+            return None
+    
     def fetch_api_reports_for_comparison(self, args):
         """
         Fetch API reports to get start_time for historical tests.
@@ -107,7 +140,8 @@ class ReportBuilder:
                 if build_id:
                     report_data = {
                         'start_time': row.get('start_time'),
-                        'duration': row.get('duration')
+                        'duration': row.get('duration'),
+                        'report_id': row.get('id')
                     }
                     # Only include end_time for the first (latest) report
                     if idx == 0:
@@ -130,7 +164,7 @@ class ReportBuilder:
                                                                    thresholds)
 
         email_body = self.get_api_email_body(args, test_description, last_test_data, baseline, builds_comparison,
-                                             baseline_and_thresholds, general_metrics)
+                                             baseline_and_thresholds, general_metrics, comparison_metric)
         return email_body, charts, str(test_description['start']).split(" ")[0]
 
     def create_ui_email_body(self, tests_data, last_test_data):
@@ -150,6 +184,13 @@ class ReportBuilder:
                        "missed_threshold_rate": args["missed_threshold_rate"],
                        "reasons_to_fail_report": args["reasons_to_fail_report"], "status": args["status"],
                        "color": STATUS_COLOR[args["status"].lower()]}
+        # Add baseline report URL if baseline exists and has build_id
+        if baseline and len(baseline) > 0 and baseline[0].get("build_id"):
+            baseline_build_id = baseline[0]["build_id"]
+            # Get report_id for baseline from API
+            baseline_report_id = self._get_baseline_api_report_id(args, baseline_build_id)
+            if baseline_report_id:
+                test_params["baseline_report_url"] = f"{args['galloper_url']}/-/performance/backend/results?result_id={baseline_report_id}"
         for param in params:
             test_params[param] = test[0][param]
         
@@ -311,6 +352,9 @@ class ReportBuilder:
                 test_info['throughput'] = round(summary_request["throughput"], 2)
                 test_info['response_time'] = summary_request[comparison_metric]
                 test_info['error_rate'] = round((summary_request["ko"] / summary_request["total"]) * 100, 2)
+                # Add report URL for clickable date
+                if api_data and api_data.get('report_id'):
+                    test_info['report_url'] = f"{args['galloper_url']}/-/performance/backend/results?result_id={api_data['report_id']}"
                 builds_comparison.append(test_info)
         builds_comparison = self.calculate_diffs(builds_comparison)
 
@@ -327,6 +371,9 @@ class ReportBuilder:
     @staticmethod
     def compare_builds(build, last_build):
         build_info = {}
+        # Preserve report_url if it exists
+        if 'report_url' in build:
+            build_info['report_url'] = build['report_url']
         for param in ['date', 'date_img', 'error_rate', 'response_time', 'total', 'throughput']:
             param_diff = None
             if param in ['error_rate']:
@@ -835,7 +882,7 @@ class ReportBuilder:
         return test_data
 
     def get_api_email_body(self, args, test_params, last_test_data, baseline, builds_comparison, baseline_and_thresholds,
-                           general_metrics):
+                           general_metrics, comparison_metric='pct95'):
         env = Environment(loader=FileSystemLoader('./templates/'))
         template = env.get_template("backend_email_template.html")
         last_test_data = self.reprocess_test_data(last_test_data, ['total', 'throughput'])
@@ -867,7 +914,8 @@ class ReportBuilder:
             test_params["threshold_status"] = "N/A"
         html = template.render(t_params=test_params, summary=last_test_data, baseline=baseline,
                                comparison=builds_comparison,
-                               baseline_and_thresholds=baseline_and_thresholds, general_metrics=general_metrics)
+                               baseline_and_thresholds=baseline_and_thresholds, general_metrics=general_metrics,
+                               comparison_metric=comparison_metric)
         return html
 
     @staticmethod
