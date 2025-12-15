@@ -119,7 +119,18 @@ def parse_args(event: Union[list, dict]):
     # Notification Config
     args['user_list'] = event.get('user_list')
     args['test_limit'] = event.get("test_limit", 5)
-    args['comparison_metric'] = event.get("comparison_metric", 'pct95')
+    #args['comparison_metric'] = event.get("comparison_metric", 'pct95')
+    # Try to extract comparison_metric from reasons_to_fail_report if not provided
+    comparison_metric_from_event = event.get("comparison_metric")
+    if not comparison_metric_from_event and event.get('reasons_to_fail_report'):
+        # Parse comparison_metric from failed reasons text
+        import re
+        for reason in event.get('reasons_to_fail_report', []):
+            match = re.search(r'by (pct\d+)', reason)
+            if match:
+                comparison_metric_from_event = match.group(1)
+                break
+    args['comparison_metric'] = comparison_metric_from_event or 'pct95'
 
     # ui data
     args['test_id'] = event.get('test_id')

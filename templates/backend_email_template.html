@@ -155,7 +155,7 @@
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_er }}</td>
         </tr>
         <tr>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Response time (pct95), sec</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Response time ({{ general_metrics.comparison_metric }}), sec</td>
             {% if general_metrics.show_baseline_column %}
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.baseline_rt_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_rt }}</td>
             {% endif %}
@@ -181,7 +181,7 @@
         </div>
     </div>
 
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Response Time (pct95)</p>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Response Time ({{ general_metrics.comparison_metric }})</p>
     <div>
         <div align="center">
             <img src="cid:response_time"/>
@@ -235,7 +235,7 @@
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Diff, req/sec</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Err. rate, %</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Diff, %</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Pct95, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">{{ general_metrics.comparison_metric }}, sec</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Diff, sec</th>
         </tr>
         </thead>
@@ -249,8 +249,8 @@
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.throughput_diff }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.error_rate }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.error_rate_diff }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.pct95 }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.pct95_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.response_time }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ comparison_result.response_time_diff }}</td>
         </tr>
         {% endfor %}
         </tbody>

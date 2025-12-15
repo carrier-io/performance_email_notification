@@ -123,8 +123,8 @@ class ReportBuilder:
         test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation, report_data)
         # Fetch API reports to get start_time for historical tests
         api_reports = self.fetch_api_reports_for_comparison(args)
-        builds_comparison = self.create_builds_comparison(tests_data, args, api_reports)
-        general_metrics = self.get_general_metrics(args, builds_comparison[0], baseline, thresholds)
+        builds_comparison = self.create_builds_comparison(tests_data, args, api_reports, comparison_metric)
+        general_metrics = self.get_general_metrics(args, builds_comparison[0], baseline, thresholds, comparison_metric)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
         baseline_and_thresholds = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric,
                                                                    thresholds)
@@ -278,7 +278,7 @@ class ReportBuilder:
             return 'FAILED', 'missed thresholds rate - ' + str(violation) + ' %'
         return 'SUCCESS', ''
 
-    def create_builds_comparison(self, tests, args, api_reports=None):
+    def create_builds_comparison(self, tests, args, api_reports=None, comparison_metric='pct95'):
         builds_comparison = []
         if api_reports is None:
             api_reports = {}
@@ -309,7 +309,7 @@ class ReportBuilder:
                 test_info['date_img'] = convert_utc_to_cet(utc_date, '%d-%b\n%H:%M')
                 test_info['total'] = summary_request["total"]
                 test_info['throughput'] = round(summary_request["throughput"], 2)
-                test_info['pct95'] = summary_request["pct95"]
+                test_info['response_time'] = summary_request[comparison_metric]
                 test_info['error_rate'] = round((summary_request["ko"] / summary_request["total"]) * 100, 2)
                 builds_comparison.append(test_info)
         builds_comparison = self.calculate_diffs(builds_comparison)
@@ -327,7 +327,7 @@ class ReportBuilder:
     @staticmethod
     def compare_builds(build, last_build):
         build_info = {}
-        for param in ['date', 'date_img', 'error_rate', 'pct95', 'total', 'throughput']:
+        for param in ['date', 'date_img', 'error_rate', 'response_time', 'total', 'throughput']:
             param_diff = None
             if param in ['error_rate']:
                 param_diff = round(float(build[param]) - float(last_build.get(param, 0.0)), 2)
@@ -335,7 +335,7 @@ class ReportBuilder:
             if param in ['throughput', 'total']:
                 param_diff = round(float(build[param]) - float(last_build.get(param, 0.0)), 2)
                 color = RED if param_diff < 0.0 else GREEN
-            if param in ['pct95']:
+            if param in ['response_time']:
                 param_diff = round((float(build[param]) - float(last_build[param])) / 1000, 2)
                 color = RED if param_diff > 0.0 else GREEN
             if param_diff is not None:
@@ -349,7 +349,7 @@ class ReportBuilder:
         if len(builds) > 1:
             charts.append(self.create_success_rate_chart(builds))
             charts.append(self.create_throughput_chart(builds))
-            charts.append(self.create_response_time_chart(builds))
+            charts.append(self.create_response_time_chart(builds, comparison_metric))
         return charts
 
     @staticmethod
@@ -409,16 +409,16 @@ class ReportBuilder:
         return image
 
     @staticmethod
-    def create_response_time_chart(builds):
+    def create_response_time_chart(builds, metric_name='pct95'):
         labels, keys, values = [], [], []
         count = 1
         for test in builds:
             labels.append(test.get('date_img', test.get('date', '')))
-            keys.append(test['pct95'])
+            keys.append(test['response_time'])
             values.append(count)
             count += 1
         datapoints = {
-            'title': 'Response Time (pct95)',
+            'title': f'Response Time ({metric_name})',
             'label': 'Response Time, ms',
             'x_axis': 'Test Runs',
             'y_axis': 'Response Time, ms',
@@ -593,10 +593,10 @@ class ReportBuilder:
         return image
 
     @staticmethod
-    def get_general_metrics(args, build_data, baseline, thresholds=None):
+    def get_general_metrics(args, build_data, baseline, thresholds=None, comparison_metric='pct95'):
         current_tp = build_data['throughput']
         current_error_rate = build_data['error_rate']
-        current_rt = build_data['pct95']
+        current_rt = build_data['response_time']
         baseline_throughput = "N/A"
         baseline_error_rate = "N/A"
         baseline_rt = "N/A"
@@ -618,9 +618,9 @@ class ReportBuilder:
             baseline_er_color = RED if current_error_rate > baseline_error_rate else GREEN
             baseline_throughput = round(current_tp - baseline_throughput, 2)
             baseline_error_rate = round(current_error_rate - baseline_error_rate, 2)
-            baseline_pct95 = round(sum([b['pct95'] for b in baseline]) / len(baseline), 2)
-            baseline_rt_color = RED if current_rt > baseline_pct95 else GREEN
-            baseline_rt = round((current_rt - baseline_pct95) / 1000, 2)
+            baseline_comparison_metric = round(sum([b[comparison_metric] for b in baseline]) / len(baseline), 2)
+            baseline_rt_color = RED if current_rt > baseline_comparison_metric else GREEN
+            baseline_rt = round((current_rt - baseline_comparison_metric) / 1000, 2)
         if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked"):
             for th in thresholds:
                 if th['request_name'] == 'all':
@@ -656,7 +656,8 @@ class ReportBuilder:
             "threshold_rt": thresholds_rt,
             "threshold_rt_color": thresholds_rt_color,
             "show_baseline_column": baseline_throughput != "N/A" or baseline_error_rate != "N/A" or baseline_rt != "N/A",
-            "show_threshold_column": thresholds_tp_rate != "N/A" or thresholds_error_rate != "N/A" or thresholds_rt != "N/A"
+            "show_threshold_column": thresholds_tp_rate != "N/A" or thresholds_error_rate != "N/A" or thresholds_rt != "N/A",
+            "comparison_metric": comparison_metric.capitalize()
         }
 
     @staticmethod
