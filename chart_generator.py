@@ -128,15 +128,14 @@ def ui_metrics_chart_pages(datapoints):
     y_max = 0
     x_max = 0
     x_max = max(datapoints['values']) if max(datapoints['values']) > x_max else x_max
-    for each in ["total_time", "tbt", "fcp", "lcp"]:
+    for each in ["ttfb", "tbt", "lcp"]:
         y_max = max(datapoints[each]) if max(datapoints[each]) > y_max else y_max
-    _, = ax.plot(datapoints['values'], datapoints['total_time'], linewidth=2, label="Load time")
+    _, = ax.plot(datapoints['values'], datapoints['ttfb'], linewidth=2, label="TTFB")
     _, = ax.plot(datapoints['values'], datapoints['tbt'], linewidth=2, label="TBT")
-    _, = ax.plot(datapoints['values'], datapoints['fcp'], linewidth=2, label="FCP")
     _, = ax.plot(datapoints['values'], datapoints['lcp'], linewidth=2, label="LCP")
     #_, = ax.plot(datapoints['values'], datapoints['keys'], 'o', linewidth=4, color=YELLOW)
 
-    for each in ["total_time", "tbt", "fcp", "lcp"]:
+    for each in ["ttfb", "tbt", "lcp"]:
         for index, value in enumerate(datapoints[each]):
             ax.annotate(str(value), xy=(datapoints['values'][index], value + y_max * 0.05))
     ax.legend(loc='upper left')
@@ -164,15 +163,19 @@ def ui_metrics_chart_actions(datapoints):
     y_max = 0
     x_max = 0
     x_max = max(datapoints['values']) if max(datapoints['values']) > x_max else x_max
-    for each in ["cls", "tbt"]:
-        y_max = max(datapoints[each]) if max(datapoints[each]) > y_max else y_max
+    for each in ["cls", "tbt", "inp"]:
+        if each in datapoints and datapoints[each]:
+            y_max = max(datapoints[each]) if max(datapoints[each]) > y_max else y_max
     _, = ax.plot(datapoints['values'], datapoints['cls'], linewidth=2, label="CLS")
     _, = ax.plot(datapoints['values'], datapoints['tbt'], linewidth=2, label="TBT")
+    if 'inp' in datapoints and datapoints['inp']:
+        _, = ax.plot(datapoints['values'], datapoints['inp'], linewidth=2, label="INP")
     #_, = ax.plot(datapoints['values'], datapoints['keys'], 'o', linewidth=4, color=YELLOW)
 
-    for each in ["cls", "tbt"]:
-        for index, value in enumerate(datapoints[each]):
-            ax.annotate(str(value), xy=(datapoints['values'][index], value + y_max * 0.05))
+    for each in ["cls", "tbt", "inp"]:
+        if each in datapoints and datapoints[each]:
+            for index, value in enumerate(datapoints[each]):
+                ax.annotate(str(value), xy=(datapoints['values'][index], value + y_max * 0.05))
     ax.legend(loc='upper left')
     ax.set_xlabel(datapoints['x_axis'])
     ax.set_ylabel(datapoints['y_axis'])
