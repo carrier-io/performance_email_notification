@@ -16,8 +16,15 @@ class EmailClient(object):
             self.sender = self.user
 
     def send_email(self, email):
-        with smtplib.SMTP_SSL(host=self.host, port=self.port) as server:
+        if self.port == 465:
+            server = smtplib.SMTP_SSL(host=self.host, port=self.port)
+        else:
+            server = smtplib.SMTP(host=self.host, port=self.port)
+        try:
             server.ehlo()
+            if self.port != 465:
+                server.starttls()
+                server.ehlo()
             server.login(self.user, self.password)
 
             for recipient in email.users_to:
@@ -35,3 +42,5 @@ class EmailClient(object):
 
                 server.sendmail(self.sender, recipient, msg_root.as_string())
                 print('Send')
+        finally:
+            server.quit()

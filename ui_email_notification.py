@@ -1,4 +1,5 @@
 from datetime import datetime
+import pytz
 
 import requests
 from jinja2 import Environment, FileSystemLoader
@@ -25,37 +26,42 @@ class UIEmailNotification(object):
 
     def ui_email_notification(self):
         info = self.__get_test_info()
-        last_reports = self.__get_last_report(info['name'], 5)
+        last_reports = self.__get_last_report(info['name'], 10)
         tests_data = []
+        test_counter = 0
         for each in last_reports:
-            report = {"pages": [], "actions": []}
-            results_info = self.__get_results_info(each["uid"])
-            for result in results_info:
-                if result["type"] == "page":
-                    report["pages"].append(result)
-                else:
-                    report["actions"].append(result)
-            tests_data.append(report)
+            if each["test_status"]["status"] in ["Finished", "Success", "Failed"]:
+                if test_counter >= 5:
+                    break
+                report = {"pages": [], "actions": []}
+                results_info = self.__get_results_info(each["uid"])
+                for result in results_info:
+                    if result["type"] == "page":
+                        report["pages"].append(result)
+                    else:
+                        report["actions"].append(result)
+                tests_data.append(report)
+                test_counter += 1
 
         page_comparison, action_comparison = [], []
         for index, test in enumerate(tests_data):
             aggregated_test_data = {}
-            for metric in ["load_time", "tbt", "fcp", "lcp"]:
+            for metric in ["load_time", "tbt", "fcp", "lcp", "ttfb"]:
                 _arr = [int(each[metric]) for each in test["pages"]]
-                aggregated_test_data[metric] = int(sum(_arr) / len(_arr)) if len(_arr) else 0
-            aggregated_test_data["date"] = last_reports[index]["start_time"][2:-3]
+                aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2) if len(_arr) else 0
+            aggregated_test_data["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
             aggregated_test_data["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             page_comparison.append(aggregated_test_data)
 
             aggregated_test_data = {}
-            for metric in ["cls", "tbt"]:
+            for metric in ["cls", "tbt", "inp"]:
                 if metric == "cls":
                     _arr = [float(each[metric]) for each in test["actions"]]
-                    aggregated_test_data[metric] = round(sum(_arr) / len(_arr),4) if len(_arr) else 0
+                    aggregated_test_data[metric] = round(sum(_arr) / len(_arr), 2) if len(_arr) else 0
                 else:
                     _arr = [int(each[metric]) for each in test["actions"]]
-                    aggregated_test_data[metric] = int(sum(_arr) / len(_arr)) if len(_arr) else 0
-            aggregated_test_data["date"] = last_reports[index]["start_time"][2:-3]
+                    aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2) if len(_arr) else 0
+            aggregated_test_data["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
             aggregated_test_data["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             action_comparison.append(aggregated_test_data)
 
@@ -69,6 +75,11 @@ class UIEmailNotification(object):
         results_info = self.__get_results_info(self.report_id)
         for each in results_info:
             each["report"] = f"{self.gelloper_url}{each['report'][0]}"
+            for metric in ["load_time", "dom", "fcp", "lcp", "tbt", "ttfb", "fvc", "lvc", "inp"]:
+                if metric in each:
+                    each[metric] = round(int(each[metric]) / 1000, 2)
+            if "cls" in each:
+                each["cls"] = round(float(each["cls"]), 2)
 
         try:
             baseline_id = self.__get_baseline_report(report_info['name'], report_info['environment'])
@@ -93,32 +104,32 @@ class UIEmailNotification(object):
                 if each["identifier"] not in _baseline_results.keys():
                     _baseline_results[each["identifier"]] = {"name": each["name"], "type": each["type"]}
                     if each["type"] == "page":
-                        for metric in ["load_time", "fcp", "lcp", "tbt"]:
-                            _baseline_results[each["identifier"]][metric] = [int(each[metric])]
+                        for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
+                            _baseline_results[each["identifier"]][metric] = [round(int(each[metric]) / 1000, 2)]
                     else:
-                        for metric in ["tbt", "cls"]:
-                            if metric == "tbt":
-                                _baseline_results[each["identifier"]][metric] = [int(each[metric])]
+                        for metric in ["tbt", "cls", "inp"]:
+                            if metric == "cls":
+                                _baseline_results[each["identifier"]][metric] = [round(float(each[metric]), 2)]
                             else:
-                                _baseline_results[each["identifier"]][metric] = [round(float(each[metric]), 4)]
+                                _baseline_results[each["identifier"]][metric] = [round(int(each[metric]) / 1000, 2)]
                 else:
                     if each["type"] == "page":
-                        for metric in ["load_time", "fcp", "lcp", "tbt"]:
-                            _baseline_results[each["identifier"]][metric].append(int(each[metric]))
+                        for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
+                            _baseline_results[each["identifier"]][metric].append(round(int(each[metric]) / 1000, 2))
                     else:
-                        for metric in ["tbt", "cls"]:
-                            if metric == "tbt":
-                                _baseline_results[each["identifier"]][metric].append(int(each[metric]))
+                        for metric in ["tbt", "cls", "inp"]:
+                            if metric == "cls":
+                                _baseline_results[each["identifier"]][metric].append(round(float(each[metric]), 2))
                             else:
-                                _baseline_results[each["identifier"]][metric].append(round(float(each[metric]),4))
+                                _baseline_results[each["identifier"]][metric].append(round(int(each[metric]) / 1000, 2))
             for each in _baseline_results:
                 _ = {"identifier": each, "name": _baseline_results[each]["name"], "type": _baseline_results[each]["type"]}
-                for metric in ["load_time", "fcp", "lcp", "tbt", "tbt", "cls"]:
+                for metric in ["load_time", "fcp", "lcp", "tbt", "inp", "cls", "ttfb"]:
                     if metric in _baseline_results[each].keys():
                         if metric == "cls":
-                            _[metric] = round(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]), 4)
+                            _[metric] = round(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]), 2)
                         else:
-                            _[metric] = int(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]))
+                            _[metric] = round(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]), 2)
                 aggregated_baseline.append(_)
 
             # TODO refactoring
@@ -127,32 +138,32 @@ class UIEmailNotification(object):
                 if each["identifier"] not in _current_results.keys():
                     _current_results[each["identifier"]] = {"name": each["name"], "type": each["type"]}
                     if each["type"] == "page":
-                        for metric in ["load_time", "fcp", "lcp", "tbt"]:
-                            _current_results[each["identifier"]][metric] = [int(each[metric])]
+                        for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
+                            _current_results[each["identifier"]][metric] = [float(each[metric])]
                     else:
-                        for metric in ["tbt", "cls"]:
-                            if metric == "tbt":
-                                _current_results[each["identifier"]][metric] = [int(each[metric])]
+                        for metric in ["tbt", "cls", "inp"]:
+                            if metric == "cls":
+                                _current_results[each["identifier"]][metric] = [round(float(each[metric]), 2)]
                             else:
-                                _current_results[each["identifier"]][metric] = [round(float(each[metric]), 4)]
+                                _current_results[each["identifier"]][metric] = [float(each[metric])]
                 else:
                     if each["type"] == "page":
-                        for metric in ["load_time", "fcp", "lcp", "tbt"]:
-                            _current_results[each["identifier"]][metric].append(int(each[metric]))
+                        for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
+                            _current_results[each["identifier"]][metric].append(float(each[metric]))
                     else:
-                        for metric in ["tbt", "cls"]:
-                            if metric == "tbt":
-                                _current_results[each["identifier"]][metric].append(int(each[metric]))
+                        for metric in ["tbt", "cls", "inp"]:
+                            if metric == "cls":
+                                _current_results[each["identifier"]][metric].append(round(float(each[metric]), 2))
                             else:
-                                _current_results[each["identifier"]][metric].append(round(float(each[metric]), 4))
+                                _current_results[each["identifier"]][metric].append(float(each[metric]))
             for each in _current_results:
                 _ = {"identifier": each, "name": _current_results[each]["name"], "type": _current_results[each]["type"]}
-                for metric in ["load_time", "fcp", "lcp", "tbt", "tbt", "cls"]:
+                for metric in ["load_time", "fcp", "lcp", "tbt", "inp", "cls", "ttfb"]:
                     if metric in _current_results[each].keys():
                         if metric == "cls":
-                            _[metric] = round(sum(_current_results[each][metric]) / len(_current_results[each][metric]), 4)
+                            _[metric] = round(sum(_current_results[each][metric]) / len(_current_results[each][metric]), 2)
                         else:
-                            _[metric] = int(sum(_current_results[each][metric]) / len(_current_results[each][metric]))
+                            _[metric] = round(sum(_current_results[each][metric]) / len(_current_results[each][metric]), 2)
                 aggregated_current_results.append(_)
 
         degradation_rate = 0
@@ -164,10 +175,11 @@ class UIEmailNotification(object):
                     if current_result["identifier"] == baseline_result["identifier"]:
                         comparison = {"name": current_result["name"]}
                         if current_result["type"] == "page":
-                            for each in ["load_time", "fcp", "lcp", "tbt"]:
+                            for each in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
                                 _count += 1
                                 comparison[each] = current_result[each]
-                                comparison[f"{each}_diff"] = int(current_result[each]) - int(baseline_result[each])
+                                comparison[f"{each}_baseline"] = baseline_result[each]
+                                comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
                                 if comparison[f"{each}_diff"] > 0:
                                     _failed += 1
                                     comparison[f"{each}_diff"] = f'+{comparison[f"{each}_diff"]}'
@@ -176,13 +188,14 @@ class UIEmailNotification(object):
                                     comparison[f"{each}_diff_color"] = "color:green;"
                             baseline_comparison_pages.append(comparison)
                         else:
-                            for each in ["tbt", "cls"]:
+                            for each in ["tbt", "cls", "inp"]:
                                 _count += 1
                                 comparison[each] = current_result[each]
+                                comparison[f"{each}_baseline"] = baseline_result[each]
                                 if each == "cls":
-                                    comparison[f"{each}_diff"] = float(current_result[each]) - float(baseline_result[each])
+                                    comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
                                 else:
-                                    comparison[f"{each}_diff"] = int(current_result[each]) - int(baseline_result[each])
+                                    comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
                                 if comparison[f"{each}_diff"] > 0:
                                     _failed += 1
                                     comparison[f"{each}_diff"] = f'+{comparison[f"{each}_diff"]}'
@@ -210,7 +223,7 @@ class UIEmailNotification(object):
             "scenario": report_info['name'],
             "baseline_test_url": baseline_test_url,
             "baseline_test_date": baseline_test_date,
-            "start_time": report_info["start_time"],
+            "start_time": self.convert_short_date_to_cet(report_info["start_time"]) + ' CET',
             "status": status,
             "color": color,
             "missed_thresholds": missed_thresholds,
@@ -224,7 +237,7 @@ class UIEmailNotification(object):
         }
         email_body = self.__get_email_body(t_params, results_info, page_comparison, action_comparison,
                                            baseline_comparison_pages, baseline_comparison_actions, degradation_rate,
-                                           missed_thresholds)
+                                           missed_thresholds, baseline_info, aggregated_baseline)
 
         charts = []
         charts.append(self.create_ui_metrics_chart_pages(page_comparison))
@@ -253,14 +266,15 @@ class UIEmailNotification(object):
         return self.__get_url(f"/ui_performance/results/{self.galloper_project_id}/{report_id}?order=asc")
 
     def __get_email_body(self, t_params, results_info, page_comparison, action_comparison,
-                         baseline_comparison_pages, baseline_comparison_actions, degradation_rate, missed_thresholds):
+                         baseline_comparison_pages, baseline_comparison_actions, degradation_rate, missed_thresholds, baseline_info, aggregated_baseline):
         env = Environment(
             loader=FileSystemLoader('./templates'))
         template = env.get_template("ui_email_template.html")
         return template.render(t_params=t_params, results=results_info, page_comparison=page_comparison,
                                action_comparison=action_comparison, baseline_comparison_pages=baseline_comparison_pages,
                                baseline_comparison_actions=baseline_comparison_actions,
-                               degradation_rate=degradation_rate, missed_thresholds=missed_thresholds)
+                               degradation_rate=degradation_rate, missed_thresholds=missed_thresholds, 
+                               baseline_info=baseline_info, aggregated_baseline=aggregated_baseline)
 
     def __get_url(self, url):
         resp = requests.get(
@@ -276,13 +290,12 @@ class UIEmailNotification(object):
 
     @staticmethod
     def create_ui_metrics_chart_pages(builds):
-        labels, x, load_time, tbt, fcp, lcp = [], [], [], [], [], []
+        labels, x, ttfb, tbt, lcp = [], [], [], [], []
         count = 1
         for test in builds:
             labels.append(test['date'])
-            load_time.append(round(test['load_time'], 2))
+            ttfb.append(round(test['ttfb'], 2))
             tbt.append(round(test['tbt'], 2))
-            fcp.append(round(test['fcp'], 2))
             lcp.append(round(test['lcp'], 2))
             x.append(count)
             count += 1
@@ -290,13 +303,12 @@ class UIEmailNotification(object):
             'title': 'UI metrics',
             'label': 'UI metrics',
             'x_axis': 'Test Runs',
-            'y_axis': 'Time, ms',
+            'y_axis': 'Time, sec',
             'width': 14,
             'height': 4,
             'path_to_save': '/tmp/ui_metrics_pages.png',
-            'total_time': load_time[::-1],
+            'ttfb': ttfb[::-1],
             'tbt': tbt[::-1],
-            'fcp': fcp[::-1],
             'lcp': lcp[::-1],
             'values': x,
             'labels': labels[::-1]
@@ -310,24 +322,26 @@ class UIEmailNotification(object):
 
     @staticmethod
     def create_ui_metrics_chart_actions(builds):
-        labels, x, cls, tbt = [], [], [], []
+        labels, x, cls, tbt, inp = [], [], [], [], []
         count = 1
         for test in builds:
             labels.append(test['date'])
-            cls.append(round(test['cls'], 4))
+            cls.append(round(test['cls'], 2))
             tbt.append(round(test['tbt'], 2))
+            inp.append(round(test['inp'], 2))
             x.append(count)
             count += 1
         datapoints = {
             'title': 'UI metrics Actions',
             'label': 'UI metrics Actions',
             'x_axis': 'Test Runs',
-            'y_axis': 'Time, ms',
+            'y_axis': 'Time, sec',
             'width': 14,
             'height': 4,
             'path_to_save': '/tmp/ui_metrics_actions.png',
             'cls': cls[::-1],
             'tbt': tbt[::-1],
+            'inp': inp[::-1],
             'values': x,
             'labels': labels[::-1]
         }
@@ -337,3 +351,31 @@ class UIEmailNotification(object):
         image.add_header('Content-ID', '<ui_metrics_actions>')
         fp.close()
         return image
+
+    @staticmethod
+    def convert_short_date_to_cet(short_date_str, output_format='%Y-%m-%d %H:%M:%S'):
+        """
+        Convert UTC datetime string to CET/CEST timezone.
+        Args:
+            short_date_str: UTC datetime string in format 'YYYY-MM-DDTHH:MM:SS' or 'YY-MM-DDTHH:MM:SS'
+            output_format: Output format for datetime string
+        Returns:
+            Datetime string in CET/CEST timezone
+        """
+        utc_tz = pytz.UTC
+        cet_tz = pytz.timezone('Europe/Paris')  # CET/CEST timezone
+        # Check if year is already 4 digits or needs 20 prefix
+        date_part = short_date_str.split('T')[0]
+        year_part = date_part.split('-')[0]
+        if len(year_part) == 2:
+            # Add century prefix for 2-digit year
+            full_datetime_str = f"20{short_date_str}"
+        else:
+            # Already has 4-digit year
+            full_datetime_str = short_date_str
+        utc_dt = datetime.strptime(full_datetime_str, '%Y-%m-%dT%H:%M:%S')
+        utc_dt = utc_tz.localize(utc_dt)
+        # Convert to CET
+        cet_dt = utc_dt.astimezone(cet_tz)
+
+        return cet_dt.strftime(output_format)
