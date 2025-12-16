@@ -95,6 +95,14 @@
     </div>
     {% endif %}
 
+    {% if t_params.sla_metric_warning %}
+    <div style="margin: 24px 12px; padding: 12px; background-color: #FFF4E5; border-left: 4px solid #FFA726; border-radius: 4px;">
+        <p style="margin: 0; color: #E65100; font-size: 14px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.sla_metric_warning }}
+        </p>
+    </div>
+    {% endif %}
+
     <div style="margin-top: 24px;">
         <table style="width: 100%;">
             <tbody>

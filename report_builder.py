@@ -154,14 +154,20 @@ class ReportBuilder:
 
     def create_api_email_body(self, args, tests_data, last_test_data, baseline, comparison_metric,
                               violation, thresholds=None, report_data=None):
+        # Create baseline_and_thresholds first to check for metric mismatch
+        baseline_and_thresholds_temp = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric, thresholds)
+        
         test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation, report_data)
+        
+        # Add SLA mismatch warning if detected
+        if baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
+            test_description['sla_metric_warning'] = f"SLA configured for {baseline_and_thresholds_temp['sla_configured_metric'].upper()}, but report uses {comparison_metric.upper()}. SLA columns hidden."
         # Fetch API reports to get start_time for historical tests
         api_reports = self.fetch_api_reports_for_comparison(args)
         builds_comparison = self.create_builds_comparison(tests_data, args, api_reports, comparison_metric)
         general_metrics = self.get_general_metrics(args, builds_comparison[0], baseline, thresholds, comparison_metric)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
-        baseline_and_thresholds = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric,
-                                                                   thresholds)
+        baseline_and_thresholds = baseline_and_thresholds_temp
 
         email_body = self.get_api_email_body(args, test_description, last_test_data, baseline, builds_comparison,
                                              baseline_and_thresholds, general_metrics, comparison_metric)
@@ -193,6 +199,9 @@ class ReportBuilder:
                 test_params["baseline_report_url"] = f"{args['galloper_url']}/-/performance/backend/results?result_id={baseline_report_id}"
         for param in params:
             test_params[param] = test[0][param]
+        
+        # Add SLA metric mismatch warning if needed
+        test_params['sla_metric_warning'] = None
         
         # Use start_time and end_time from report_data if available (for API tests)
         if report_data and 'start_time' in report_data and 'end_time' in report_data:
@@ -700,9 +709,11 @@ class ReportBuilder:
                         else:
                             thresholds_tp_color = GREEN
                     if th['target'] == 'response_time':
-                        threshold_rt_value = round(th['value'] / 1000, 2)
-                        thresholds_rt = round((th["metric"] - th['value']) / 1000, 2)
-                        thresholds_rt_color = RED if th['threshold'] == "red" else GREEN
+                        # Only use threshold if aggregation matches comparison_metric
+                        if th.get('aggregation', 'pct95') == comparison_metric:
+                            threshold_rt_value = round(th['value'] / 1000, 2)
+                            thresholds_rt = round((th["metric"] - th['value']) / 1000, 2)
+                            thresholds_rt_color = RED if th['threshold'] == "red" else GREEN
         return {
             "current_tp": current_tp,
             "baseline_tp": baseline_throughput,
@@ -735,6 +746,9 @@ class ReportBuilder:
         exceeded_thresholds = []
         baseline_metrics = {}
         thresholds_metrics = {}
+        sla_metric_mismatch = False
+        sla_configured_metric = None
+        
         if baseline and args.get("quality_gate_config", {}).get("baseline", {}).get("checked") and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
             for request in baseline:
                 baseline_metrics[request['request_name']] = int(request[comparison_metric])
@@ -742,7 +756,14 @@ class ReportBuilder:
         if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked") and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
             for th in thresholds:
                 if th['target'] == 'response_time':
-                    thresholds_metrics[th['request_name']] = th
+                    # Track SLA metric for mismatch detection
+                    if sla_configured_metric is None:
+                        sla_configured_metric = th.get('aggregation', 'pct95')
+                    # Only add threshold if aggregation matches comparison_metric
+                    if th.get('aggregation', 'pct95') == comparison_metric:
+                        thresholds_metrics[th['request_name']] = th
+                    else:
+                        sla_metric_mismatch = True
         for request in last_test_data:
             req = {}
             req['response_time'] = str(round(float(request[comparison_metric]) / 1000, 2))
@@ -801,7 +822,9 @@ class ReportBuilder:
             "requests": exceeded_thresholds,
             "show_baseline_column": show_baseline,
             "show_threshold_column": show_threshold,
-            "show_representation_column": show_representation
+            "show_representation_column": show_representation,
+            "sla_metric_mismatch": sla_metric_mismatch,
+            "sla_configured_metric": sla_configured_metric
         }
 
     def create_ui_builds_comparison(self, tests):
