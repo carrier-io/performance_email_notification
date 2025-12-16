@@ -12,7 +12,41 @@
             font-family: 'Open Sans', sans-serif;
             line-height: 24px;
         }
+        .collapsible-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        .collapsible-header::before {
+            content: '▼';
+            position: absolute;
+            left: -4px;
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+        .collapsible-header.collapsed::before {
+            transform: rotate(-90deg);
+        }
+        .collapsible-rows {
+            display: table-row-group;
+        }
+        .collapsible-rows.hidden {
+            display: none;
+        }
     </style>
+    <script>
+        function toggleGroup(groupId) {
+            var rows = document.getElementById(groupId);
+            var header = document.getElementById(groupId + '-header');
+            if (rows.classList.contains('hidden')) {
+                rows.classList.remove('hidden');
+                header.classList.remove('collapsed');
+            } else {
+                rows.classList.add('hidden');
+                header.classList.add('collapsed');
+            }
+        }
+    </script>
 </head>
 
 <body style="margin: 0; padding: 0;">
@@ -254,16 +288,31 @@
         </thead>
         <tbody>
         {% set prev_category = namespace(value='') %}
+        {% set current_group = namespace(id='') %}
         {% for baseline_result in baseline_and_thresholds.requests %}
         {% if baseline_result.category != prev_category.value %}
+            {% if prev_category.value != '' and prev_category.value != 'all' %}
+        </tbody>
+            {% endif %}
             {% if baseline_result.category == 'transaction' %}
+            {% set current_group.id = 'req-metrics-transactions' %}
+        <tbody>
         <tr>
-            <td colspan="10" style="color: #8492A6; padding: 4px 12px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Transactions</td>
+            <td colspan="10" id="{{ current_group.id }}-header" class="collapsible-header" onclick="toggleGroup('{{ current_group.id }}')" style="color: #8492A6; padding: 4px 12px 4px 16px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Transactions</td>
         </tr>
+        </tbody>
+        <tbody id="{{ current_group.id }}" class="collapsible-rows">
             {% elif baseline_result.category == 'request' %}
+            {% set current_group.id = 'req-metrics-requests' %}
+        <tbody>
         <tr>
-            <td colspan="10" style="color: #8492A6; padding: 4px 12px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Requests</td>
+            <td colspan="10" id="{{ current_group.id }}-header" class="collapsible-header" onclick="toggleGroup('{{ current_group.id }}')" style="color: #8492A6; padding: 4px 12px 4px 16px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Requests</td>
         </tr>
+        </tbody>
+        <tbody id="{{ current_group.id }}" class="collapsible-rows">
+            {% else %}
+            {% set current_group.id = '' %}
+        <tbody>
             {% endif %}
             {% set prev_category.value = baseline_result.category %}
         {% endif %}
@@ -340,16 +389,31 @@
         </thead>
         <tbody>
         {% set prev_category_summary = namespace(value='') %}
+        {% set current_group_summary = namespace(id='') %}
         {% for summary_result in summary %}
         {% if summary_result.category != prev_category_summary.value %}
+            {% if prev_category_summary.value != '' and prev_category_summary.value != 'all' %}
+        </tbody>
+            {% endif %}
             {% if summary_result.category == 'transaction' %}
+            {% set current_group_summary.id = 'summary-transactions' %}
+        <tbody>
         <tr>
-            <td colspan="10" style="color: #8492A6; padding: 4px 12px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Transactions</td>
+            <td colspan="10" id="{{ current_group_summary.id }}-header" class="collapsible-header" onclick="toggleGroup('{{ current_group_summary.id }}')" style="color: #8492A6; padding: 4px 12px 4px 16px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Transactions</td>
         </tr>
+        </tbody>
+        <tbody id="{{ current_group_summary.id }}" class="collapsible-rows">
             {% elif summary_result.category == 'request' %}
+            {% set current_group_summary.id = 'summary-requests' %}
+        <tbody>
         <tr>
-            <td colspan="10" style="color: #8492A6; padding: 4px 12px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Requests</td>
+            <td colspan="10" id="{{ current_group_summary.id }}-header" class="collapsible-header" onclick="toggleGroup('{{ current_group_summary.id }}')" style="color: #8492A6; padding: 4px 12px 4px 16px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Requests</td>
         </tr>
+        </tbody>
+        <tbody id="{{ current_group_summary.id }}" class="collapsible-rows">
+            {% else %}
+            {% set current_group_summary.id = '' %}
+        <tbody>
             {% endif %}
             {% set prev_category_summary.value = summary_result.category %}
         {% endif %}
