@@ -647,9 +647,15 @@ class ReportBuilder:
         baseline_throughput = "N/A"
         baseline_error_rate = "N/A"
         baseline_rt = "N/A"
+        baseline_tp_value = "N/A"
+        baseline_er_value = "N/A"
+        baseline_rt_value = "N/A"
         thresholds_tp_rate = "N/A"
         thresholds_error_rate = "N/A"
         thresholds_rt = "N/A"
+        threshold_tp_value = "N/A"
+        threshold_er_value = "N/A"
+        threshold_rt_value = "N/A"
         thresholds_tp_color = GRAY
         thresholds_er_color = GRAY
         thresholds_rt_color = GRAY
@@ -657,50 +663,67 @@ class ReportBuilder:
         baseline_er_color = GRAY
         baseline_rt_color = GRAY
         if baseline and args.get("quality_gate_config", {}).get("baseline", {}).get("checked"):
-            baseline_throughput = round(sum([tp['throughput'] for tp in baseline]), 2)
-            baseline_ko_count = round(sum([tp['ko'] for tp in baseline]), 2)
-            baseline_ok_count = round(sum([tp['ok'] for tp in baseline]), 2)
-            baseline_error_rate = round((baseline_ko_count / (baseline_ko_count + baseline_ok_count)) * 100, 2)
-            baseline_tp_color = RED if baseline_throughput > current_tp else GREEN
-            baseline_er_color = RED if current_error_rate > baseline_error_rate else GREEN
-            baseline_throughput = round(current_tp - baseline_throughput, 2)
-            baseline_error_rate = round(current_error_rate - baseline_error_rate, 2)
-            baseline_comparison_metric = round(sum([b[comparison_metric] for b in baseline]) / len(baseline), 2)
-            baseline_rt_color = RED if current_rt > baseline_comparison_metric else GREEN
-            baseline_rt = round((current_rt - baseline_comparison_metric) / 1000, 2)
+            # Find "All" request in baseline
+            baseline_all = None
+            for b in baseline:
+                if b.get('request_name') == 'All':
+                    baseline_all = b
+                    break
+            
+            if baseline_all:
+                baseline_tp_value = round(baseline_all['throughput'], 2)
+                baseline_ko_count = baseline_all['ko']
+                baseline_ok_count = baseline_all['ok']
+                baseline_er_value = round((baseline_ko_count / (baseline_ko_count + baseline_ok_count)) * 100, 2)
+                baseline_tp_color = RED if baseline_tp_value > current_tp else GREEN
+                baseline_er_color = RED if current_error_rate > baseline_er_value else GREEN
+                baseline_throughput = round(current_tp - baseline_tp_value, 2)
+                baseline_error_rate = round(current_error_rate - baseline_er_value, 2)
+                baseline_rt_value = round(baseline_all[comparison_metric] / 1000, 2)
+                baseline_rt_color = RED if current_rt > baseline_rt_value else GREEN
+                baseline_rt = round(current_rt - baseline_rt_value, 2)
         if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked"):
             for th in thresholds:
                 if th['request_name'] == 'all':
                     if th['target'] == 'error_rate':
+                        threshold_er_value = th['value']
                         thresholds_error_rate = round(th["metric"] - th['value'], 2)
                         if th['threshold'] == "red":
                             thresholds_er_color = RED
                         else:
                             thresholds_er_color = GREEN
                     if th['target'] == 'throughput':
+                        threshold_tp_value = th['value']
                         thresholds_tp_rate = round(th["metric"] - th['value'], 2)
                         if th['threshold'] == "red":
                             thresholds_tp_color = RED
                         else:
                             thresholds_tp_color = GREEN
                     if th['target'] == 'response_time':
+                        threshold_rt_value = round(th['value'] / 1000, 2)
                         thresholds_rt = round((th["metric"] - th['value']) / 1000, 2)
                         thresholds_rt_color = RED if th['threshold'] == "red" else GREEN
         return {
             "current_tp": current_tp,
             "baseline_tp": baseline_throughput,
+            "baseline_tp_value": baseline_tp_value,
             "baseline_tp_color": baseline_tp_color,
             "threshold_tp": thresholds_tp_rate,
+            "threshold_tp_value": threshold_tp_value,
             "threshold_tp_color": thresholds_tp_color,
             "current_er": current_error_rate,
             "baseline_er": baseline_error_rate,
+            "baseline_er_value": baseline_er_value,
             "baseline_er_color": baseline_er_color,
             "threshold_er": thresholds_error_rate,
+            "threshold_er_value": threshold_er_value,
             "threshold_er_color": thresholds_er_color,
             "current_rt": current_rt,
             "baseline_rt": baseline_rt,
+            "baseline_rt_value": baseline_rt_value,
             "baseline_rt_color": baseline_rt_color,
             "threshold_rt": thresholds_rt,
+            "threshold_rt_value": threshold_rt_value,
             "threshold_rt_color": thresholds_rt_color,
             "show_baseline_column": baseline_throughput != "N/A" or baseline_error_rate != "N/A" or baseline_rt != "N/A",
             "show_threshold_column": thresholds_tp_rate != "N/A" or thresholds_error_rate != "N/A" or thresholds_rt != "N/A",
@@ -712,7 +735,7 @@ class ReportBuilder:
         exceeded_thresholds = []
         baseline_metrics = {}
         thresholds_metrics = {}
-        if baseline and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
+        if baseline and args.get("quality_gate_config", {}).get("baseline", {}).get("checked") and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
             for request in baseline:
                 baseline_metrics[request['request_name']] = int(request[comparison_metric])
 
@@ -730,18 +753,20 @@ class ReportBuilder:
             if baseline and request['request_name'] in list(baseline_metrics.keys()):
                 req['baseline'] = round(
                     float(int(request[comparison_metric]) - baseline_metrics[request['request_name']]) / 1000, 2)
+                req['baseline_value'] = round(baseline_metrics[request['request_name']] / 1000, 2)
                 if req['baseline'] < 0:
                     req['baseline_color'] = GREEN
                 else:
                     req['baseline_color'] = YELLOW
             else:
                 req['baseline'] = "N/A"
+                req['baseline_value'] = "N/A"
                 req['baseline_color'] = GRAY
             if thresholds_metrics and thresholds_metrics.get(request['request_name']):
                 req['threshold'] = round(
                     float(int(request[comparison_metric]) -
                           int(thresholds_metrics[request['request_name']]['value'])) / 1000, 2)
-                req['threshold_value'] = str(thresholds_metrics[request['request_name']]['value'])
+                req['threshold_value'] = round(float(thresholds_metrics[request['request_name']]['value']) / 1000, 2)
                 if thresholds_metrics[request['request_name']]['threshold'] == 'red':
                     req['line_color'] = RED
                     req['threshold_color'] = RED
@@ -749,7 +774,7 @@ class ReportBuilder:
                     req['threshold_color'] = GREEN
             else:
                 req['threshold'] = "N/A"
-                req['threshold_value'] = 0.0
+                req['threshold_value'] = "N/A"
                 req['threshold_color'] = GRAY
                 req['line_color'] = GRAY
             if not req.get('line_color'):
