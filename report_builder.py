@@ -983,7 +983,24 @@ class ReportBuilder:
 
     def get_api_email_body(self, args, test_params, last_test_data, baseline, builds_comparison, baseline_and_thresholds,
                            general_metrics, comparison_metric='pct95'):
+        def format_number(value):
+            """Format number with thousand separators and max 2 decimal places"""
+            if value in ['N/A', '', None]:
+                return value
+            try:
+                # Convert to float
+                num = float(value)
+                # Format with 2 decimal places and thousand separators (comma)
+                formatted = "{:,.2f}".format(num)
+                # Remove trailing zeros after decimal point
+                if '.' in formatted:
+                    formatted = formatted.rstrip('0').rstrip('.')
+                return formatted
+            except (ValueError, TypeError):
+                return value
+        
         env = Environment(loader=FileSystemLoader('./templates/'))
+        env.filters['format_number'] = format_number
         template = env.get_template("backend_email_template.html")
         last_test_data = self.reprocess_test_data(last_test_data, ['total', 'throughput'])
         if args.get("performance_degradation_rate_qg", None):
