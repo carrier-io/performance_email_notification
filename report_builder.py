@@ -693,7 +693,7 @@ class ReportBuilder:
                 baseline_rt = round(current_rt - baseline_rt_value, 2)
         if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked"):
             for th in thresholds:
-                if th['request_name'] == 'all':
+                if th['request_name'].lower() == 'all':
                     if th['target'] == 'error_rate':
                         threshold_er_value = th['value']
                         thresholds_error_rate = round(th["metric"] - th['value'], 2)
@@ -710,7 +710,8 @@ class ReportBuilder:
                             thresholds_tp_color = GREEN
                     if th['target'] == 'response_time':
                         # Only use threshold if aggregation matches comparison_metric
-                        if th.get('aggregation', 'pct95') == comparison_metric:
+                        th_aggregation = th.get('aggregation', 'pct95')
+                        if th_aggregation == comparison_metric:
                             threshold_rt_value = round(th['value'] / 1000, 2)
                             thresholds_rt = round((th["metric"] - th['value']) / 1000, 2)
                             thresholds_rt_color = RED if th['threshold'] == "red" else GREEN
@@ -754,16 +755,23 @@ class ReportBuilder:
                 baseline_metrics[request['request_name']] = int(request[comparison_metric])
 
         if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked") and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
+            matching_thresholds = []
+            all_sla_metrics = set()
             for th in thresholds:
                 if th['target'] == 'response_time':
-                    # Track SLA metric for mismatch detection
-                    if sla_configured_metric is None:
-                        sla_configured_metric = th.get('aggregation', 'pct95')
+                    # Track all SLA metrics
+                    th_aggregation = th.get('aggregation', 'pct95')
+                    all_sla_metrics.add(th_aggregation)
                     # Only add threshold if aggregation matches comparison_metric
-                    if th.get('aggregation', 'pct95') == comparison_metric:
+                    if th_aggregation == comparison_metric:
                         thresholds_metrics[th['request_name']] = th
-                    else:
-                        sla_metric_mismatch = True
+                        matching_thresholds.append(th)
+            # Determine if there's a mismatch
+            if all_sla_metrics and not matching_thresholds:
+                sla_metric_mismatch = True
+                # Pick a metric that doesn't match for warning message
+                non_matching = all_sla_metrics - {comparison_metric}
+                sla_configured_metric = list(non_matching)[0] if non_matching else list(all_sla_metrics)[0]
         for request in last_test_data:
             req = {}
             req['response_time'] = str(round(float(request[comparison_metric]) / 1000, 2))
@@ -783,12 +791,20 @@ class ReportBuilder:
                 req['baseline'] = "N/A"
                 req['baseline_value'] = "N/A"
                 req['baseline_color'] = GRAY
-            if thresholds_metrics and thresholds_metrics.get(request['request_name']):
+            # Try to get threshold for specific request, fallback to "all"/"All" if not found
+            threshold_for_request = thresholds_metrics.get(request['request_name'])
+            if not threshold_for_request:
+                # Try to find "all" in any case
+                for key in thresholds_metrics.keys():
+                    if key.lower() == 'all':
+                        threshold_for_request = thresholds_metrics[key]
+                        break
+            if thresholds_metrics and threshold_for_request:
                 req['threshold'] = round(
                     float(int(request[comparison_metric]) -
-                          int(thresholds_metrics[request['request_name']]['value'])) / 1000, 2)
-                req['threshold_value'] = round(float(thresholds_metrics[request['request_name']]['value']) / 1000, 2)
-                if thresholds_metrics[request['request_name']]['threshold'] == 'red':
+                          int(threshold_for_request['value'])) / 1000, 2)
+                req['threshold_value'] = round(float(threshold_for_request['value']) / 1000, 2)
+                if threshold_for_request['threshold'] == 'red':
                     req['line_color'] = RED
                     req['threshold_color'] = RED
                 else:
@@ -804,7 +820,7 @@ class ReportBuilder:
                 else:
                     req['line_color'] = YELLOW
             exceeded_thresholds.append(req)
-        exceeded_thresholds = sorted(exceeded_thresholds, key=lambda k: float(k['response_time']), reverse=True)
+        exceeded_thresholds = sorted(exceeded_thresholds, key=lambda k: k['request_name'])
         hundered = 0
         for _ in range(len(exceeded_thresholds)):
             if not (hundered):
