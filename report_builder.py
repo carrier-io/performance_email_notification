@@ -161,7 +161,12 @@ class ReportBuilder:
         
         # Add SLA mismatch warning if detected
         if baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
-            test_description['sla_metric_warning'] = f"SLA configured for {baseline_and_thresholds_temp['sla_configured_metric'].upper()}, but report uses {comparison_metric.upper()}. SLA columns hidden."
+            sla_metric = baseline_and_thresholds_temp['sla_configured_metric']
+            # Check if this is a case where SLA exists but no "all" for the metric
+            if sla_metric == comparison_metric:
+                test_description['sla_metric_warning'] = f"SLA for {comparison_metric.upper()} is configured only for specific requests, but no general 'All' SLA found. Some requests may show N/A."
+            else:
+                test_description['sla_metric_warning'] = f"SLA configured for {sla_metric.upper()}, but report uses {comparison_metric.upper()}. SLA columns hidden."
         # Fetch API reports to get start_time for historical tests
         api_reports = self.fetch_api_reports_for_comparison(args)
         builds_comparison = self.create_builds_comparison(tests_data, args, api_reports, comparison_metric)
@@ -757,6 +762,7 @@ class ReportBuilder:
         if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked") and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
             matching_thresholds = []
             all_sla_metrics = set()
+            has_all_for_comparison_metric = False
             for th in thresholds:
                 if th['target'] == 'response_time':
                     # Track all SLA metrics
@@ -766,12 +772,20 @@ class ReportBuilder:
                     if th_aggregation == comparison_metric:
                         thresholds_metrics[th['request_name']] = th
                         matching_thresholds.append(th)
+                        # Check if there's a general "all" SLA for this metric
+                        if th['request_name'].lower() == 'all':
+                            has_all_for_comparison_metric = True
             # Determine if there's a mismatch
+            # Case 1: No matching thresholds at all
             if all_sla_metrics and not matching_thresholds:
                 sla_metric_mismatch = True
                 # Pick a metric that doesn't match for warning message
                 non_matching = all_sla_metrics - {comparison_metric}
                 sla_configured_metric = list(non_matching)[0] if non_matching else list(all_sla_metrics)[0]
+            # Case 2: Has matching thresholds but no "all" for comparison_metric
+            elif matching_thresholds and not has_all_for_comparison_metric:
+                sla_metric_mismatch = True
+                sla_configured_metric = comparison_metric
         for request in last_test_data:
             req = {}
             req['response_time'] = str(round(float(request[comparison_metric]) / 1000, 2))
