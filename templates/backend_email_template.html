@@ -12,41 +12,7 @@
             font-family: 'Open Sans', sans-serif;
             line-height: 24px;
         }
-        .collapsible-header {
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-        }
-        .collapsible-header::before {
-            content: '▼';
-            position: absolute;
-            left: -4px;
-            font-size: 10px;
-            transition: transform 0.2s;
-        }
-        .collapsible-header.collapsed::before {
-            transform: rotate(-90deg);
-        }
-        .collapsible-rows {
-            display: table-row-group;
-        }
-        .collapsible-rows.hidden {
-            display: none;
-        }
     </style>
-    <script>
-        function toggleGroup(groupId) {
-            var rows = document.getElementById(groupId);
-            var header = document.getElementById(groupId + '-header');
-            if (rows.classList.contains('hidden')) {
-                rows.classList.remove('hidden');
-                header.classList.remove('collapsed');
-            } else {
-                rows.classList.add('hidden');
-                header.classList.add('collapsed');
-            }
-        }
-    </script>
 </head>
 
 <body style="margin: 0; padding: 0;">
@@ -278,8 +244,8 @@
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Baseline diff, sec</th>
             {% endif %}
             {% if baseline_and_thresholds.show_threshold_column %}
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Threshold value, sec</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Threshold diff, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Threshold value, sec{% if baseline_and_thresholds.has_missing_sla %} <span style="color: #FFA400; font-size: 11px;">⚠️</span><br><span style="font-size: 10px; font-weight: 400; color: #8492A6;">(Configure for {{ general_metrics.comparison_metric }})</span>{% endif %}</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Threshold diff, sec{% if baseline_and_thresholds.has_missing_sla %} <span style="color: #FFA400; font-size: 11px;">⚠️</span><br><span style="font-size: 10px; font-weight: 400; color: #8492A6;">(Configure for {{ general_metrics.comparison_metric }})</span>{% endif %}</th>
             {% endif %}
             {% if baseline_and_thresholds.show_representation_column %}
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Representation</th>
@@ -288,31 +254,16 @@
         </thead>
         <tbody>
         {% set prev_category = namespace(value='') %}
-        {% set current_group = namespace(id='') %}
         {% for baseline_result in baseline_and_thresholds.requests %}
         {% if baseline_result.category != prev_category.value %}
-            {% if prev_category.value != '' and prev_category.value != 'all' %}
-        </tbody>
-            {% endif %}
             {% if baseline_result.category == 'transaction' %}
-            {% set current_group.id = 'req-metrics-transactions' %}
-        <tbody>
         <tr>
-            <td colspan="10" id="{{ current_group.id }}-header" class="collapsible-header" onclick="toggleGroup('{{ current_group.id }}')" style="color: #8492A6; padding: 4px 12px 4px 16px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Transactions</td>
+            <td colspan="10" style="color: #8492A6; padding: 4px 12px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Transactions</td>
         </tr>
-        </tbody>
-        <tbody id="{{ current_group.id }}" class="collapsible-rows">
             {% elif baseline_result.category == 'request' %}
-            {% set current_group.id = 'req-metrics-requests' %}
-        <tbody>
         <tr>
-            <td colspan="10" id="{{ current_group.id }}-header" class="collapsible-header" onclick="toggleGroup('{{ current_group.id }}')" style="color: #8492A6; padding: 4px 12px 4px 16px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Requests</td>
+            <td colspan="10" style="color: #8492A6; padding: 4px 12px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Requests</td>
         </tr>
-        </tbody>
-        <tbody id="{{ current_group.id }}" class="collapsible-rows">
-            {% else %}
-            {% set current_group.id = '' %}
-        <tbody>
             {% endif %}
             {% set prev_category.value = baseline_result.category %}
         {% endif %}
@@ -324,8 +275,8 @@
             <td style="padding: 8px 12px; font-size: 14px; color: {{ baseline_result.baseline_color }}; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.baseline|format_number }}</td>
             {% endif %}
             {% if baseline_and_thresholds.show_threshold_column %}
-            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.threshold_value|format_number }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: {{ baseline_result.threshold_color }}; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.threshold|format_number }}</td>
+            <td style="padding: 8px 12px; {% if baseline_result.threshold_value == 'Set SLA' %}font-size: 12px; color: #8492A6; font-style: italic;{% else %}font-size: 14px; color: #757F99;{% endif %} text-align: right; border-bottom: solid 1px #EAEDEF;">{% if baseline_result.threshold_value == 'Set SLA' %}{{ baseline_result.threshold_value }}{% else %}{{ baseline_result.threshold_value|format_number }}{% endif %}</td>
+            <td style="padding: 8px 12px; font-size: 14px; {% if baseline_result.threshold == '-' %}color: #8492A6;{% else %}color: {{ baseline_result.threshold_color }};{% endif %} text-align: right; border-bottom: solid 1px #EAEDEF;">{% if baseline_result.threshold in ['-', 'Set SLA'] %}{{ baseline_result.threshold }}{% else %}{{ baseline_result.threshold|format_number }}{% endif %}</td>
             {% endif %}
             {% if baseline_and_thresholds.show_representation_column %}
             <td style="padding: 8px 12px; text-align: left; border-bottom: solid 1px #EAEDEF;"><span style="background: {{ baseline_result.line_color}}; width: 25px; height: 25px; display: inline-block;">&nbsp;</span></td>
@@ -389,31 +340,16 @@
         </thead>
         <tbody>
         {% set prev_category_summary = namespace(value='') %}
-        {% set current_group_summary = namespace(id='') %}
         {% for summary_result in summary %}
         {% if summary_result.category != prev_category_summary.value %}
-            {% if prev_category_summary.value != '' and prev_category_summary.value != 'all' %}
-        </tbody>
-            {% endif %}
             {% if summary_result.category == 'transaction' %}
-            {% set current_group_summary.id = 'summary-transactions' %}
-        <tbody>
         <tr>
-            <td colspan="10" id="{{ current_group_summary.id }}-header" class="collapsible-header" onclick="toggleGroup('{{ current_group_summary.id }}')" style="color: #8492A6; padding: 4px 12px 4px 16px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Transactions</td>
+            <td colspan="10" style="color: #8492A6; padding: 4px 12px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Transactions</td>
         </tr>
-        </tbody>
-        <tbody id="{{ current_group_summary.id }}" class="collapsible-rows">
             {% elif summary_result.category == 'request' %}
-            {% set current_group_summary.id = 'summary-requests' %}
-        <tbody>
         <tr>
-            <td colspan="10" id="{{ current_group_summary.id }}-header" class="collapsible-header" onclick="toggleGroup('{{ current_group_summary.id }}')" style="color: #8492A6; padding: 4px 12px 4px 16px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Requests</td>
+            <td colspan="10" style="color: #8492A6; padding: 4px 12px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Requests</td>
         </tr>
-        </tbody>
-        <tbody id="{{ current_group_summary.id }}" class="collapsible-rows">
-            {% else %}
-            {% set current_group_summary.id = '' %}
-        <tbody>
             {% endif %}
             {% set prev_category_summary.value = summary_result.category %}
         {% endif %}

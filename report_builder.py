@@ -164,7 +164,7 @@ class ReportBuilder:
             sla_metric = baseline_and_thresholds_temp['sla_configured_metric']
             # Check if this is a case where SLA exists but no "all" for the metric
             if sla_metric == comparison_metric:
-                test_description['sla_metric_warning'] = f"SLA for {comparison_metric.upper()} is configured only for specific requests, but no general 'All' SLA found. Some requests may show N/A."
+                test_description['sla_metric_warning'] = f"SLA for {comparison_metric.upper()} is configured only for specific requests, but no general 'All' SLA found. Please configure SLA for all requests if needed."
             else:
                 test_description['sla_metric_warning'] = f"SLA configured for {sla_metric.upper()}, but report uses {comparison_metric.upper()}. SLA columns hidden."
         # Fetch API reports to get start_time for historical tests
@@ -833,8 +833,8 @@ class ReportBuilder:
                 else:
                     req['threshold_color'] = GREEN
             else:
-                req['threshold'] = "N/A"
-                req['threshold_value'] = "N/A"
+                req['threshold'] = "-"
+                req['threshold_value'] = "Set SLA"
                 req['threshold_color'] = GRAY
                 req['line_color'] = GRAY
             if not req.get('line_color'):
@@ -866,7 +866,8 @@ class ReportBuilder:
         
         # Determine column visibility for Request metrics table
         show_baseline = any(req.get('baseline') != "N/A" for req in exceeded_thresholds)
-        show_threshold = any(req.get('threshold') != "N/A" for req in exceeded_thresholds)
+        show_threshold = any(req.get('threshold') not in ["N/A", None, ""] for req in exceeded_thresholds)
+        has_missing_sla = any(req.get('threshold_value') == "Set SLA" for req in exceeded_thresholds)
         # show_representation = show_baseline or show_threshold  # Original logic
         show_representation = False  # Hide Representation column but keep sorting by color
         
@@ -875,6 +876,7 @@ class ReportBuilder:
             "show_baseline_column": show_baseline,
             "show_threshold_column": show_threshold,
             "show_representation_column": show_representation,
+            "has_missing_sla": has_missing_sla,
             "sla_metric_mismatch": sla_metric_mismatch,
             "sla_configured_metric": sla_configured_metric
         }
