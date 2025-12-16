@@ -138,61 +138,79 @@
         </table>
     </div>
 
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">General metrics</p>
+    {% if general_metrics.show_baseline_column %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">General metrics vs Baseline</p>
     <table style=" width: 100%;">
         <thead>
         <tr>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Metric</th>
-            {% if general_metrics.show_baseline_column %}
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Current value</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Baseline value</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Baseline diff</th>
-            {% endif %}
-            {% if general_metrics.show_threshold_column %}
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">SLA value</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">SLA diff</th>
-            {% endif %}
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Current value</th>
         </tr>
         </thead>
         <tbody>
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Throughput, req/sec</td>
-            {% if general_metrics.show_baseline_column %}
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_tp }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_tp_value }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.baseline_tp_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_tp }}</td>
-            {% endif %}
-            {% if general_metrics.show_threshold_column %}
-            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_tp_value }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_tp_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_tp }}</td>
-            {% endif %}
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_tp }}</td>
         </tr>
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Error rate, %</td>
-            {% if general_metrics.show_baseline_column %}
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_er }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_er_value }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.baseline_er_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_er }}</td>
-            {% endif %}
-            {% if general_metrics.show_threshold_column %}
-            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_er_value }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_er_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_er }}</td>
-            {% endif %}
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_er }}</td>
         </tr>
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Response time ({{ general_metrics.comparison_metric }}), sec</td>
-            {% if general_metrics.show_baseline_column %}
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_rt }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_rt_value }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.baseline_rt_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.baseline_rt }}</td>
-            {% endif %}
-            {% if general_metrics.show_threshold_column %}
-            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_rt_value }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_rt_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_rt }}</td>
-            {% endif %}
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_rt }}</td>
         </tr>
         </tbody>
     </table>
+    {% endif %}
+
+    {% if general_metrics.show_threshold_column %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">General metrics vs SLA</p>
+    <table style=" width: 100%;">
+        <thead>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Metric</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Current value</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">SLA value</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">SLA diff</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% if general_metrics.threshold_tp != 'N/A' %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Throughput, req/sec</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_tp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_tp_value }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_tp_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_tp }}</td>
+        </tr>
+        {% endif %}
+        {% if general_metrics.threshold_er != 'N/A' %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Error rate, %</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_er }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_er_value }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_er_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_er }}</td>
+        </tr>
+        {% endif %}
+        {% if general_metrics.threshold_rt != 'N/A' %}
+        <tr>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Response time ({{ general_metrics.comparison_metric }}), sec</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_rt }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_rt_value }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_rt_color }}; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_rt }}</td>
+        </tr>
+        {% endif %}
+        </tbody>
+    </table>
+    {% endif %}
 
     <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Success Rate</p>
     <div>
