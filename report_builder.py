@@ -793,6 +793,15 @@ class ReportBuilder:
                 req['request_name'] = str(request['request_name'])[:80] + "..."
             else:
                 req['request_name'] = str(request['request_name'])
+            
+            # Determine request category based on method field
+            method = request.get('method', '').upper()
+            if request['request_name'].lower() == 'all':
+                req['category'] = 'all'  # Overall metrics
+            elif method == 'TRANSACTION':
+                req['category'] = 'transaction'  # Transactions
+            else:
+                req['category'] = 'request'  # Individual requests
             if baseline and request['request_name'] in list(baseline_metrics.keys()):
                 req['baseline'] = round(
                     float(int(request[comparison_metric]) - baseline_metrics[request['request_name']]) / 1000, 2)
@@ -834,9 +843,19 @@ class ReportBuilder:
                 else:
                     req['line_color'] = YELLOW
             exceeded_thresholds.append(req)
-        # Sort by line_color: RED first, then YELLOW, then GREEN, then GRAY
+        
+        # Group by category and sort by color within each group
+        # Category priority: all (0), transaction (1), request (2)
+        # Color priority: RED (0), YELLOW (1), GREEN (2), GRAY (3)
+        category_priority = {'all': 0, 'transaction': 1, 'request': 2}
         color_priority = {RED: 0, YELLOW: 1, GREEN: 2, GRAY: 3}
-        exceeded_thresholds = sorted(exceeded_thresholds, key=lambda k: color_priority.get(k.get('line_color', GRAY), 4))
+        exceeded_thresholds = sorted(
+            exceeded_thresholds, 
+            key=lambda k: (
+                category_priority.get(k.get('category', 'request'), 3),
+                color_priority.get(k.get('line_color', GRAY), 4)
+            )
+        )
         hundered = 0
         for _ in range(len(exceeded_thresholds)):
             if not (hundered):

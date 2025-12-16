@@ -253,7 +253,20 @@
         </tr>
         </thead>
         <tbody>
+        {% set prev_category = namespace(value='') %}
         {% for baseline_result in baseline_and_thresholds.requests %}
+        {% if baseline_result.category != prev_category.value %}
+            {% if baseline_result.category == 'transaction' %}
+        <tr>
+            <td colspan="10" style="color: #8492A6; padding: 4px 12px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Transactions</td>
+        </tr>
+            {% elif baseline_result.category == 'request' %}
+        <tr>
+            <td colspan="10" style="color: #8492A6; padding: 4px 12px; line-height: 14px; font-size: 11px; font-weight: 500; background: #FAFBFC; border-bottom: solid 1px #EAEDEF; text-align: left;">Requests</td>
+        </tr>
+            {% endif %}
+            {% set prev_category.value = baseline_result.category %}
+        {% endif %}
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.request_name }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.response_time }}</td>
