@@ -1048,6 +1048,15 @@ class ReportBuilder:
         for _ in range(len(results_list)):
             for key in keys:
                 results_list[_][key] = self.stringify_number(results_list[_][key])
+            
+            # Add category field for grouping in Results summary table
+            method = results_list[_].get('method', '').upper()
+            if results_list[_].get('request_name', '').lower() == 'all':
+                results_list[_]['category'] = 'all'
+            elif method == 'TRANSACTION':
+                results_list[_]['category'] = 'transaction'
+            else:
+                results_list[_]['category'] = 'request'
         return results_list
 
     @staticmethod
