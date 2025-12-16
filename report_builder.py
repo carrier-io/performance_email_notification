@@ -866,7 +866,7 @@ class ReportBuilder:
         
         # Determine column visibility for Request metrics table
         show_baseline = any(req.get('baseline') != "N/A" for req in exceeded_thresholds)
-        show_threshold = any(req.get('threshold') not in ["N/A", None, ""] for req in exceeded_thresholds)
+        show_threshold = any(req.get('threshold_value') not in ["N/A", None, "", "Set SLA"] for req in exceeded_thresholds)
         has_missing_sla = any(req.get('threshold_value') == "Set SLA" for req in exceeded_thresholds)
         # show_representation = show_baseline or show_threshold  # Original logic
         show_representation = False  # Hide Representation column but keep sorting by color
