@@ -716,7 +716,7 @@ class ReportBuilder:
             for request in baseline:
                 baseline_metrics[request['request_name']] = int(request[comparison_metric])
 
-        if thresholds and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
+        if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked") and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
             for th in thresholds:
                 if th['target'] == 'response_time':
                     thresholds_metrics[th['request_name']] = th
