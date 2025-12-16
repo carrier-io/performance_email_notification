@@ -350,7 +350,7 @@ class ReportBuilder:
                 test_info['date_img'] = convert_utc_to_cet(utc_date, '%d-%b\n%H:%M')
                 test_info['total'] = summary_request["total"]
                 test_info['throughput'] = round(summary_request["throughput"], 2)
-                test_info['response_time'] = summary_request[comparison_metric]
+                test_info['response_time'] = round(summary_request[comparison_metric] / 1000, 2)
                 test_info['error_rate'] = round((summary_request["ko"] / summary_request["total"]) * 100, 2)
                 # Add report URL for clickable date
                 if api_data and api_data.get('report_id'):
@@ -383,7 +383,7 @@ class ReportBuilder:
                 param_diff = round(float(build[param]) - float(last_build.get(param, 0.0)), 2)
                 color = RED if param_diff < 0.0 else GREEN
             if param in ['response_time']:
-                param_diff = round((float(build[param]) - float(last_build[param])) / 1000, 2)
+                param_diff = round(float(build[param]) - float(last_build[param]), 2)
                 color = RED if param_diff > 0.0 else GREEN
             if param_diff is not None:
                 param_diff = f"+{param_diff}" if param_diff > 0 else str(param_diff)
@@ -697,7 +697,7 @@ class ReportBuilder:
             "baseline_er_color": baseline_er_color,
             "threshold_er": thresholds_error_rate,
             "threshold_er_color": thresholds_er_color,
-            "current_rt": round(current_rt / 1000, 2),
+            "current_rt": current_rt,
             "baseline_rt": baseline_rt,
             "baseline_rt_color": baseline_rt_color,
             "threshold_rt": thresholds_rt,
