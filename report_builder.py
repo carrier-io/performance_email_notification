@@ -834,7 +834,9 @@ class ReportBuilder:
                 else:
                     req['line_color'] = YELLOW
             exceeded_thresholds.append(req)
-        exceeded_thresholds = sorted(exceeded_thresholds, key=lambda k: k['request_name'])
+        # Sort by line_color: RED first, then YELLOW, then GREEN, then GRAY
+        color_priority = {RED: 0, YELLOW: 1, GREEN: 2, GRAY: 3}
+        exceeded_thresholds = sorted(exceeded_thresholds, key=lambda k: color_priority.get(k.get('line_color', GRAY), 4))
         hundered = 0
         for _ in range(len(exceeded_thresholds)):
             if not (hundered):
@@ -846,7 +848,8 @@ class ReportBuilder:
         # Determine column visibility for Request metrics table
         show_baseline = any(req.get('baseline') != "N/A" for req in exceeded_thresholds)
         show_threshold = any(req.get('threshold') != "N/A" for req in exceeded_thresholds)
-        show_representation = show_baseline or show_threshold
+        # show_representation = show_baseline or show_threshold  # Original logic
+        show_representation = False  # Hide Representation column but keep sorting by color
         
         return {
             "requests": exceeded_thresholds,
