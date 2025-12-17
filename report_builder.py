@@ -82,6 +82,39 @@ class ReportBuilder:
             end_time = first_row.get("end_time")
         return total, rows, start_time, end_time
     
+    @staticmethod
+    def _get_baseline_api_report_id(args, baseline_build_id):
+        """
+        Get report_id for baseline API test by its build_id.
+        Returns report_id (int) or None if not found.
+        """
+        try:
+            test_name = args.get('test') or args.get('simulation')
+            galloper_url = args.get('galloper_url')
+            project_id = args.get('project_id')
+            token = args.get('token')
+            
+            if not all([galloper_url, project_id, token, test_name]):
+                return None
+            
+            # Fetch all reports to find the one with matching build_id
+            url = f"{galloper_url}/api/v1/backend_performance/reports/{project_id}?name={test_name}&limit=100"
+            headers = {"Authorization": f"Bearer {token}"}
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            rows = data.get("rows", [])
+            
+            # Find report with matching build_id
+            for row in rows:
+                if row.get('build_id') == baseline_build_id:
+                    return row.get('id')
+            
+            return None
+        except Exception as e:
+            print(f"Warning: Could not fetch baseline report_id: {e}")
+            return None
+    
     def fetch_api_reports_for_comparison(self, args):
         """
         Fetch API reports to get start_time for historical tests.
@@ -107,7 +140,8 @@ class ReportBuilder:
                 if build_id:
                     report_data = {
                         'start_time': row.get('start_time'),
-                        'duration': row.get('duration')
+                        'duration': row.get('duration'),
+                        'report_id': row.get('id')
                     }
                     # Only include end_time for the first (latest) report
                     if idx == 0:
@@ -120,17 +154,28 @@ class ReportBuilder:
 
     def create_api_email_body(self, args, tests_data, last_test_data, baseline, comparison_metric,
                               violation, thresholds=None, report_data=None):
+        # Create baseline_and_thresholds first to check for metric mismatch
+        baseline_and_thresholds_temp = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric, thresholds)
+        
         test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation, report_data)
+        
+        # Add SLA mismatch warning if detected
+        if baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
+            sla_metric = baseline_and_thresholds_temp['sla_configured_metric']
+            # Check if this is a case where SLA exists but no "all" for the metric
+            if sla_metric == comparison_metric:
+                test_description['sla_metric_warning'] = f"SLA for {comparison_metric.upper()} is configured only for specific requests, but no general 'All' SLA found. Please configure SLA for all requests if needed."
+            else:
+                test_description['sla_metric_warning'] = f"SLA configured for {sla_metric.upper()}, but report uses {comparison_metric.upper()}. SLA columns hidden."
         # Fetch API reports to get start_time for historical tests
         api_reports = self.fetch_api_reports_for_comparison(args)
-        builds_comparison = self.create_builds_comparison(tests_data, args, api_reports)
-        general_metrics = self.get_general_metrics(args, builds_comparison[0], baseline, thresholds)
+        builds_comparison = self.create_builds_comparison(tests_data, args, api_reports, comparison_metric)
+        general_metrics = self.get_general_metrics(args, builds_comparison[0], baseline, thresholds, comparison_metric)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
-        baseline_and_thresholds = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric,
-                                                                   thresholds)
+        baseline_and_thresholds = baseline_and_thresholds_temp
 
         email_body = self.get_api_email_body(args, test_description, last_test_data, baseline, builds_comparison,
-                                             baseline_and_thresholds, general_metrics)
+                                             baseline_and_thresholds, general_metrics, comparison_metric)
         return email_body, charts, str(test_description['start']).split(" ")[0]
 
     def create_ui_email_body(self, tests_data, last_test_data):
@@ -150,8 +195,18 @@ class ReportBuilder:
                        "missed_threshold_rate": args["missed_threshold_rate"],
                        "reasons_to_fail_report": args["reasons_to_fail_report"], "status": args["status"],
                        "color": STATUS_COLOR[args["status"].lower()]}
+        # Add baseline report URL if baseline exists and has build_id
+        if baseline and len(baseline) > 0 and baseline[0].get("build_id"):
+            baseline_build_id = baseline[0]["build_id"]
+            # Get report_id for baseline from API
+            baseline_report_id = self._get_baseline_api_report_id(args, baseline_build_id)
+            if baseline_report_id:
+                test_params["baseline_report_url"] = f"{args['galloper_url']}/-/performance/backend/results?result_id={baseline_report_id}"
         for param in params:
             test_params[param] = test[0][param]
+        
+        # Add SLA metric mismatch warning if needed
+        test_params['sla_metric_warning'] = None
         
         # Use start_time and end_time from report_data if available (for API tests)
         if report_data and 'start_time' in report_data and 'end_time' in report_data:
@@ -278,7 +333,7 @@ class ReportBuilder:
             return 'FAILED', 'missed thresholds rate - ' + str(violation) + ' %'
         return 'SUCCESS', ''
 
-    def create_builds_comparison(self, tests, args, api_reports=None):
+    def create_builds_comparison(self, tests, args, api_reports=None, comparison_metric='pct95'):
         builds_comparison = []
         if api_reports is None:
             api_reports = {}
@@ -309,8 +364,11 @@ class ReportBuilder:
                 test_info['date_img'] = convert_utc_to_cet(utc_date, '%d-%b\n%H:%M')
                 test_info['total'] = summary_request["total"]
                 test_info['throughput'] = round(summary_request["throughput"], 2)
-                test_info['pct95'] = summary_request["pct95"]
+                test_info['response_time'] = round(summary_request[comparison_metric] / 1000, 2)
                 test_info['error_rate'] = round((summary_request["ko"] / summary_request["total"]) * 100, 2)
+                # Add report URL for clickable date
+                if api_data and api_data.get('report_id'):
+                    test_info['report_url'] = f"{args['galloper_url']}/-/performance/backend/results?result_id={api_data['report_id']}"
                 builds_comparison.append(test_info)
         builds_comparison = self.calculate_diffs(builds_comparison)
 
@@ -327,7 +385,10 @@ class ReportBuilder:
     @staticmethod
     def compare_builds(build, last_build):
         build_info = {}
-        for param in ['date', 'date_img', 'error_rate', 'pct95', 'total', 'throughput']:
+        # Preserve report_url if it exists
+        if 'report_url' in build:
+            build_info['report_url'] = build['report_url']
+        for param in ['date', 'date_img', 'error_rate', 'response_time', 'total', 'throughput']:
             param_diff = None
             if param in ['error_rate']:
                 param_diff = round(float(build[param]) - float(last_build.get(param, 0.0)), 2)
@@ -335,8 +396,8 @@ class ReportBuilder:
             if param in ['throughput', 'total']:
                 param_diff = round(float(build[param]) - float(last_build.get(param, 0.0)), 2)
                 color = RED if param_diff < 0.0 else GREEN
-            if param in ['pct95']:
-                param_diff = round((float(build[param]) - float(last_build[param])) / 1000, 2)
+            if param in ['response_time']:
+                param_diff = round(float(build[param]) - float(last_build[param]), 2)
                 color = RED if param_diff > 0.0 else GREEN
             if param_diff is not None:
                 param_diff = f"+{param_diff}" if param_diff > 0 else str(param_diff)
@@ -349,7 +410,7 @@ class ReportBuilder:
         if len(builds) > 1:
             charts.append(self.create_success_rate_chart(builds))
             charts.append(self.create_throughput_chart(builds))
-            charts.append(self.create_response_time_chart(builds))
+            charts.append(self.create_response_time_chart(builds, comparison_metric))
         return charts
 
     @staticmethod
@@ -367,7 +428,7 @@ class ReportBuilder:
             'x_axis': 'Test Runs',
             'y_axis': 'Successful requests, %',
             'width': 10,
-            'height': 3,
+            'height': 2,
             'path_to_save': '/tmp/success_rate.png',
             'keys': keys[::-1],
             'values': values,
@@ -395,7 +456,7 @@ class ReportBuilder:
             'x_axis': 'Test Runs',
             'y_axis': 'Throughput, req/s',
             'width': 10,
-            'height': 3,
+            'height': 2,
             'path_to_save': '/tmp/throughput.png',
             'keys': keys[::-1],
             'values': values,
@@ -409,21 +470,21 @@ class ReportBuilder:
         return image
 
     @staticmethod
-    def create_response_time_chart(builds):
+    def create_response_time_chart(builds, metric_name='pct95'):
         labels, keys, values = [], [], []
         count = 1
         for test in builds:
             labels.append(test.get('date_img', test.get('date', '')))
-            keys.append(test['pct95'])
+            keys.append(test['response_time'])
             values.append(count)
             count += 1
         datapoints = {
-            'title': 'Response Time (pct95)',
-            'label': 'Response Time, ms',
+            'title': f'Response Time ({metric_name})',
+            'label': 'Response Time, sec',
             'x_axis': 'Test Runs',
-            'y_axis': 'Response Time, ms',
+            'y_axis': 'Response Time, sec',
             'width': 10,
-            'height': 3,
+            'height': 2,
             'path_to_save': '/tmp/response_time.png',
             'keys': keys[::-1],
             'values': values,
@@ -593,16 +654,22 @@ class ReportBuilder:
         return image
 
     @staticmethod
-    def get_general_metrics(args, build_data, baseline, thresholds=None):
+    def get_general_metrics(args, build_data, baseline, thresholds=None, comparison_metric='pct95'):
         current_tp = build_data['throughput']
         current_error_rate = build_data['error_rate']
-        current_rt = build_data['pct95']
+        current_rt = build_data['response_time']
         baseline_throughput = "N/A"
         baseline_error_rate = "N/A"
         baseline_rt = "N/A"
+        baseline_tp_value = "N/A"
+        baseline_er_value = "N/A"
+        baseline_rt_value = "N/A"
         thresholds_tp_rate = "N/A"
         thresholds_error_rate = "N/A"
         thresholds_rt = "N/A"
+        threshold_tp_value = "N/A"
+        threshold_er_value = "N/A"
+        threshold_rt_value = "N/A"
         thresholds_tp_color = GRAY
         thresholds_er_color = GRAY
         thresholds_rt_color = GRAY
@@ -610,53 +677,74 @@ class ReportBuilder:
         baseline_er_color = GRAY
         baseline_rt_color = GRAY
         if baseline and args.get("quality_gate_config", {}).get("baseline", {}).get("checked"):
-            baseline_throughput = round(sum([tp['throughput'] for tp in baseline]), 2)
-            baseline_ko_count = round(sum([tp['ko'] for tp in baseline]), 2)
-            baseline_ok_count = round(sum([tp['ok'] for tp in baseline]), 2)
-            baseline_error_rate = round((baseline_ko_count / (baseline_ko_count + baseline_ok_count)) * 100, 2)
-            baseline_tp_color = RED if baseline_throughput > current_tp else GREEN
-            baseline_er_color = RED if current_error_rate > baseline_error_rate else GREEN
-            baseline_throughput = round(current_tp - baseline_throughput, 2)
-            baseline_error_rate = round(current_error_rate - baseline_error_rate, 2)
-            baseline_pct95 = round(sum([b['pct95'] for b in baseline]) / len(baseline), 2)
-            baseline_rt_color = RED if current_rt > baseline_pct95 else GREEN
-            baseline_rt = round((current_rt - baseline_pct95) / 1000, 2)
+            # Find "All" request in baseline
+            baseline_all = None
+            for b in baseline:
+                if b.get('request_name') == 'All':
+                    baseline_all = b
+                    break
+            
+            if baseline_all:
+                baseline_tp_value = round(baseline_all['throughput'], 2)
+                baseline_ko_count = baseline_all['ko']
+                baseline_ok_count = baseline_all['ok']
+                baseline_er_value = round((baseline_ko_count / (baseline_ko_count + baseline_ok_count)) * 100, 2)
+                baseline_tp_color = RED if baseline_tp_value > current_tp else GREEN
+                baseline_er_color = RED if current_error_rate > baseline_er_value else GREEN
+                baseline_throughput = round(current_tp - baseline_tp_value, 2)
+                baseline_error_rate = round(current_error_rate - baseline_er_value, 2)
+                baseline_rt_value = round(baseline_all[comparison_metric] / 1000, 2)
+                baseline_rt_color = RED if current_rt > baseline_rt_value else GREEN
+                baseline_rt = round(current_rt - baseline_rt_value, 2)
         if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked"):
             for th in thresholds:
-                if th['request_name'] == 'all':
+                if th['request_name'].lower() == 'all':
                     if th['target'] == 'error_rate':
+                        threshold_er_value = th['value']
                         thresholds_error_rate = round(th["metric"] - th['value'], 2)
                         if th['threshold'] == "red":
                             thresholds_er_color = RED
                         else:
                             thresholds_er_color = GREEN
                     if th['target'] == 'throughput':
+                        threshold_tp_value = th['value']
                         thresholds_tp_rate = round(th["metric"] - th['value'], 2)
                         if th['threshold'] == "red":
                             thresholds_tp_color = RED
                         else:
                             thresholds_tp_color = GREEN
                     if th['target'] == 'response_time':
-                        thresholds_rt = round((th["metric"] - th['value']) / 1000, 2)
-                        thresholds_rt_color = RED if th['threshold'] == "red" else GREEN
+                        # Only use threshold if aggregation matches comparison_metric
+                        th_aggregation = th.get('aggregation', 'pct95')
+                        if th_aggregation == comparison_metric:
+                            threshold_rt_value = round(th['value'] / 1000, 2)
+                            thresholds_rt = round((th["metric"] - th['value']) / 1000, 2)
+                            thresholds_rt_color = RED if th['threshold'] == "red" else GREEN
         return {
             "current_tp": current_tp,
             "baseline_tp": baseline_throughput,
+            "baseline_tp_value": baseline_tp_value,
             "baseline_tp_color": baseline_tp_color,
             "threshold_tp": thresholds_tp_rate,
+            "threshold_tp_value": threshold_tp_value,
             "threshold_tp_color": thresholds_tp_color,
             "current_er": current_error_rate,
             "baseline_er": baseline_error_rate,
+            "baseline_er_value": baseline_er_value,
             "baseline_er_color": baseline_er_color,
             "threshold_er": thresholds_error_rate,
+            "threshold_er_value": threshold_er_value,
             "threshold_er_color": thresholds_er_color,
-            "current_rt": round(current_rt / 1000, 2),
+            "current_rt": current_rt,
             "baseline_rt": baseline_rt,
+            "baseline_rt_value": baseline_rt_value,
             "baseline_rt_color": baseline_rt_color,
             "threshold_rt": thresholds_rt,
+            "threshold_rt_value": threshold_rt_value,
             "threshold_rt_color": thresholds_rt_color,
             "show_baseline_column": baseline_throughput != "N/A" or baseline_error_rate != "N/A" or baseline_rt != "N/A",
-            "show_threshold_column": thresholds_tp_rate != "N/A" or thresholds_error_rate != "N/A" or thresholds_rt != "N/A"
+            "show_threshold_column": thresholds_tp_rate != "N/A" or thresholds_error_rate != "N/A" or thresholds_rt != "N/A",
+            "comparison_metric": comparison_metric.capitalize()
         }
 
     @staticmethod
@@ -664,14 +752,40 @@ class ReportBuilder:
         exceeded_thresholds = []
         baseline_metrics = {}
         thresholds_metrics = {}
-        if baseline and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
+        sla_metric_mismatch = False
+        sla_configured_metric = None
+        
+        if baseline and args.get("quality_gate_config", {}).get("baseline", {}).get("checked") and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
             for request in baseline:
                 baseline_metrics[request['request_name']] = int(request[comparison_metric])
 
-        if thresholds and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
+        if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked") and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
+            matching_thresholds = []
+            all_sla_metrics = set()
+            has_all_for_comparison_metric = False
             for th in thresholds:
                 if th['target'] == 'response_time':
-                    thresholds_metrics[th['request_name']] = th
+                    # Track all SLA metrics
+                    th_aggregation = th.get('aggregation', 'pct95')
+                    all_sla_metrics.add(th_aggregation)
+                    # Only add threshold if aggregation matches comparison_metric
+                    if th_aggregation == comparison_metric:
+                        thresholds_metrics[th['request_name']] = th
+                        matching_thresholds.append(th)
+                        # Check if there's a general "all" SLA for this metric
+                        if th['request_name'].lower() == 'all':
+                            has_all_for_comparison_metric = True
+            # Determine if there's a mismatch
+            # Case 1: No matching thresholds at all
+            if all_sla_metrics and not matching_thresholds:
+                sla_metric_mismatch = True
+                # Pick a metric that doesn't match for warning message
+                non_matching = all_sla_metrics - {comparison_metric}
+                sla_configured_metric = list(non_matching)[0] if non_matching else list(all_sla_metrics)[0]
+            # Case 2: Has matching thresholds but no "all" for comparison_metric
+            elif matching_thresholds and not has_all_for_comparison_metric:
+                sla_metric_mismatch = True
+                sla_configured_metric = comparison_metric
         for request in last_test_data:
             req = {}
             req['response_time'] = str(round(float(request[comparison_metric]) / 1000, 2))
@@ -679,29 +793,48 @@ class ReportBuilder:
                 req['request_name'] = str(request['request_name'])[:80] + "..."
             else:
                 req['request_name'] = str(request['request_name'])
+            
+            # Determine request category based on method field
+            method = request.get('method', '').upper()
+            if request['request_name'].lower() == 'all':
+                req['category'] = 'all'  # Overall metrics
+            elif method == 'TRANSACTION':
+                req['category'] = 'transaction'  # Transactions
+            else:
+                req['category'] = 'request'  # Individual requests
             if baseline and request['request_name'] in list(baseline_metrics.keys()):
                 req['baseline'] = round(
                     float(int(request[comparison_metric]) - baseline_metrics[request['request_name']]) / 1000, 2)
+                req['baseline_value'] = round(baseline_metrics[request['request_name']] / 1000, 2)
                 if req['baseline'] < 0:
                     req['baseline_color'] = GREEN
                 else:
                     req['baseline_color'] = YELLOW
             else:
                 req['baseline'] = "N/A"
+                req['baseline_value'] = "N/A"
                 req['baseline_color'] = GRAY
-            if thresholds_metrics and thresholds_metrics.get(request['request_name']):
+            # Try to get threshold for specific request, fallback to "all"/"All" if not found
+            threshold_for_request = thresholds_metrics.get(request['request_name'])
+            if not threshold_for_request:
+                # Try to find "all" in any case
+                for key in thresholds_metrics.keys():
+                    if key.lower() == 'all':
+                        threshold_for_request = thresholds_metrics[key]
+                        break
+            if thresholds_metrics and threshold_for_request:
                 req['threshold'] = round(
                     float(int(request[comparison_metric]) -
-                          int(thresholds_metrics[request['request_name']]['value'])) / 1000, 2)
-                req['threshold_value'] = str(thresholds_metrics[request['request_name']]['value'])
-                if thresholds_metrics[request['request_name']]['threshold'] == 'red':
+                          int(threshold_for_request['value'])) / 1000, 2)
+                req['threshold_value'] = round(float(threshold_for_request['value']) / 1000, 2)
+                if threshold_for_request['threshold'] == 'red':
                     req['line_color'] = RED
                     req['threshold_color'] = RED
                 else:
                     req['threshold_color'] = GREEN
             else:
-                req['threshold'] = "N/A"
-                req['threshold_value'] = 0.0
+                req['threshold'] = "-"
+                req['threshold_value'] = "Set SLA"
                 req['threshold_color'] = GRAY
                 req['line_color'] = GRAY
             if not req.get('line_color'):
@@ -710,7 +843,19 @@ class ReportBuilder:
                 else:
                     req['line_color'] = YELLOW
             exceeded_thresholds.append(req)
-        exceeded_thresholds = sorted(exceeded_thresholds, key=lambda k: float(k['response_time']), reverse=True)
+        
+        # Group by category and sort by color within each group
+        # Category priority: all (0), transaction (1), request (2)
+        # Color priority: RED (0), YELLOW (1), GREEN (2), GRAY (3)
+        category_priority = {'all': 0, 'transaction': 1, 'request': 2}
+        color_priority = {RED: 0, YELLOW: 1, GREEN: 2, GRAY: 3}
+        exceeded_thresholds = sorted(
+            exceeded_thresholds, 
+            key=lambda k: (
+                category_priority.get(k.get('category', 'request'), 3),
+                color_priority.get(k.get('line_color', GRAY), 4)
+            )
+        )
         hundered = 0
         for _ in range(len(exceeded_thresholds)):
             if not (hundered):
@@ -721,14 +866,19 @@ class ReportBuilder:
         
         # Determine column visibility for Request metrics table
         show_baseline = any(req.get('baseline') != "N/A" for req in exceeded_thresholds)
-        show_threshold = any(req.get('threshold') != "N/A" for req in exceeded_thresholds)
-        show_representation = show_baseline or show_threshold
+        show_threshold = any(req.get('threshold_value') not in ["N/A", None, "", "Set SLA"] for req in exceeded_thresholds)
+        has_missing_sla = any(req.get('threshold_value') == "Set SLA" for req in exceeded_thresholds)
+        # show_representation = show_baseline or show_threshold  # Original logic
+        show_representation = False  # Hide Representation column but keep sorting by color
         
         return {
             "requests": exceeded_thresholds,
             "show_baseline_column": show_baseline,
             "show_threshold_column": show_threshold,
-            "show_representation_column": show_representation
+            "show_representation_column": show_representation,
+            "has_missing_sla": has_missing_sla,
+            "sla_metric_mismatch": sla_metric_mismatch,
+            "sla_configured_metric": sla_configured_metric
         }
 
     def create_ui_builds_comparison(self, tests):
@@ -834,8 +984,25 @@ class ReportBuilder:
         return test_data
 
     def get_api_email_body(self, args, test_params, last_test_data, baseline, builds_comparison, baseline_and_thresholds,
-                           general_metrics):
+                           general_metrics, comparison_metric='pct95'):
+        def format_number(value):
+            """Format number with thousand separators and max 2 decimal places"""
+            if value in ['N/A', '', None]:
+                return value
+            try:
+                # Convert to float
+                num = float(value)
+                # Format with 2 decimal places and thousand separators (comma)
+                formatted = "{:,.2f}".format(num)
+                # Remove trailing zeros after decimal point
+                if '.' in formatted:
+                    formatted = formatted.rstrip('0').rstrip('.')
+                return formatted
+            except (ValueError, TypeError):
+                return value
+        
         env = Environment(loader=FileSystemLoader('./templates/'))
+        env.filters['format_number'] = format_number
         template = env.get_template("backend_email_template.html")
         last_test_data = self.reprocess_test_data(last_test_data, ['total', 'throughput'])
         if args.get("performance_degradation_rate_qg", None):
@@ -866,7 +1033,8 @@ class ReportBuilder:
             test_params["threshold_status"] = "N/A"
         html = template.render(t_params=test_params, summary=last_test_data, baseline=baseline,
                                comparison=builds_comparison,
-                               baseline_and_thresholds=baseline_and_thresholds, general_metrics=general_metrics)
+                               baseline_and_thresholds=baseline_and_thresholds, general_metrics=general_metrics,
+                               comparison_metric=comparison_metric)
         return html
 
     @staticmethod
@@ -882,6 +1050,15 @@ class ReportBuilder:
         for _ in range(len(results_list)):
             for key in keys:
                 results_list[_][key] = self.stringify_number(results_list[_][key])
+            
+            # Add category field for grouping in Results summary table
+            method = results_list[_].get('method', '').upper()
+            if results_list[_].get('request_name', '').lower() == 'all':
+                results_list[_]['category'] = 'all'
+            elif method == 'TRANSACTION':
+                results_list[_]['category'] = 'transaction'
+            else:
+                results_list[_]['category'] = 'request'
         return results_list
 
     @staticmethod
