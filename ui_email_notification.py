@@ -47,20 +47,28 @@ class UIEmailNotification(object):
         for index, test in enumerate(tests_data):
             aggregated_test_data = {}
             for metric in ["load_time", "tbt", "fcp", "lcp", "ttfb"]:
-                _arr = [int(each[metric]) for each in test["pages"]]
-                aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2) if len(_arr) else 0
+                try:
+                    _arr = [int(each[metric]) for each in test["pages"] if metric in each]
+                    aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2) if len(_arr) else 0
+                except (KeyError, ValueError, TypeError) as e:
+                    print(f"[WARNING] Missing or invalid metric '{metric}' in pages data: {e}")
+                    aggregated_test_data[metric] = 0
             aggregated_test_data["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
             aggregated_test_data["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             page_comparison.append(aggregated_test_data)
 
             aggregated_test_data = {}
             for metric in ["cls", "tbt", "inp"]:
-                if metric == "cls":
-                    _arr = [float(each[metric]) for each in test["actions"]]
-                    aggregated_test_data[metric] = round(sum(_arr) / len(_arr), 2) if len(_arr) else 0
-                else:
-                    _arr = [int(each[metric]) for each in test["actions"]]
-                    aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2) if len(_arr) else 0
+                try:
+                    if metric == "cls":
+                        _arr = [float(each[metric]) for each in test["actions"] if metric in each]
+                        aggregated_test_data[metric] = round(sum(_arr) / len(_arr), 2) if len(_arr) else 0
+                    else:
+                        _arr = [int(each[metric]) for each in test["actions"] if metric in each]
+                        aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2) if len(_arr) else 0
+                except (KeyError, ValueError, TypeError) as e:
+                    print(f"[WARNING] Missing or invalid metric '{metric}' in actions data: {e}")
+                    aggregated_test_data[metric] = 0
             aggregated_test_data["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
             aggregated_test_data["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             action_comparison.append(aggregated_test_data)
@@ -77,9 +85,17 @@ class UIEmailNotification(object):
             each["report"] = f"{self.gelloper_url}{each['report'][0]}"
             for metric in ["load_time", "dom", "fcp", "lcp", "tbt", "ttfb", "fvc", "lvc", "inp"]:
                 if metric in each:
-                    each[metric] = round(int(each[metric]) / 1000, 2)
+                    try:
+                        each[metric] = round(int(each[metric]) / 1000, 2)
+                    except (ValueError, TypeError) as e:
+                        print(f"[WARNING] Invalid value for metric '{metric}' in result '{each.get('name', 'unknown')}': {e}")
+                        each[metric] = 0
             if "cls" in each:
-                each["cls"] = round(float(each["cls"]), 2)
+                try:
+                    each["cls"] = round(float(each["cls"]), 2)
+                except (ValueError, TypeError) as e:
+                    print(f"[WARNING] Invalid value for CLS in result '{each.get('name', 'unknown')}': {e}")
+                    each["cls"] = 0
 
         try:
             baseline_id = self.__get_baseline_report(report_info['name'], report_info['environment'])
@@ -105,23 +121,51 @@ class UIEmailNotification(object):
                     _baseline_results[each["identifier"]] = {"name": each["name"], "type": each["type"]}
                     if each["type"] == "page":
                         for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
-                            _baseline_results[each["identifier"]][metric] = [round(int(each[metric]) / 1000, 2)]
+                            try:
+                                if metric in each:
+                                    _baseline_results[each["identifier"]][metric] = [round(int(each[metric]) / 1000, 2)]
+                                else:
+                                    _baseline_results[each["identifier"]][metric] = [0]
+                            except (ValueError, TypeError, KeyError) as e:
+                                print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
+                                _baseline_results[each["identifier"]][metric] = [0]
                     else:
                         for metric in ["tbt", "cls", "inp"]:
-                            if metric == "cls":
-                                _baseline_results[each["identifier"]][metric] = [round(float(each[metric]), 2)]
-                            else:
-                                _baseline_results[each["identifier"]][metric] = [round(int(each[metric]) / 1000, 2)]
+                            try:
+                                if metric in each:
+                                    if metric == "cls":
+                                        _baseline_results[each["identifier"]][metric] = [round(float(each[metric]), 2)]
+                                    else:
+                                        _baseline_results[each["identifier"]][metric] = [round(int(each[metric]) / 1000, 2)]
+                                else:
+                                    _baseline_results[each["identifier"]][metric] = [0]
+                            except (ValueError, TypeError, KeyError) as e:
+                                print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
+                                _baseline_results[each["identifier"]][metric] = [0]
                 else:
                     if each["type"] == "page":
                         for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
-                            _baseline_results[each["identifier"]][metric].append(round(int(each[metric]) / 1000, 2))
+                            try:
+                                if metric in each:
+                                    _baseline_results[each["identifier"]][metric].append(round(int(each[metric]) / 1000, 2))
+                                else:
+                                    _baseline_results[each["identifier"]][metric].append(0)
+                            except (ValueError, TypeError, KeyError) as e:
+                                print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
+                                _baseline_results[each["identifier"]][metric].append(0)
                     else:
                         for metric in ["tbt", "cls", "inp"]:
-                            if metric == "cls":
-                                _baseline_results[each["identifier"]][metric].append(round(float(each[metric]), 2))
-                            else:
-                                _baseline_results[each["identifier"]][metric].append(round(int(each[metric]) / 1000, 2))
+                            try:
+                                if metric in each:
+                                    if metric == "cls":
+                                        _baseline_results[each["identifier"]][metric].append(round(float(each[metric]), 2))
+                                    else:
+                                        _baseline_results[each["identifier"]][metric].append(round(int(each[metric]) / 1000, 2))
+                                else:
+                                    _baseline_results[each["identifier"]][metric].append(0)
+                            except (ValueError, TypeError, KeyError) as e:
+                                print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
+                                _baseline_results[each["identifier"]][metric].append(0)
             for each in _baseline_results:
                 _ = {"identifier": each, "name": _baseline_results[each]["name"], "type": _baseline_results[each]["type"]}
                 for metric in ["load_time", "fcp", "lcp", "tbt", "inp", "cls", "ttfb"]:
@@ -139,23 +183,51 @@ class UIEmailNotification(object):
                     _current_results[each["identifier"]] = {"name": each["name"], "type": each["type"]}
                     if each["type"] == "page":
                         for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
-                            _current_results[each["identifier"]][metric] = [float(each[metric])]
+                            try:
+                                if metric in each:
+                                    _current_results[each["identifier"]][metric] = [float(each[metric])]
+                                else:
+                                    _current_results[each["identifier"]][metric] = [0.0]
+                            except (ValueError, TypeError, KeyError) as e:
+                                print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
+                                _current_results[each["identifier"]][metric] = [0.0]
                     else:
                         for metric in ["tbt", "cls", "inp"]:
-                            if metric == "cls":
-                                _current_results[each["identifier"]][metric] = [round(float(each[metric]), 2)]
-                            else:
-                                _current_results[each["identifier"]][metric] = [float(each[metric])]
+                            try:
+                                if metric in each:
+                                    if metric == "cls":
+                                        _current_results[each["identifier"]][metric] = [round(float(each[metric]), 2)]
+                                    else:
+                                        _current_results[each["identifier"]][metric] = [float(each[metric])]
+                                else:
+                                    _current_results[each["identifier"]][metric] = [0.0]
+                            except (ValueError, TypeError, KeyError) as e:
+                                print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
+                                _current_results[each["identifier"]][metric] = [0.0]
                 else:
                     if each["type"] == "page":
                         for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
-                            _current_results[each["identifier"]][metric].append(float(each[metric]))
+                            try:
+                                if metric in each:
+                                    _current_results[each["identifier"]][metric].append(float(each[metric]))
+                                else:
+                                    _current_results[each["identifier"]][metric].append(0.0)
+                            except (ValueError, TypeError, KeyError) as e:
+                                print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
+                                _current_results[each["identifier"]][metric].append(0.0)
                     else:
                         for metric in ["tbt", "cls", "inp"]:
-                            if metric == "cls":
-                                _current_results[each["identifier"]][metric].append(round(float(each[metric]), 2))
-                            else:
-                                _current_results[each["identifier"]][metric].append(float(each[metric]))
+                            try:
+                                if metric in each:
+                                    if metric == "cls":
+                                        _current_results[each["identifier"]][metric].append(round(float(each[metric]), 2))
+                                    else:
+                                        _current_results[each["identifier"]][metric].append(float(each[metric]))
+                                else:
+                                    _current_results[each["identifier"]][metric].append(0.0)
+                            except (ValueError, TypeError, KeyError) as e:
+                                print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
+                                _current_results[each["identifier"]][metric].append(0.0)
             for each in _current_results:
                 _ = {"identifier": each, "name": _current_results[each]["name"], "type": _current_results[each]["type"]}
                 for metric in ["load_time", "fcp", "lcp", "tbt", "inp", "cls", "ttfb"]:
