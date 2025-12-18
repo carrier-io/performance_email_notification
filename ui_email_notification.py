@@ -288,7 +288,7 @@ class UIEmailNotification(object):
         # Get browser version - try report_info first, then fall back to results_info
         browser_version = report_info.get('browser_version')
         if not browser_version or browser_version == 'undefined':
-            browser_version = results_info[0]['browser_version'] if results_info else 'Unknown'
+            browser_version = results_info[0].get('browser_version', 'Unknown') if results_info else 'Unknown'
         print(f"[BROWSER VERSION] Parsed version: {browser_version}")
         
         t_params = {
