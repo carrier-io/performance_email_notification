@@ -154,13 +154,52 @@ class ReportBuilder:
 
     def create_api_email_body(self, args, tests_data, last_test_data, baseline, comparison_metric,
                               violation, thresholds=None, report_data=None):
+        # Smart metric selection: if comparison_metric is default (pct95) and Per request results is not enabled,
+        # but SLA is configured with different metrics, auto-select the metric from SLA
+        per_request_enabled = args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time')
+        sla_enabled = args.get("quality_gate_config", {}).get("SLA", {}).get("checked")
+        
+        if not per_request_enabled and sla_enabled and thresholds:
+            # Extract all unique pct metrics from SLA thresholds
+            sla_metrics = set()
+            for th in thresholds:
+                if th.get('target') == 'response_time':
+                    sla_metrics.add(th.get('aggregation', 'pct95'))
+            
+            # Check if no response_time SLA configured
+            if not sla_metrics:
+                args['sla_no_response_time'] = True
+            # If multiple metrics exist, store for warning
+            elif len(sla_metrics) > 1:
+                args['comparison_metric_sla_options'] = list(sla_metrics)
+                # If comparison_metric is default pct95 and pct95 not in SLA, auto-select highest
+                if comparison_metric == 'pct95' and 'pct95' not in sla_metrics:
+                    pct_priority = {'pct99': 4, 'pct95': 3, 'pct90': 2, 'pct50': 1, 'mean': 0}
+                    sorted_metrics = sorted(sla_metrics, key=lambda x: pct_priority.get(x, 0), reverse=True)
+                    comparison_metric = sorted_metrics[0]
+                    args['comparison_metric_auto_selected'] = True
+            # If only one metric exists and it's not pct95 (default), switch to it
+            elif len(sla_metrics) == 1 and comparison_metric == 'pct95':
+                single_metric = list(sla_metrics)[0]
+                if single_metric != 'pct95':
+                    comparison_metric = single_metric
+        
         # Create baseline_and_thresholds first to check for metric mismatch
         baseline_and_thresholds_temp = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric, thresholds)
         
         test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation, report_data)
         
+        # Add warning if SLA enabled but no response_time thresholds configured
+        if args.get('sla_no_response_time'):
+            test_description['sla_metric_warning'] = "SLA is enabled but no response time thresholds are configured. Please configure SLA for response time metrics."
+        
+        # Add warning if multiple SLA metrics exist (when Per request results is disabled)
+        elif not per_request_enabled and len(args.get('comparison_metric_sla_options', [])) > 1:
+            all_metrics = ', '.join(sorted([m.upper() for m in args['comparison_metric_sla_options']], reverse=True))
+            test_description['sla_metric_warning'] = f"Multiple SLA metrics configured ({all_metrics}). Report uses {comparison_metric.upper()}. To use a different metric, enable \"Per request results\" in SLA configuration and select the desired percentile."
+        
         # Add SLA mismatch warning if detected
-        if baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
+        elif baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
             sla_metric = baseline_and_thresholds_temp['sla_configured_metric']
             # Check if this is a case where SLA exists but no "all" for the metric
             if sla_metric == comparison_metric:
@@ -759,7 +798,12 @@ class ReportBuilder:
             for request in baseline:
                 baseline_metrics[request['request_name']] = int(request[comparison_metric])
 
-        if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked") and args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time'):
+        # Check SLA if it's enabled and either per_request_results OR summary_results is checking response_time
+        sla_checked = args.get("quality_gate_config", {}).get("SLA", {}).get("checked")
+        per_request_rt_check = args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time')
+        summary_rt_check = args.get("quality_gate_config", {}).get("settings", {}).get("summary_results", {}).get('check_response_time')
+        
+        if thresholds and sla_checked and (per_request_rt_check or summary_rt_check):
             matching_thresholds = []
             all_sla_metrics = set()
             has_all_for_comparison_metric = False
@@ -776,7 +820,7 @@ class ReportBuilder:
                         if th['request_name'].lower() == 'all':
                             has_all_for_comparison_metric = True
             # Determine if there's a mismatch
-            # Case 1: No matching thresholds at all
+            # Case 1: No matching thresholds at all (SLA configured for different metric)
             if all_sla_metrics and not matching_thresholds:
                 sla_metric_mismatch = True
                 # Pick a metric that doesn't match for warning message
