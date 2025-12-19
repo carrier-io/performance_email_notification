@@ -13,169 +13,18 @@
 # limitations under the License.
 
 """
-===============================================================================
-SLA THRESHOLD MATCHING LOGIC - FINAL IMPLEMENTATION (API TESTS)
-===============================================================================
+SLA Threshold & Baseline Matching Logic for API Performance Reports.
 
-This module implements strict threshold matching for API performance reports:
+For complete documentation of threshold matching rules, metric selection,
+baseline comparison logic, and configuration scenarios, see:
+    THRESHOLD_MATCHING_LOGIC.md
 
-┌─────────────────────────────────────────────────────────────────────────┐
-│ TABLE: General metrics vs SLA (Response time row)                      │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Rule: ONLY use threshold with request_name='all' (lowercase, strict)   │
-│ - Match: request_name='all' AND target='response_time' AND             │
-│          aggregation=comparison_metric                                  │
-│ - Fallback: None (show N/A if no match)                                │
-│ - Excludes: 'All' (capital), 'every', 'each', specific request names   │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ TABLE: Request metrics (All row)                                       │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Rule: ONLY use threshold with request_name='all' (lowercase, strict)   │
-│ - Match: request_name='all' AND target='response_time' AND             │
-│          aggregation=comparison_metric                                  │
-│ - Fallback: None (show N/A if no match)                                │
-│ - Excludes: 'All' (capital), 'every', 'each'                           │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ TABLE: Request metrics (Individual requests/transactions)              │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Rule: Check Per request results setting first, then apply fallback     │
-│ - If SLA enabled BUT Per request results disabled:                     │
-│   → Show "SLA disabled" (gray, italic)                                 │
-│   → Display warning: "Per request SLA thresholds are disabled because  │
-│     'Per request results' option is not enabled in Quality Gate        │
-│     configuration"                                                      │
-│ - If Per request results enabled:                                      │
-│   → Priority 1: Exact match by request_name                            │
-│   → Priority 2: Fallback to 'every' (case-insensitive)                 │
-│   → Priority 3: Fallback to 'all' (case-insensitive)                   │
-│   → Final: Show "Set SLA" if no threshold found                        │
-└─────────────────────────────────────────────────────────────────────────┘
-
-SLA Configuration Example:
-┌──────────────┬───────────┬────────────────────────────────────────────┐
-│ Scope        │ Metric    │ Usage                                      │
-├──────────────┼───────────┼────────────────────────────────────────────┤
-│ all          │ pct50     │ General metrics + All row (for pct50)      │
-│ all          │ pct95     │ General metrics + All row (for pct95)      │
-│ every        │ pct50     │ Individual requests fallback (for pct50)   │
-│ every        │ pct95     │ Individual requests fallback (for pct95)   │
-│ <req_name>   │ pct50     │ Specific request (for pct50)               │
-│ <req_name>   │ pct95     │ Specific request (for pct95)               │
-└──────────────┴───────────┴────────────────────────────────────────────┘
-
-Note: Backend may send 'All' (capital) which represents per-request metrics
-      aggregated using 'every' scope, not the general 'all' scope.
-
-===============================================================================
-COMPARISON METRIC SELECTION & SLA VALIDATION - FINAL LOGIC (API TESTS)
-===============================================================================
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Scenario 1: SLA enabled but no response_time thresholds configured     │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Action:   Keeps default pct95, SLA columns hidden                      │
-│ Warning:  "SLA is enabled but no response time thresholds are          │
-│            configured. Please configure SLA for response time metrics." │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Scenario 2: SLA with single metric (e.g., pct50), Per request disabled │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Action:   Auto-switches to pct50 (single SLA metric)                   │
-│ Warning:  None                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Scenario 3: SLA with multiple metrics, Per request disabled            │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Action:   Uses pct95 (or highest available: pct99 > pct95 > pct90 >    │
-│           pct50 > mean)                                                 │
-│ Warning:  "Multiple SLA metrics configured (PCT95, PCT50). Report uses │
-│            PCT95. To use a different metric, enable 'Per request        │
-│            results' in Quality Gate configuration and select the        │
-│            desired percentile."                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Scenario 4: SLA configured for pct95, user selected pct50 via Per      │
-│             request results                                             │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Action:   Uses pct50 (user selection takes priority)                   │
-│ Warning:  "SLA configured for PCT95, but report uses PCT50. SLA        │
-│            columns hidden."                                             │
-└─────────────────────────────────────────────────────────────────────────┘
-
-Metric Selection Priority:
-1. User selection via quality_gate_config.baseline.rt_baseline_comparison_metric
-2. Single SLA metric (auto-switch if default pct95 not in SLA)
-3. Highest available SLA metric (when multiple exist and Per request disabled)
-4. Default: pct95
-
-===============================================================================
-BASELINE COMPARISON LOGIC - FINAL IMPLEMENTATION (API TESTS)
-===============================================================================
-
-Baseline displays comparison against a previous test run using selected metric.
-Unlike SLA, Baseline doesn't use 'all'/'every' scopes - only percentile matters.
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ TABLE: General metrics vs Baseline (Response time row)                 │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Rule: Requires "Summary results" enabled in Quality Gate               │
-│ - If Baseline.checked AND Summary results.check_response_time:         │
-│   → Show baseline data for "All" request using comparison_metric       │
-│ - If Baseline.checked BUT Summary results disabled:                    │
-│   → Hide baseline column, show warning                                 │
-│ - Metric: Uses comparison_metric (default pct95 or user-selected)      │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ TABLE: Request metrics (Individual requests/transactions)              │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Rule: Requires "Per request results" enabled in Quality Gate           │
-│ - If Baseline.checked AND Per request results.check_response_time:     │
-│   → Show baseline data for each request using comparison_metric        │
-│ - If Baseline.checked BUT Per request results disabled:                │
-│   → Hide baseline column for individual requests                       │
-│ - Metric: Uses comparison_metric (default pct95 or user-selected)      │
-└─────────────────────────────────────────────────────────────────────────┘
-
-Baseline Configuration Cases:
-┌──────────────────────┬───────────────────┬───────────────────────────────┐
-│ Summary results      │ Per request       │ Result                        │
-├──────────────────────┼───────────────────┼───────────────────────────────┤
-│ OFF                  │ OFF               │ All baseline hidden + Warning │
-│ ON                   │ OFF               │ General metrics only (pct95)  │
-│ ON                   │ ON                │ All metrics (selected pct)    │
-│ OFF                  │ ON                │ Request metrics only          │
-└──────────────────────┴───────────────────┴───────────────────────────────┘
-
-Baseline Warnings:
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Case 1: Baseline enabled, both Summary and Per request disabled        │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Warning: "Baseline comparison is enabled, but both 'Summary results'   │
-│           and 'Per request results' options are disabled in Quality     │
-│           Gate configuration. Enable at least one option to see         │
-│           baseline data."                                               │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Case 2: Baseline enabled, Summary ON, Per request OFF                  │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Warning: "Baseline comparison uses default PCT95. To select a          │
-│           different percentile, enable 'Per request results' in Quality │
-│           Gate configuration."                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-
-Note: Baseline metric selection is controlled by Per request results setting.
-      When disabled, always uses default pct95 regardless of desired metric.
-
-===============================================================================
+Quick Summary:
+- General metrics: Uses ONLY lowercase 'all' threshold (strict match)
+- Request metrics (All row): Uses ONLY lowercase 'all' threshold
+- Request metrics (Individual): Per request results check → fallback chain
+- Baseline: Controlled by Summary/Per request results settings
+- Metric selection: User → Single SLA → Highest SLA → Default pct95
 """
 
 import time
@@ -355,31 +204,39 @@ class ReportBuilder:
         
         test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation, report_data)
         
-        # Add warning if SLA enabled but no response_time thresholds configured
-        if args.get('sla_no_response_time'):
+        # Check Quality Gate settings once
+        summary_rt_check = args.get("quality_gate_config", {}).get("settings", {}).get("summary_results", {}).get('check_response_time')
+        
+        # SLA warnings (priority order - only one SLA warning shown)
+        if sla_enabled and not per_request_enabled and not summary_rt_check:
+            # Priority 1: SLA enabled but both Summary and Per request results are disabled
+            test_description['sla_metric_warning'] = "SLA is enabled, but both \"Summary results\" and \"Per request results\" options are disabled in Quality Gate configuration. Enable at least one option to see SLA data."
+        
+        elif args.get('sla_no_response_time'):
+            # Priority 2: SLA enabled but no response_time thresholds configured
             test_description['sla_metric_warning'] = "SLA is enabled but no response time thresholds are configured. Please configure SLA for response time metrics."
         
-        # Add warning if Baseline enabled but both Summary and Per request results are disabled
-        summary_rt_check = args.get("quality_gate_config", {}).get("settings", {}).get("summary_results", {}).get('check_response_time')
-        if baseline_enabled and not per_request_enabled and not summary_rt_check and baseline:
-            test_description['sla_metric_warning'] = "Baseline comparison is enabled, but both \"Summary results\" and \"Per request results\" options are disabled in Quality Gate configuration. Enable at least one option to see baseline data."
-        # Add warning if Baseline enabled and Summary enabled but Per request results is disabled (metric selection not available)
-        elif baseline_enabled and summary_rt_check and not per_request_enabled and baseline:
-            test_description['sla_metric_warning'] = "Baseline comparison uses default PCT95. To select a different percentile, enable \"Per request results\" in Quality Gate configuration."
-        
-        # Add warning if multiple SLA metrics exist (when Per request results is disabled)
         elif not per_request_enabled and len(args.get('comparison_metric_sla_options', [])) > 1:
+            # Priority 3: Multiple SLA metrics configured (when Per request results is disabled)
             all_metrics = ', '.join(sorted([m.upper() for m in args['comparison_metric_sla_options']], reverse=True))
             test_description['sla_metric_warning'] = f"Multiple SLA metrics configured ({all_metrics}). Report uses {comparison_metric.upper()}. To use a different metric, enable \"Per request results\" in Quality Gate configuration and select the desired percentile."
         
-        # Add SLA mismatch warning if detected
         elif baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
+            # Priority 4: SLA metric mismatch detected
             sla_metric = baseline_and_thresholds_temp['sla_configured_metric']
-            # Check if this is a case where SLA exists but no "all" for the metric
             if sla_metric == comparison_metric:
                 test_description['sla_metric_warning'] = f"SLA for {comparison_metric.upper()} is configured only for specific requests, but no general 'All' SLA found. Please configure SLA for all requests if needed."
             else:
                 test_description['sla_metric_warning'] = f"SLA configured for {sla_metric.upper()}, but report uses {comparison_metric.upper()}. SLA columns hidden."
+        
+        # Baseline warnings (independent from SLA, priority order - only one Baseline warning shown)
+        if baseline_enabled and not per_request_enabled and not summary_rt_check and baseline:
+            # Priority 1: Baseline enabled but both Summary and Per request results are disabled
+            test_description['baseline_metric_warning'] = "Baseline comparison is enabled, but both \"Summary results\" and \"Per request results\" options are disabled in Quality Gate configuration. Enable at least one option to see baseline data."
+        
+        elif baseline_enabled and summary_rt_check and not per_request_enabled and baseline:
+            # Priority 2: Baseline enabled, Summary ON but Per request OFF (metric selection not available)
+            test_description['baseline_metric_warning'] = "Baseline comparison uses default PCT95. To select a different percentile, enable \"Per request results\" in Quality Gate configuration."
         # Fetch API reports to get start_time for historical tests
         api_reports = self.fetch_api_reports_for_comparison(args)
         builds_comparison = self.create_builds_comparison(tests_data, args, api_reports, comparison_metric)
@@ -418,8 +275,9 @@ class ReportBuilder:
         for param in params:
             test_params[param] = test[0][param]
         
-        # Add SLA metric mismatch warning if needed
+        # Initialize warning fields
         test_params['sla_metric_warning'] = None
+        test_params['baseline_metric_warning'] = None
         
         # Use start_time and end_time from report_data if available (for API tests)
         if report_data and 'start_time' in report_data and 'end_time' in report_data:

@@ -103,6 +103,14 @@
     </div>
     {% endif %}
 
+    {% if t_params.baseline_metric_warning %}
+    <div style="margin: 24px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 14px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_metric_warning }}
+        </p>
+    </div>
+    {% endif %}
+
     {% if baseline_and_thresholds.has_disabled_sla %}
     <div style="margin: 24px 12px; padding: 12px; background-color: #FFF4E5; border-left: 4px solid #FFA726; border-radius: 4px;">
         <p style="margin: 0; color: #E65100; font-size: 14px;">
