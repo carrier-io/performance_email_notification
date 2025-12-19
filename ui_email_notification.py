@@ -6,6 +6,7 @@ from jinja2 import Environment, FileSystemLoader
 from chart_generator import ui_metrics_chart_pages, ui_metrics_chart_actions
 from email.mime.image import MIMEImage
 from email_notifications import Email
+from thresholds_comparison import ThresholdsComparison
 
 
 GREEN = '#18B64D'
@@ -78,9 +79,118 @@ class UIEmailNotification(object):
         subject = f"[UI] Test results for {info['name']}. From {date}."
 
         report_info = self.__get_report_info()
-        missed_thresholds = round(float(report_info["thresholds_failed"] / report_info["thresholds_total"]) * 100, 2)\
-            if report_info["thresholds_total"] else 0
-        results_info = self.__get_results_info(self.report_id)
+        # Use the report UID instead of numeric report_id for fetching results
+        report_uid = report_info.get("uid", self.report_id)
+        results_info = self.__get_results_info(report_uid)
+        test_environment = report_info["environment"]
+
+        # Process thresholds and add color coding to results BEFORE converting units
+        thresholds_processor = ThresholdsComparison(
+            self.gelloper_url, 
+            self.gelloper_token, 
+            self.galloper_project_id, 
+            self.report_id
+        )
+        
+        # Get thresholds grouped by scope for easier lookup
+        try:
+            # First, get raw thresholds to see what's returned
+            raw_thresholds = thresholds_processor.get_thresholds_info()
+            print(f"\n[RAW THRESHOLDS] Total returned: {len(raw_thresholds)}")
+            for i, th in enumerate(raw_thresholds, 1):
+                print(f"  {i}. test={th.get('test')}, env={th.get('environment')}, scope={th.get('scope')}, target={th.get('target')}, value={th.get('value')}, comparison={th.get('comparison')}")
+            
+            thresholds_grouped = thresholds_processor.get_thresholds_grouped_by_scope(
+                report_info['name'], 
+                test_environment
+            )
+            print(f"\n[THRESHOLDS] Loaded {sum(len(v) for v in thresholds_grouped.values())} thresholds across {len(thresholds_grouped)} scopes")
+            print(f"[THRESHOLDS] Scopes: {list(thresholds_grouped.keys())}")
+        except Exception as e:
+            print(f"[WARNING] Could not load thresholds: {e}")
+            thresholds_grouped = {}
+        
+        # Track threshold failures for missed_thresholds calculation
+        total_thresholds_checked = 0
+        failed_thresholds_count = 0
+        
+        # Add threshold comparison to results_info (compare in original units - milliseconds)
+        for result in results_info:
+            identifier = result.get('identifier', result.get('name'))
+            result_type = result.get('type', 'page')
+            
+            # Get applicable thresholds for this result (every + specific scope + all)
+            # Include 'all' scope thresholds for individual result checking
+            applicable_thresholds = (
+                thresholds_grouped.get('every', []) + 
+                thresholds_grouped.get(identifier, []) +
+                thresholds_grouped.get('all', [])
+            )
+            
+            # Check each metric against thresholds
+            if result_type == "page":
+                metrics_to_check = ["load_time", "dom", "fcp", "lcp", "cls", "tbt", "ttfb", "fvc", "lvc"]
+            else:  # action
+                metrics_to_check = ["cls", "tbt", "inp"]
+            
+            for metric_short in metrics_to_check:
+                if metric_short in result:
+                    # Map short name to full threshold target name
+                    metric_full = thresholds_processor.METRICS_MAPPER.get(metric_short, metric_short)
+                    
+                    # Find thresholds for this metric
+                    metric_thresholds = [
+                        th for th in applicable_thresholds 
+                        if th.get('target') == metric_full
+                    ]
+                    
+                    # Check if any threshold is violated (compare in original units)
+                    is_failed = False
+                    for threshold in metric_thresholds:
+                        # Get actual value in original units (milliseconds for time metrics)
+                        try:
+                            if metric_short == "cls":
+                                actual_value = float(result[metric_short])
+                            else:
+                                actual_value = int(result[metric_short])
+                        except (ValueError, TypeError):
+                            actual_value = 0
+                        
+                        threshold_value = threshold.get('value', 0)
+                        
+                        # Convert threshold to milliseconds for time-based metrics (not CLS)
+                        if metric_short != "cls":
+                            threshold_value = threshold_value * 1000  # Convert seconds to milliseconds
+                        
+                        comparison = threshold.get('comparison', 'lte')
+                        
+                        print(f"[DEBUG COMPARE] {result.get('name')} - {metric_short}: actual={actual_value}ms, threshold={threshold_value}ms, comparison={comparison}")
+                        
+                        # Count this threshold check
+                        total_thresholds_checked += 1
+                        
+                        if thresholds_processor.is_threshold_failed(actual_value, comparison, threshold_value):
+                            is_failed = True
+                            failed_thresholds_count += 1
+                            print(f"[THRESHOLD VIOLATION] {result.get('name')} - {metric_short}: {actual_value}ms violates {comparison} {threshold_value}ms")
+                            break
+                    
+                    # Add color coding based on threshold check
+                    if metric_thresholds:  # Only apply color if thresholds exist for this metric
+                        if is_failed:
+                            result[f"{metric_short}_color"] = f"color: {RED};"
+                        else:
+                            result[f"{metric_short}_color"] = f"color: {GREEN};"
+                    else:
+                        # No thresholds defined for this metric, leave default color
+                        result[f"{metric_short}_color"] = ""
+        
+        # Calculate missed thresholds percentage based on actual checks
+        missed_thresholds = round(float(failed_thresholds_count / total_thresholds_checked) * 100, 2) \
+            if total_thresholds_checked > 0 else 0
+        print(f"\n[THRESHOLDS SUMMARY] Total checked: {total_thresholds_checked}, Failed: {failed_thresholds_count}, Missed: {missed_thresholds}%")
+        
+        # Now convert units for display
         for each in results_info:
             each["report"] = f"{self.gelloper_url}{each['report'][0]}"
             for metric in ["load_time", "dom", "fcp", "lcp", "tbt", "ttfb", "fvc", "lvc", "inp"]:

@@ -119,15 +119,15 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.name }}</a></td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.load_time }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.dom }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.fcp }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.lcp }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.ttfb }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.fvc }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.lvc }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.load_time_color }}">{{ result.load_time }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.dom_color }}">{{ result.dom }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.fcp_color }}">{{ result.fcp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lcp_color }}">{{ result.lcp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_color }}">{{ result.cls }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_color }}">{{ result.tbt }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.ttfb_color }}">{{ result.ttfb }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.fvc_color }}">{{ result.fvc }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lvc_color }}">{{ result.lvc }}</td>
         </tr>
                 {% endif %}
                 {% endfor %}
@@ -151,9 +151,9 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.name }}</a></td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.inp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_color }}">{{ result.cls }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_color }}">{{ result.tbt }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.inp_color }}">{{ result.inp }}</td>
         </tr>
                 {% endif %}
                 {% endfor %}
