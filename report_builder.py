@@ -42,11 +42,17 @@ This module implements strict threshold matching for API performance reports:
 ┌─────────────────────────────────────────────────────────────────────────┐
 │ TABLE: Request metrics (Individual requests/transactions)              │
 ├─────────────────────────────────────────────────────────────────────────┤
-│ Rule: Use specific threshold with fallback chain                       │
-│ - Priority 1: Exact match by request_name                              │
-│ - Priority 2: Fallback to 'every' (case-insensitive)                   │
-│ - Priority 3: Fallback to 'all' (case-insensitive)                     │
-│ - Final: Show "Set SLA" if no threshold found                          │
+│ Rule: Check Per request results setting first, then apply fallback     │
+│ - If SLA enabled BUT Per request results disabled:                     │
+│   → Show "SLA disabled" (gray, italic)                                 │
+│   → Display warning: "Per request SLA thresholds are disabled because  │
+│     'Per request results' option is not enabled in Quality Gate        │
+│     configuration"                                                      │
+│ - If Per request results enabled:                                      │
+│   → Priority 1: Exact match by request_name                            │
+│   → Priority 2: Fallback to 'every' (case-insensitive)                 │
+│   → Priority 3: Fallback to 'all' (case-insensitive)                   │
+│   → Final: Show "Set SLA" if no threshold found                        │
 └─────────────────────────────────────────────────────────────────────────┘
 
 SLA Configuration Example:
@@ -108,6 +114,66 @@ Metric Selection Priority:
 2. Single SLA metric (auto-switch if default pct95 not in SLA)
 3. Highest available SLA metric (when multiple exist and Per request disabled)
 4. Default: pct95
+
+===============================================================================
+BASELINE COMPARISON LOGIC - FINAL IMPLEMENTATION (API TESTS)
+===============================================================================
+
+Baseline displays comparison against a previous test run using selected metric.
+Unlike SLA, Baseline doesn't use 'all'/'every' scopes - only percentile matters.
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ TABLE: General metrics vs Baseline (Response time row)                 │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Rule: Requires "Summary results" enabled in Quality Gate               │
+│ - If Baseline.checked AND Summary results.check_response_time:         │
+│   → Show baseline data for "All" request using comparison_metric       │
+│ - If Baseline.checked BUT Summary results disabled:                    │
+│   → Hide baseline column, show warning                                 │
+│ - Metric: Uses comparison_metric (default pct95 or user-selected)      │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ TABLE: Request metrics (Individual requests/transactions)              │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Rule: Requires "Per request results" enabled in Quality Gate           │
+│ - If Baseline.checked AND Per request results.check_response_time:     │
+│   → Show baseline data for each request using comparison_metric        │
+│ - If Baseline.checked BUT Per request results disabled:                │
+│   → Hide baseline column for individual requests                       │
+│ - Metric: Uses comparison_metric (default pct95 or user-selected)      │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Baseline Configuration Cases:
+┌──────────────────────┬───────────────────┬───────────────────────────────┐
+│ Summary results      │ Per request       │ Result                        │
+├──────────────────────┼───────────────────┼───────────────────────────────┤
+│ OFF                  │ OFF               │ All baseline hidden + Warning │
+│ ON                   │ OFF               │ General metrics only (pct95)  │
+│ ON                   │ ON                │ All metrics (selected pct)    │
+│ OFF                  │ ON                │ Request metrics only          │
+└──────────────────────┴───────────────────┴───────────────────────────────┘
+
+Baseline Warnings:
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Case 1: Baseline enabled, both Summary and Per request disabled        │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Warning: "Baseline comparison is enabled, but both 'Summary results'   │
+│           and 'Per request results' options are disabled in Quality     │
+│           Gate configuration. Enable at least one option to see         │
+│           baseline data."                                               │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Case 2: Baseline enabled, Summary ON, Per request OFF                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Warning: "Baseline comparison uses default PCT95. To select a          │
+│           different percentile, enable 'Per request results' in Quality │
+│           Gate configuration."                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Note: Baseline metric selection is controlled by Per request results setting.
+      When disabled, always uses default pct95 regardless of desired metric.
 
 ===============================================================================
 """
@@ -257,6 +323,7 @@ class ReportBuilder:
         # but SLA is configured with different metrics, auto-select the metric from SLA
         per_request_enabled = args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time')
         sla_enabled = args.get("quality_gate_config", {}).get("SLA", {}).get("checked")
+        baseline_enabled = args.get("quality_gate_config", {}).get("baseline", {}).get("checked")
         
         if not per_request_enabled and sla_enabled and thresholds:
             # Extract all unique pct metrics from SLA thresholds
@@ -291,6 +358,14 @@ class ReportBuilder:
         # Add warning if SLA enabled but no response_time thresholds configured
         if args.get('sla_no_response_time'):
             test_description['sla_metric_warning'] = "SLA is enabled but no response time thresholds are configured. Please configure SLA for response time metrics."
+        
+        # Add warning if Baseline enabled but both Summary and Per request results are disabled
+        summary_rt_check = args.get("quality_gate_config", {}).get("settings", {}).get("summary_results", {}).get('check_response_time')
+        if baseline_enabled and not per_request_enabled and not summary_rt_check and baseline:
+            test_description['sla_metric_warning'] = "Baseline comparison is enabled, but both \"Summary results\" and \"Per request results\" options are disabled in Quality Gate configuration. Enable at least one option to see baseline data."
+        # Add warning if Baseline enabled and Summary enabled but Per request results is disabled (metric selection not available)
+        elif baseline_enabled and summary_rt_check and not per_request_enabled and baseline:
+            test_description['sla_metric_warning'] = "Baseline comparison uses default PCT95. To select a different percentile, enable \"Per request results\" in Quality Gate configuration."
         
         # Add warning if multiple SLA metrics exist (when Per request results is disabled)
         elif not per_request_enabled and len(args.get('comparison_metric_sla_options', [])) > 1:
@@ -814,7 +889,10 @@ class ReportBuilder:
         baseline_tp_color = GRAY
         baseline_er_color = GRAY
         baseline_rt_color = GRAY
-        if baseline and args.get("quality_gate_config", {}).get("baseline", {}).get("checked"):
+        # Check if Summary results is enabled for General metrics baseline
+        summary_rt_check = args.get("quality_gate_config", {}).get("settings", {}).get("summary_results", {}).get('check_response_time')
+        
+        if baseline and args.get("quality_gate_config", {}).get("baseline", {}).get("checked") and summary_rt_check:
             # Find "All" request in baseline
             baseline_all = None
             for b in baseline:
@@ -974,10 +1052,10 @@ class ReportBuilder:
                 # Do NOT fallback to "every" or "All" (capital) for the "All" row
             # For individual requests/transactions, check if Per request results is enabled
             else:
-                # If SLA is enabled but Per request results is disabled, show disabled message
-                if sla_checked and not per_request_rt_check:
-                    threshold_for_request = None  # Will trigger "Per request SLA disabled" message
-                else:
+                threshold_for_request = None
+                
+                # If Per request results is enabled, use full fallback chain
+                if per_request_rt_check:
                     # Try to get threshold for specific request name
                     threshold_for_request = thresholds_metrics.get(request['request_name'])
                     
@@ -993,6 +1071,10 @@ class ReportBuilder:
                                 if key.lower() == 'all':
                                     threshold_for_request = thresholds_metrics[key]
                                     break
+                
+                # If Per request results is disabled but SLA is enabled
+                # Don't use per-request thresholds, but threshold_for_request stays None
+                # This will trigger "SLA disabled" message below
             
             # Process threshold value or show appropriate message
             if thresholds_metrics and threshold_for_request:
