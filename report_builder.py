@@ -216,13 +216,17 @@ class ReportBuilder:
             # Priority 2: SLA enabled but no response_time thresholds configured
             test_description['sla_metric_warning'] = "SLA is enabled but no response time thresholds are configured. Please configure SLA for response time metrics."
         
+        elif sla_enabled and per_request_enabled and not summary_rt_check:
+            # Priority 3: SLA enabled, Per request ON but Summary OFF - General metrics won't show SLA
+            test_description['sla_metric_warning'] = "General metrics SLA is disabled. Enable \"Summary results\" in Quality Gate configuration to see SLA for general metrics."
+        
         elif not per_request_enabled and len(args.get('comparison_metric_sla_options', [])) > 1:
-            # Priority 3: Multiple SLA metrics configured (when Per request results is disabled)
+            # Priority 4: Multiple SLA metrics configured (when Per request results is disabled)
             all_metrics = ', '.join(sorted([m.upper() for m in args['comparison_metric_sla_options']], reverse=True))
             test_description['sla_metric_warning'] = f"Multiple SLA metrics configured ({all_metrics}). Report uses {comparison_metric.upper()}. To use a different metric, enable \"Per request results\" in Quality Gate configuration and select the desired percentile."
         
         elif baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
-            # Priority 4: SLA metric mismatch detected
+            # Priority 5: SLA metric mismatch detected
             sla_metric = baseline_and_thresholds_temp['sla_configured_metric']
             if sla_metric == comparison_metric:
                 test_description['sla_metric_warning'] = f"SLA for {comparison_metric.upper()} is configured only for specific requests, but no general 'All' SLA found. Please configure SLA for all requests if needed."
@@ -237,6 +241,10 @@ class ReportBuilder:
         elif baseline_enabled and summary_rt_check and not per_request_enabled and baseline:
             # Priority 2: Baseline enabled, Summary ON but Per request OFF (metric selection not available)
             test_description['baseline_metric_warning'] = "Baseline comparison uses default PCT95. To select a different percentile, enable \"Per request results\" in Quality Gate configuration."
+        
+        elif baseline_enabled and per_request_enabled and not summary_rt_check and baseline:
+            # Priority 3: Baseline enabled, Per request ON but Summary OFF - General metrics won't show Baseline
+            test_description['baseline_metric_warning'] = "General metrics baseline is disabled. Enable \"Summary results\" in Quality Gate configuration to see baseline for general metrics."
         # Fetch API reports to get start_time for historical tests
         api_reports = self.fetch_api_reports_for_comparison(args)
         builds_comparison = self.create_builds_comparison(tests_data, args, api_reports, comparison_metric)
@@ -304,8 +312,17 @@ class ReportBuilder:
             timestamp = calendar.timegm(time.strptime(test_params['end'], '%Y-%m-%d %H:%M:%S'))
             test_params['start'] = datetime.datetime.utcfromtimestamp(int(timestamp) - int(float(test[0]['duration']))) \
                 .strftime('%Y-%m-%d %H:%M:%S')
-        # test_params['status'], test_params['color'], test_params['failed_reason'] = self.check_status(args,
-        #     test, baseline, comparison_metric, violation)
+        
+        # Override status to FINISHED if all quality gate checks are disabled
+        error_rate = args.get("error_rate") if args.get("error_rate") is not None else -1
+        performance_degradation_rate = args.get("performance_degradation_rate") if args.get("performance_degradation_rate") is not None else -1
+        missed_thresholds = args.get("missed_thresholds") if args.get("missed_thresholds") is not None else -1
+        all_checks_disabled = error_rate == -1 and performance_degradation_rate == -1 and missed_thresholds == -1
+        
+        if all_checks_disabled and test_params["status"].lower() == "success":
+            test_params["status"] = "finished"
+            test_params["color"] = STATUS_COLOR["finished"]
+        
         return test_params
 
     @staticmethod
@@ -357,7 +374,14 @@ class ReportBuilder:
             failed_reasons.append(failed_message)
         if test_status is 'SUCCESS':
             test_status = status
-        if test_status is 'SUCCESS':
+        
+        # If no quality gate checks were performed (all disabled), set status to FINISHED
+        all_checks_disabled = error_rate == -1 and performance_degradation_rate == -1 and missed_thresholds == -1
+        
+        if all_checks_disabled:
+            test_status = 'FINISHED'
+            color = GRAY
+        elif test_status is 'SUCCESS':
             color = GREEN
         else:
             color = RED
@@ -770,7 +794,8 @@ class ReportBuilder:
                 baseline_rt_value = round(baseline_all[comparison_metric] / 1000, 2)
                 baseline_rt_color = RED if current_rt > baseline_rt_value else GREEN
                 baseline_rt = round(current_rt - baseline_rt_value, 2)
-        if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked"):
+        # Check if Summary results is enabled for General metrics SLA
+        if thresholds and args.get("quality_gate_config", {}).get("SLA", {}).get("checked") and summary_rt_check:
             # For General metrics, ONLY use thresholds with request_name = "all" (lowercase, strict match)
             # Do NOT use "every" or "All" (capital) - if no "all" threshold exists, show N/A
             for th in thresholds:
@@ -884,7 +909,19 @@ class ReportBuilder:
                 req['category'] = 'transaction'  # Transactions
             else:
                 req['category'] = 'request'  # Individual requests
+            # For baseline: check if appropriate setting is enabled
+            # For "All" row - requires Summary results enabled
+            # For individual requests - requires Per request results enabled
+            show_baseline_for_request = False
             if baseline and request['request_name'] in list(baseline_metrics.keys()):
+                if request['request_name'].lower() == 'all':
+                    # All row requires Summary results enabled
+                    show_baseline_for_request = summary_rt_check
+                else:
+                    # Individual requests require Per request results enabled (already checked in baseline_metrics)
+                    show_baseline_for_request = True
+            
+            if show_baseline_for_request:
                 req['baseline'] = round(
                     float(int(request[comparison_metric]) - baseline_metrics[request['request_name']]) / 1000, 2)
                 req['baseline_value'] = round(baseline_metrics[request['request_name']] / 1000, 2)
@@ -898,15 +935,18 @@ class ReportBuilder:
                 req['baseline_color'] = GRAY
             # For "All" row, ONLY use threshold with request_name = "all" (lowercase, strict match)
             # Do NOT fallback to "every" - if no "all" threshold exists, show N/A
+            # Also check if Summary results is enabled
             if request['request_name'].lower() == 'all':
                 threshold_for_request = None
-                # Search for ONLY lowercase "all" in thresholds array
-                for th in thresholds:
-                    if (th.get('target') == 'response_time' and 
-                        th.get('aggregation', 'pct95') == comparison_metric and
-                        th.get('request_name', '') == 'all'):  # Strict match: lowercase "all" only
-                        threshold_for_request = th
-                        break
+                # Only show SLA for All row if Summary results is enabled
+                if summary_rt_check:
+                    # Search for ONLY lowercase "all" in thresholds array
+                    for th in thresholds:
+                        if (th.get('target') == 'response_time' and 
+                            th.get('aggregation', 'pct95') == comparison_metric and
+                            th.get('request_name', '') == 'all'):  # Strict match: lowercase "all" only
+                            threshold_for_request = th
+                            break
                 # Do NOT fallback to "every" or "All" (capital) for the "All" row
             # For individual requests/transactions, check if Per request results is enabled
             else:
@@ -1125,7 +1165,15 @@ class ReportBuilder:
         env.filters['format_number'] = format_number
         template = env.get_template("backend_email_template.html")
         last_test_data = self.reprocess_test_data(last_test_data, ['total', 'throughput'])
-        if args.get("performance_degradation_rate_qg", None):
+        
+        # Check if Baseline is actually enabled and has required settings
+        baseline_enabled = args.get("quality_gate_config", {}).get("baseline", {}).get("checked")
+        per_request_rt_check = args.get("quality_gate_config", {}).get("settings", {}).get("per_request_results", {}).get('check_response_time')
+        summary_rt_check = args.get("quality_gate_config", {}).get("settings", {}).get("summary_results", {}).get('check_response_time')
+        baseline_has_data = baseline and len(baseline) > 0
+        baseline_operational = baseline_enabled and (per_request_rt_check or summary_rt_check) and baseline_has_data
+        
+        if args.get("performance_degradation_rate_qg", None) and baseline_operational:
             if test_params["performance_degradation_rate"] > args["performance_degradation_rate_qg"]:
                 test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
                 test_params["baseline_status"] = "failed"
@@ -1138,7 +1186,12 @@ class ReportBuilder:
         else:
             test_params["performance_degradation_rate"] = f'-'
             test_params["baseline_status"] = "N/A"
-        if args.get("missed_thresholds_qg", None):
+        
+        # Check if SLA is actually enabled and has required settings
+        sla_enabled = args.get("quality_gate_config", {}).get("SLA", {}).get("checked")
+        sla_operational = sla_enabled and (per_request_rt_check or summary_rt_check)
+        
+        if args.get("missed_thresholds_qg", None) and sla_operational:
             if test_params["missed_threshold_rate"] > args["missed_thresholds_qg"]:
                 test_params["missed_threshold_rate"] = f'{test_params["missed_threshold_rate"]}%'
                 test_params["threshold_status"] = "failed"

@@ -96,8 +96,8 @@
     {% endif %}
 
     {% if t_params.sla_metric_warning %}
-    <div style="margin: 24px 12px; padding: 12px; background-color: #FFF4E5; border-left: 4px solid #FFA726; border-radius: 4px;">
-        <p style="margin: 0; color: #E65100; font-size: 14px;">
+    <div style="margin: 24px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 14px;">
             <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.sla_metric_warning }}
         </p>
     </div>
@@ -112,9 +112,9 @@
     {% endif %}
 
     {% if baseline_and_thresholds.has_disabled_sla %}
-    <div style="margin: 24px 12px; padding: 12px; background-color: #FFF4E5; border-left: 4px solid #FFA726; border-radius: 4px;">
-        <p style="margin: 0; color: #E65100; font-size: 14px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> Per request SLA thresholds are disabled because "Per request results" option is not enabled in Quality Gate configuration. To see SLA thresholds for individual requests and transactions, please enable "Per request results" in Quality Gate settings.
+    <div style="margin: 24px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 14px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> Per request SLA thresholds are disabled. Enable "Per request results" in Quality Gate configuration to see SLA thresholds for individual requests.
         </p>
     </div>
     {% endif %}
@@ -254,7 +254,7 @@
         <thead>
         <tr>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Request name</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Current, sec</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Current ({{ general_metrics.comparison_metric }}), sec</th>
             {% if baseline_and_thresholds.show_baseline_column %}
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Baseline value, sec</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Baseline diff, sec</th>
