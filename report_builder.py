@@ -12,105 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-===============================================================================
-SLA THRESHOLD MATCHING LOGIC - FINAL IMPLEMENTATION (API TESTS)
-===============================================================================
-
-This module implements strict threshold matching for API performance reports:
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ TABLE: General metrics vs SLA (Response time row)                      │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Rule: ONLY use threshold with request_name='all' (lowercase, strict)   │
-│ - Match: request_name='all' AND target='response_time' AND             │
-│          aggregation=comparison_metric                                  │
-│ - Fallback: None (show N/A if no match)                                │
-│ - Excludes: 'All' (capital), 'every', 'each', specific request names   │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ TABLE: Request metrics (All row)                                       │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Rule: ONLY use threshold with request_name='all' (lowercase, strict)   │
-│ - Match: request_name='all' AND target='response_time' AND             │
-│          aggregation=comparison_metric                                  │
-│ - Fallback: None (show N/A if no match)                                │
-│ - Excludes: 'All' (capital), 'every', 'each'                           │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ TABLE: Request metrics (Individual requests/transactions)              │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Rule: Use specific threshold with fallback chain                       │
-│ - Priority 1: Exact match by request_name                              │
-│ - Priority 2: Fallback to 'every' (case-insensitive)                   │
-│ - Priority 3: Fallback to 'all' (case-insensitive)                     │
-│ - Final: Show "Set SLA" if no threshold found                          │
-└─────────────────────────────────────────────────────────────────────────┘
-
-SLA Configuration Example:
-┌──────────────┬───────────┬────────────────────────────────────────────┐
-│ Scope        │ Metric    │ Usage                                      │
-├──────────────┼───────────┼────────────────────────────────────────────┤
-│ all          │ pct50     │ General metrics + All row (for pct50)      │
-│ all          │ pct95     │ General metrics + All row (for pct95)      │
-│ every        │ pct50     │ Individual requests fallback (for pct50)   │
-│ every        │ pct95     │ Individual requests fallback (for pct95)   │
-│ <req_name>   │ pct50     │ Specific request (for pct50)               │
-│ <req_name>   │ pct95     │ Specific request (for pct95)               │
-└──────────────┴───────────┴────────────────────────────────────────────┘
-
-Note: Backend may send 'All' (capital) which represents per-request metrics
-      aggregated using 'every' scope, not the general 'all' scope.
-
-===============================================================================
-COMPARISON METRIC SELECTION & SLA VALIDATION - FINAL LOGIC (API TESTS)
-===============================================================================
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Scenario 1: SLA enabled but no response_time thresholds configured     │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Action:   Keeps default pct95, SLA columns hidden                      │
-│ Warning:  "SLA is enabled but no response time thresholds are          │
-│            configured. Please configure SLA for response time metrics." │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Scenario 2: SLA with single metric (e.g., pct50), Per request disabled │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Action:   Auto-switches to pct50 (single SLA metric)                   │
-│ Warning:  None                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Scenario 3: SLA with multiple metrics, Per request disabled            │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Action:   Uses pct95 (or highest available: pct99 > pct95 > pct90 >    │
-│           pct50 > mean)                                                 │
-│ Warning:  "Multiple SLA metrics configured (PCT95, PCT50). Report uses │
-│            PCT95. To use a different metric, enable 'Per request        │
-│            results' in Quality Gate configuration and select the        │
-│            desired percentile."                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Scenario 4: SLA configured for pct95, user selected pct50 via Per      │
-│             request results                                             │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Action:   Uses pct50 (user selection takes priority)                   │
-│ Warning:  "SLA configured for PCT95, but report uses PCT50. SLA        │
-│            columns hidden."                                             │
-└─────────────────────────────────────────────────────────────────────────┘
-
-Metric Selection Priority:
-1. User selection via quality_gate_config.baseline.rt_baseline_comparison_metric
-2. Single SLA metric (auto-switch if default pct95 not in SLA)
-3. Highest available SLA metric (when multiple exist and Per request disabled)
-4. Default: pct95
-
-===============================================================================
-"""
 
 import time
 import calendar
@@ -295,7 +196,7 @@ class ReportBuilder:
         # Add warning if multiple SLA metrics exist (when Per request results is disabled)
         elif not per_request_enabled and len(args.get('comparison_metric_sla_options', [])) > 1:
             all_metrics = ', '.join(sorted([m.upper() for m in args['comparison_metric_sla_options']], reverse=True))
-            test_description['sla_metric_warning'] = f"Multiple SLA metrics configured ({all_metrics}). Report uses {comparison_metric.upper()}. To use a different metric, enable \"Per request results\" in Quality Gate configuration and select the desired percentile."
+            test_description['sla_metric_warning'] = f"Multiple SLA metrics configured ({all_metrics}). Report uses {comparison_metric.upper()}. To use a different metric, enable \"Per request results\" in SLA configuration and select the desired percentile."
         
         # Add SLA mismatch warning if detected
         elif baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
@@ -972,29 +873,23 @@ class ReportBuilder:
                         threshold_for_request = th
                         break
                 # Do NOT fallback to "every" or "All" (capital) for the "All" row
-            # For individual requests/transactions, check if Per request results is enabled
+            # For individual requests/transactions, try specific threshold first, then fallback
             else:
-                # If SLA is enabled but Per request results is disabled, show disabled message
-                if sla_checked and not per_request_rt_check:
-                    threshold_for_request = None  # Will trigger "Per request SLA disabled" message
-                else:
-                    # Try to get threshold for specific request name
-                    threshold_for_request = thresholds_metrics.get(request['request_name'])
-                    
+                # Try to get threshold for specific request name
+                threshold_for_request = thresholds_metrics.get(request['request_name'])
+                
+                if not threshold_for_request:
+                    # First try "every" as it's more specific for per-request thresholds
+                    for key in thresholds_metrics.keys():
+                        if key.lower() == 'every':
+                            threshold_for_request = thresholds_metrics[key]
+                            break
+                    # If no "every" found, fallback to "all"
                     if not threshold_for_request:
-                        # First try "every" as it's more specific for per-request thresholds
                         for key in thresholds_metrics.keys():
-                            if key.lower() == 'every':
+                            if key.lower() == 'all':
                                 threshold_for_request = thresholds_metrics[key]
                                 break
-                        # If no "every" found, fallback to "all"
-                        if not threshold_for_request:
-                            for key in thresholds_metrics.keys():
-                                if key.lower() == 'all':
-                                    threshold_for_request = thresholds_metrics[key]
-                                    break
-            
-            # Process threshold value or show appropriate message
             if thresholds_metrics and threshold_for_request:
                 req['threshold'] = round(
                     float(int(request[comparison_metric]) -
@@ -1007,12 +902,7 @@ class ReportBuilder:
                     req['threshold_color'] = GREEN
             else:
                 req['threshold'] = "-"
-                # Show different message based on whether Per request results is disabled
-                # Only for individual requests/transactions (not "All" row)
-                if request['request_name'].lower() != 'all' and sla_checked and not per_request_rt_check:
-                    req['threshold_value'] = "SLA disabled"
-                else:
-                    req['threshold_value'] = "Set SLA"
+                req['threshold_value'] = "Set SLA"
                 req['threshold_color'] = GRAY
                 req['line_color'] = GRAY
             if not req.get('line_color'):
@@ -1044,9 +934,8 @@ class ReportBuilder:
         
         # Determine column visibility for Request metrics table
         show_baseline = any(req.get('baseline') != "N/A" for req in exceeded_thresholds)
-        show_threshold = any(req.get('threshold_value') not in ["N/A", None, "", "Set SLA", "SLA disabled"] for req in exceeded_thresholds)
+        show_threshold = any(req.get('threshold_value') not in ["N/A", None, "", "Set SLA"] for req in exceeded_thresholds)
         has_missing_sla = any(req.get('threshold_value') == "Set SLA" for req in exceeded_thresholds)
-        has_disabled_sla = any(req.get('threshold_value') == "SLA disabled" for req in exceeded_thresholds)
         # show_representation = show_baseline or show_threshold  # Original logic
         show_representation = False  # Hide Representation column but keep sorting by color
         
@@ -1056,7 +945,6 @@ class ReportBuilder:
             "show_threshold_column": show_threshold,
             "show_representation_column": show_representation,
             "has_missing_sla": has_missing_sla,
-            "has_disabled_sla": has_disabled_sla,
             "sla_metric_mismatch": sla_metric_mismatch,
             "sla_configured_metric": sla_configured_metric
         }
