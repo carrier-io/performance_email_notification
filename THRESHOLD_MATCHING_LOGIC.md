@@ -117,12 +117,13 @@ Excludes:
 #### When Per Request Results is DISABLED:
 ```
 IF SLA.checked AND NOT Per request results.check_response_time:
-    ├─ Show: "SLA disabled" (gray, italic, 12px)
-    └─ Warning Banner:
-       "Per request SLA thresholds are disabled because 'Per request results' 
-        option is not enabled in Quality Gate configuration. To see SLA 
-        thresholds for individual requests and transactions, please enable 
-        'Per request results' in Quality Gate settings."
+    ├─ Show: "SLA disabled" (gray, italic, 12px) for individual requests
+    └─ Warning Banner (triggered only when individual requests have "SLA disabled"):
+       "Per request SLA thresholds are disabled. Enable 'Per request results' 
+        in Quality Gate configuration to see SLA thresholds for individual requests."
+
+Note: Warning is NOT shown if only "All" row has "SLA disabled" 
+      (e.g., when Summary OFF but Per request ON)
 ```
 
 #### When Per Request Results is ENABLED:
@@ -175,9 +176,11 @@ Warning: "SLA is enabled but no response time thresholds are configured.
 
 ```
 Action:  General metrics SLA hidden, Request metrics SLA shown
+         "All" row shows "SLA disabled" (requires Summary results)
 Warning: "General metrics SLA is disabled. Enable 'Summary results' in Quality 
           Gate configuration to see SLA for general metrics."
-Note:    "All" row in Request metrics shows "Set SLA" (Summary OFF blocks it)
+Note:    "All" row in Request metrics shows "SLA disabled" because it requires 
+         Summary results to be enabled (conceptually belongs to General metrics)
 ```
 
 ### Scenario 4: Single SLA Metric
@@ -194,8 +197,8 @@ Warning: None
 ```
 Action:  Uses pct95 (or highest available: pct99 > pct95 > pct90 > pct50 > mean)
 Warning: "Multiple SLA metrics configured (PCT95, PCT50). Report uses PCT95. 
-          To use a different metric, enable 'Per request results' in Quality 
-          Gate configuration and select the desired percentile."
+          To select a different metric, enable 'Per request results' in Quality 
+          Gate configuration."
 ```
 
 ### Scenario 6: Metric Mismatch
@@ -253,12 +256,21 @@ Metric: Uses comparison_metric (default pct95 or user-selected)
 
 **Rule:** Requires "Per request results" enabled in Quality Gate
 
+#### When Per Request Results is DISABLED:
 ```
-IF Baseline.checked AND Per request results.check_response_time:
-    └─ Show baseline data for each request using comparison_metric
+IF Baseline.checked AND NOT Per request results.check_response_time:
+    ├─ Show: "Baseline disabled" (gray, italic, 12px) for individual requests
+    └─ Warning Banner (triggered only when individual requests have "Baseline disabled"):
+       "Per request baseline comparison is disabled. Enable 'Per request results' 
+        in Quality Gate configuration to see baseline for individual requests."
 
-IF Baseline.checked BUT Per request results disabled:
-    └─ Hide baseline column for individual requests
+Note: Warning is NOT shown if only "All" row has "Baseline disabled" 
+      (e.g., when Summary OFF but Per request ON)
+```
+
+#### When Per Request Results is ENABLED:
+```
+Show baseline data for each request using comparison_metric
 
 Metric: Uses comparison_metric (default pct95 or user-selected)
 ```
@@ -289,8 +301,11 @@ Warning: "Baseline comparison is enabled, but both 'Summary results' and
 
 ```
 Action:  General metrics baseline shown, Request metrics baseline hidden
+         Individual requests show "Baseline disabled" (requires Per request results)
 Warning: "Baseline comparison uses default PCT95. To select a different 
           percentile, enable 'Per request results' in Quality Gate configuration."
+Note:    Individual requests in Request metrics show "Baseline disabled" because 
+         Per request results is disabled
 ```
 
 #### Case 3: Summary OFF, Per Request ON
@@ -298,9 +313,11 @@ Warning: "Baseline comparison uses default PCT95. To select a different
 
 ```
 Action:  General metrics baseline hidden, Request metrics baseline shown
+         "All" row shows "Baseline disabled" (requires Summary results)
 Warning: "General metrics baseline is disabled. Enable 'Summary results' in 
           Quality Gate configuration to see baseline for general metrics."
-Note:    "All" row in Request metrics shows "N/A" (Summary OFF blocks it)
+Note:    "All" row in Request metrics shows "Baseline disabled" because it requires 
+         Summary results to be enabled (conceptually belongs to General metrics)
 ```
 
 ---
@@ -319,8 +336,8 @@ Note:    "All" row in Request metrics shows "N/A" (Summary OFF blocks it)
 1. Settings disabled (both Summary and Per request OFF)
 2. No response_time thresholds configured
 3. Summary OFF, Per request ON (General metrics SLA disabled)
-4. Multiple SLA metrics exist
-5. SLA metric mismatch
+4. SLA metric mismatch (no "all" SLA or wrong metric)
+5. Multiple SLA metrics exist (when Per request OFF)
 
 **Baseline Warnings (priority order):**
 1. Settings disabled (both Summary and Per request OFF)
@@ -329,7 +346,16 @@ Note:    "All" row in Request metrics shows "N/A" (Summary OFF blocks it)
 
 **Important:** Only ONE warning per feature shown (highest priority wins), but SLA and Baseline warnings can appear together.
 
-**Additional Warning:** "Per request SLA thresholds are disabled" shown independently when Per request OFF causes individual requests to show "SLA disabled".
+**Additional Warnings (shown independently):**
+- "Per request SLA thresholds are disabled" when:
+  - Per request results is OFF AND
+  - Individual requests (not "All" row) have "SLA disabled"
+  - NOT shown when only "All" row has "SLA disabled" (e.g., Summary OFF + Per request ON)
+
+- "Per request baseline comparison is disabled" when:
+  - Per request results is OFF AND
+  - Individual requests (not "All" row) have "Baseline disabled"
+  - NOT shown when only "All" row has "Baseline disabled" (e.g., Summary OFF + Per request ON)
 
 ### 3. Case Sensitivity
 'all' (lowercase) and 'All' (capital) are different:
