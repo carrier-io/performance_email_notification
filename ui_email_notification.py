@@ -110,6 +110,9 @@ class UIEmailNotification(object):
             print(f"[WARNING] Could not load thresholds: {e}")
             thresholds_grouped = {}
         
+        # Check if any thresholds exist for this test
+        total_thresholds_for_test = sum(len(v) for v in thresholds_grouped.values())
+        
         # Track threshold failures for missed_thresholds calculation
         total_thresholds_checked = 0
         failed_thresholds_count = 0
@@ -415,7 +418,8 @@ class UIEmailNotification(object):
             "browser": report_info['browser'].capitalize(),
             "version": browser_version,
             "loops": report_info["loops"],
-            "pages": len(results_info)
+            "pages": len(results_info),
+            "total_thresholds": total_thresholds_for_test
         }
         email_body = self.__get_email_body(t_params, results_info, page_comparison, action_comparison,
                                            baseline_comparison_pages, baseline_comparison_actions, degradation_rate,
