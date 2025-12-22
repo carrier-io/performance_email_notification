@@ -50,10 +50,13 @@ class UIEmailNotification(object):
             for metric in ["load_time", "tbt", "fcp", "lcp", "ttfb"]:
                 try:
                     _arr = [int(each[metric]) for each in test["pages"] if metric in each]
-                    aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2) if len(_arr) else 0
+                    if len(_arr) > 0:
+                        aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2)
+                    else:
+                        aggregated_test_data[metric] = "Requires newer\nLighthouse version"
                 except (KeyError, ValueError, TypeError) as e:
                     print(f"[WARNING] Missing or invalid metric '{metric}' in pages data: {e}")
-                    aggregated_test_data[metric] = 0
+                    aggregated_test_data[metric] = "Requires newer\nLighthouse version"
             aggregated_test_data["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
             aggregated_test_data["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             page_comparison.append(aggregated_test_data)
@@ -63,13 +66,19 @@ class UIEmailNotification(object):
                 try:
                     if metric == "cls":
                         _arr = [float(each[metric]) for each in test["actions"] if metric in each]
-                        aggregated_test_data[metric] = round(sum(_arr) / len(_arr), 2) if len(_arr) else 0
+                        if len(_arr) > 0:
+                            aggregated_test_data[metric] = round(sum(_arr) / len(_arr), 2)
+                        else:
+                            aggregated_test_data[metric] = "Requires newer\nLighthouse version"
                     else:
                         _arr = [int(each[metric]) for each in test["actions"] if metric in each]
-                        aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2) if len(_arr) else 0
+                        if len(_arr) > 0:
+                            aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2)
+                        else:
+                            aggregated_test_data[metric] = "Requires newer\nLighthouse version"
                 except (KeyError, ValueError, TypeError) as e:
                     print(f"[WARNING] Missing or invalid metric '{metric}' in actions data: {e}")
-                    aggregated_test_data[metric] = 0
+                    aggregated_test_data[metric] = "Requires newer\nLighthouse version"
             aggregated_test_data["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
             aggregated_test_data["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             action_comparison.append(aggregated_test_data)
@@ -203,12 +212,18 @@ class UIEmailNotification(object):
                     except (ValueError, TypeError) as e:
                         print(f"[WARNING] Invalid value for metric '{metric}' in result '{each.get('name', 'unknown')}': {e}")
                         each[metric] = 0
+                else:
+                    # Metric not present in response
+                    each[metric] = "Requires newer\nLighthouse version"
             if "cls" in each:
                 try:
                     each["cls"] = round(float(each["cls"]), 2)
                 except (ValueError, TypeError) as e:
                     print(f"[WARNING] Invalid value for CLS in result '{each.get('name', 'unknown')}': {e}")
                     each["cls"] = 0
+            else:
+                # CLS not present in response
+                each["cls"] = "Requires newer\nLighthouse version"
 
         try:
             baseline_id = self.__get_baseline_report(report_info['name'], report_info['environment'])
@@ -238,10 +253,11 @@ class UIEmailNotification(object):
                                 if metric in each:
                                     _baseline_results[each["identifier"]][metric] = [round(int(each[metric]) / 1000, 2)]
                                 else:
-                                    _baseline_results[each["identifier"]][metric] = [0]
+                                    # Mark as missing, not as 0
+                                    _baseline_results[each["identifier"]][metric] = ["Requires newer\nLighthouse version"]
                             except (ValueError, TypeError, KeyError) as e:
                                 print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _baseline_results[each["identifier"]][metric] = [0]
+                                _baseline_results[each["identifier"]][metric] = ["Requires newer\nLighthouse version"]
                     else:
                         for metric in ["tbt", "cls", "inp"]:
                             try:
@@ -251,10 +267,11 @@ class UIEmailNotification(object):
                                     else:
                                         _baseline_results[each["identifier"]][metric] = [round(int(each[metric]) / 1000, 2)]
                                 else:
-                                    _baseline_results[each["identifier"]][metric] = [0]
+                                    # Mark as missing, not as 0
+                                    _baseline_results[each["identifier"]][metric] = ["Requires newer\nLighthouse version"]
                             except (ValueError, TypeError, KeyError) as e:
                                 print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _baseline_results[each["identifier"]][metric] = [0]
+                                _baseline_results[each["identifier"]][metric] = ["Requires newer\nLighthouse version"]
                 else:
                     if each["type"] == "page":
                         for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
@@ -262,10 +279,11 @@ class UIEmailNotification(object):
                                 if metric in each:
                                     _baseline_results[each["identifier"]][metric].append(round(int(each[metric]) / 1000, 2))
                                 else:
-                                    _baseline_results[each["identifier"]][metric].append(0)
+                                    # Mark as missing, not as 0
+                                    _baseline_results[each["identifier"]][metric].append("Requires newer\nLighthouse version")
                             except (ValueError, TypeError, KeyError) as e:
                                 print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _baseline_results[each["identifier"]][metric].append(0)
+                                _baseline_results[each["identifier"]][metric].append("Requires newer\nLighthouse version")
                     else:
                         for metric in ["tbt", "cls", "inp"]:
                             try:
@@ -275,7 +293,11 @@ class UIEmailNotification(object):
                                     else:
                                         _baseline_results[each["identifier"]][metric].append(round(int(each[metric]) / 1000, 2))
                                 else:
-                                    _baseline_results[each["identifier"]][metric].append(0)
+                                    # Mark as missing, not as 0
+                                    _baseline_results[each["identifier"]][metric].append("Requires newer\nLighthouse version")
+                            except (ValueError, TypeError, KeyError) as e:
+                                print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
+                                _baseline_results[each["identifier"]][metric].append("Requires newer\nLighthouse version")
                             except (ValueError, TypeError, KeyError) as e:
                                 print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
                                 _baseline_results[each["identifier"]][metric].append(0)
@@ -283,10 +305,18 @@ class UIEmailNotification(object):
                 _ = {"identifier": each, "name": _baseline_results[each]["name"], "type": _baseline_results[each]["type"]}
                 for metric in ["load_time", "fcp", "lcp", "tbt", "inp", "cls", "ttfb"]:
                     if metric in _baseline_results[each].keys():
-                        if metric == "cls":
-                            _[metric] = round(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]), 2)
+                        # Check if any value in the list is "Requires newer\nLighthouse version"
+                        metric_values = _baseline_results[each][metric]
+                        if "Requires newer\nLighthouse version" in metric_values:
+                            _[metric] = "Requires newer\nLighthouse version"
                         else:
-                            _[metric] = round(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]), 2)
+                            # All values are numeric
+                            if metric == "cls":
+                                _[metric] = round(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]), 2)
+                            else:
+                                _[metric] = round(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]), 2)
+                    else:
+                        _[metric] = "Requires newer\nLighthouse version"
                 aggregated_baseline.append(_)
 
             # TODO refactoring
@@ -298,57 +328,79 @@ class UIEmailNotification(object):
                         for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
                             try:
                                 if metric in each:
-                                    _current_results[each["identifier"]][metric] = [float(each[metric])]
+                                    # Check if value is already "Requires newer\nLighthouse version" string
+                                    if each[metric] == "Requires newer\nLighthouse version":
+                                        _current_results[each["identifier"]][metric] = ["Requires newer\nLighthouse version"]
+                                    else:
+                                        _current_results[each["identifier"]][metric] = [float(each[metric])]
                                 else:
-                                    _current_results[each["identifier"]][metric] = [0.0]
+                                    _current_results[each["identifier"]][metric] = ["Requires newer\nLighthouse version"]
                             except (ValueError, TypeError, KeyError) as e:
                                 print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _current_results[each["identifier"]][metric] = [0.0]
+                                _current_results[each["identifier"]][metric] = ["Requires newer\nLighthouse version"]
                     else:
                         for metric in ["tbt", "cls", "inp"]:
                             try:
                                 if metric in each:
-                                    if metric == "cls":
+                                    # Check if value is already "Requires newer\nLighthouse version" string
+                                    if each[metric] == "Requires newer\nLighthouse version":
+                                        _current_results[each["identifier"]][metric] = ["Requires newer\nLighthouse version"]
+                                    elif metric == "cls":
                                         _current_results[each["identifier"]][metric] = [round(float(each[metric]), 2)]
                                     else:
                                         _current_results[each["identifier"]][metric] = [float(each[metric])]
                                 else:
-                                    _current_results[each["identifier"]][metric] = [0.0]
+                                    _current_results[each["identifier"]][metric] = ["Requires newer\nLighthouse version"]
                             except (ValueError, TypeError, KeyError) as e:
                                 print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _current_results[each["identifier"]][metric] = [0.0]
+                                _current_results[each["identifier"]][metric] = ["Requires newer\nLighthouse version"]
                 else:
                     if each["type"] == "page":
                         for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
                             try:
                                 if metric in each:
-                                    _current_results[each["identifier"]][metric].append(float(each[metric]))
+                                    # Check if value is already "Requires newer\nLighthouse version" string
+                                    if each[metric] == "Requires newer\nLighthouse version":
+                                        _current_results[each["identifier"]][metric].append("Requires newer\nLighthouse version")
+                                    else:
+                                        _current_results[each["identifier"]][metric].append(float(each[metric]))
                                 else:
-                                    _current_results[each["identifier"]][metric].append(0.0)
+                                    _current_results[each["identifier"]][metric].append("Requires newer\nLighthouse version")
                             except (ValueError, TypeError, KeyError) as e:
                                 print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _current_results[each["identifier"]][metric].append(0.0)
+                                _current_results[each["identifier"]][metric].append("Requires newer\nLighthouse version")
                     else:
                         for metric in ["tbt", "cls", "inp"]:
                             try:
                                 if metric in each:
-                                    if metric == "cls":
+                                    # Check if value is already "Requires newer\nLighthouse version" string
+                                    if each[metric] == "Requires newer\nLighthouse version":
+                                        _current_results[each["identifier"]][metric].append("Requires newer\nLighthouse version")
+                                    elif metric == "cls":
                                         _current_results[each["identifier"]][metric].append(round(float(each[metric]), 2))
                                     else:
                                         _current_results[each["identifier"]][metric].append(float(each[metric]))
                                 else:
-                                    _current_results[each["identifier"]][metric].append(0.0)
+                                    _current_results[each["identifier"]][metric].append("Requires newer\nLighthouse version")
                             except (ValueError, TypeError, KeyError) as e:
                                 print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _current_results[each["identifier"]][metric].append(0.0)
+                                _current_results[each["identifier"]][metric].append("Requires newer\nLighthouse version")
             for each in _current_results:
                 _ = {"identifier": each, "name": _current_results[each]["name"], "type": _current_results[each]["type"]}
                 for metric in ["load_time", "fcp", "lcp", "tbt", "inp", "cls", "ttfb"]:
                     if metric in _current_results[each].keys():
-                        if metric == "cls":
-                            _[metric] = round(sum(_current_results[each][metric]) / len(_current_results[each][metric]), 2)
+                        # Check if any value in the list is "Requires newer\nLighthouse version"
+                        metric_values = _current_results[each][metric]
+                        if "Requires newer\nLighthouse version" in metric_values:
+                            _[metric] = "Requires newer\nLighthouse version"
                         else:
-                            _[metric] = round(sum(_current_results[each][metric]) / len(_current_results[each][metric]), 2)
+                            # All values are numeric
+                            if metric == "cls":
+                                _[metric] = round(sum(_current_results[each][metric]) / len(_current_results[each][metric]), 2)
+                            else:
+                                _[metric] = round(sum(_current_results[each][metric]) / len(_current_results[each][metric]), 2)
+                    else:
+                        _[metric] = "Requires newer\nLighthouse version"
                 aggregated_current_results.append(_)
 
         degradation_rate = 0
@@ -361,32 +413,44 @@ class UIEmailNotification(object):
                         comparison = {"name": current_result["name"]}
                         if current_result["type"] == "page":
                             for each in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
-                                _count += 1
                                 comparison[each] = current_result[each]
                                 comparison[f"{each}_baseline"] = baseline_result[each]
-                                comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
-                                if comparison[f"{each}_diff"] > 0:
-                                    _failed += 1
-                                    comparison[f"{each}_diff"] = f'+{comparison[f"{each}_diff"]}'
-                                    comparison[f"{each}_diff_color"] = "color:red;"
+                                
+                                # Check if either value is "Requires newer\nLighthouse version"
+                                if current_result[each] == "Requires newer\nLighthouse version" or baseline_result[each] == "Requires newer\nLighthouse version":
+                                    comparison[f"{each}_diff"] = "Requires newer\nLighthouse version"
+                                    comparison[f"{each}_diff_color"] = ""
                                 else:
-                                    comparison[f"{each}_diff_color"] = "color:green;"
+                                    _count += 1
+                                    comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
+                                    if comparison[f"{each}_diff"] > 0:
+                                        _failed += 1
+                                        comparison[f"{each}_diff"] = f'+{comparison[f"{each}_diff"]}'
+                                        comparison[f"{each}_diff_color"] = "color:red;"
+                                    else:
+                                        comparison[f"{each}_diff_color"] = "color:green;"
                             baseline_comparison_pages.append(comparison)
                         else:
                             for each in ["tbt", "cls", "inp"]:
-                                _count += 1
                                 comparison[each] = current_result[each]
                                 comparison[f"{each}_baseline"] = baseline_result[each]
-                                if each == "cls":
-                                    comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
+                                
+                                # Check if either value is "Requires newer\nLighthouse version"
+                                if current_result[each] == "Requires newer\nLighthouse version" or baseline_result[each] == "Requires newer\nLighthouse version":
+                                    comparison[f"{each}_diff"] = "Requires newer\nLighthouse version"
+                                    comparison[f"{each}_diff_color"] = ""
                                 else:
-                                    comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
-                                if comparison[f"{each}_diff"] > 0:
-                                    _failed += 1
-                                    comparison[f"{each}_diff"] = f'+{comparison[f"{each}_diff"]}'
-                                    comparison[f"{each}_diff_color"] = "color:red;"
-                                else:
-                                    comparison[f"{each}_diff_color"] = "color:green;"
+                                    _count += 1
+                                    if each == "cls":
+                                        comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
+                                    else:
+                                        comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
+                                    if comparison[f"{each}_diff"] > 0:
+                                        _failed += 1
+                                        comparison[f"{each}_diff"] = f'+{comparison[f"{each}_diff"]}'
+                                        comparison[f"{each}_diff_color"] = "color:red;"
+                                    else:
+                                        comparison[f"{each}_diff_color"] = "color:green;"
                             baseline_comparison_actions.append(comparison)
             degradation_rate = round(float(_failed/_count) * 100, 2) if _count else 0
 
@@ -477,14 +541,26 @@ class UIEmailNotification(object):
     @staticmethod
     def create_ui_metrics_chart_pages(builds):
         labels, x, ttfb, tbt, lcp = [], [], [], [], []
+        ttfb_original, tbt_original, lcp_original = [], [], []  # Track original values
         count = 1
         for test in builds:
             labels.append(test['date'])
-            ttfb.append(round(test['ttfb'], 2))
-            tbt.append(round(test['tbt'], 2))
-            lcp.append(round(test['lcp'], 2))
+            # Track original values to detect if all are missing
+            ttfb_original.append(test['ttfb'])
+            tbt_original.append(test['tbt'])
+            lcp_original.append(test['lcp'])
+            # Handle "Requires newer\nLighthouse version" strings - use 0 for chart plotting
+            ttfb.append(round(test['ttfb'], 2) if isinstance(test['ttfb'], (int, float)) else 0)
+            tbt.append(round(test['tbt'], 2) if isinstance(test['tbt'], (int, float)) else 0)
+            lcp.append(round(test['lcp'], 2) if isinstance(test['lcp'], (int, float)) else 0)
             x.append(count)
             count += 1
+        
+        # Check if each metric has any actual numeric data
+        ttfb_has_data = any(isinstance(v, (int, float)) for v in ttfb_original)
+        tbt_has_data = any(isinstance(v, (int, float)) for v in tbt_original)
+        lcp_has_data = any(isinstance(v, (int, float)) for v in lcp_original)
+        
         datapoints = {
             'title': 'UI metrics',
             'label': 'UI metrics',
@@ -496,6 +572,9 @@ class UIEmailNotification(object):
             'ttfb': ttfb[::-1],
             'tbt': tbt[::-1],
             'lcp': lcp[::-1],
+            'ttfb_has_data': ttfb_has_data,
+            'tbt_has_data': tbt_has_data,
+            'lcp_has_data': lcp_has_data,
             'values': x,
             'labels': labels[::-1]
         }
@@ -509,14 +588,26 @@ class UIEmailNotification(object):
     @staticmethod
     def create_ui_metrics_chart_actions(builds):
         labels, x, cls, tbt, inp = [], [], [], [], []
+        cls_original, tbt_original, inp_original = [], [], []  # Track original values
         count = 1
         for test in builds:
             labels.append(test['date'])
-            cls.append(round(test['cls'], 2))
-            tbt.append(round(test['tbt'], 2))
-            inp.append(round(test['inp'], 2))
+            # Track original values to detect if all are missing
+            cls_original.append(test['cls'])
+            tbt_original.append(test['tbt'])
+            inp_original.append(test['inp'])
+            # Handle "Requires newer\nLighthouse version" strings - use 0 for chart plotting
+            cls.append(round(test['cls'], 2) if isinstance(test['cls'], (int, float)) else 0)
+            tbt.append(round(test['tbt'], 2) if isinstance(test['tbt'], (int, float)) else 0)
+            inp.append(round(test['inp'], 2) if isinstance(test['inp'], (int, float)) else 0)
             x.append(count)
             count += 1
+        
+        # Check if each metric has any actual numeric data
+        cls_has_data = any(isinstance(v, (int, float)) for v in cls_original)
+        tbt_has_data = any(isinstance(v, (int, float)) for v in tbt_original)
+        inp_has_data = any(isinstance(v, (int, float)) for v in inp_original)
+        
         datapoints = {
             'title': 'UI metrics Actions',
             'label': 'UI metrics Actions',
@@ -528,6 +619,9 @@ class UIEmailNotification(object):
             'cls': cls[::-1],
             'tbt': tbt[::-1],
             'inp': inp[::-1],
+            'cls_has_data': cls_has_data,
+            'tbt_has_data': tbt_has_data,
+            'inp_has_data': inp_has_data,
             'values': x,
             'labels': labels[::-1]
         }

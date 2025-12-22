@@ -12,10 +12,18 @@
             font-family: 'Open Sans', sans-serif;
             line-height: 24px;
         }
+        .outdated {
+            font-style: italic;
+            color: #999;
+            display: block;
+            text-align: center;
+        }
     </style>
 </head>
 
-<body>
+    {% macro display_value(value) -%}
+        {% if "Requires newer" in value|string %}<span class="outdated">{{ value|replace("\n", "<br>")|safe }}</span>{% else %}{{ value }}{% endif %}
+    {%- endmacro %}<body>
 <table style="color: #fff; background: #875FFC; padding: 31px; font-size: 16px; font-weight: 600;">
     <tr>
         <td>
@@ -137,15 +145,15 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.name }}</a></td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.load_time_color }}">{{ result.load_time }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.dom_color }}">{{ result.dom }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.fcp_color }}">{{ result.fcp }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lcp_color }}">{{ result.lcp }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_color }}">{{ result.cls }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_color }}">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.ttfb_color }}">{{ result.ttfb }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.fvc_color }}">{{ result.fvc }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lvc_color }}">{{ result.lvc }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.load_time_color }}">{{ display_value(result.load_time) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.dom_color }}">{{ display_value(result.dom) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.fcp_color }}">{{ display_value(result.fcp) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lcp_color }}">{{ display_value(result.lcp) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_color }}">{{ display_value(result.cls) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_color }}">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.ttfb_color }}">{{ display_value(result.ttfb) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.fvc_color }}">{{ display_value(result.fvc) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lvc_color }}">{{ display_value(result.lvc) }}</td>
         </tr>
                 {% endif %}
                 {% endfor %}
@@ -169,9 +177,9 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.name }}</a></td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_color }}">{{ result.cls }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_color }}">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.inp_color }}">{{ result.inp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_color }}">{{ display_value(result.cls) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_color }}">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.inp_color }}">{{ display_value(result.inp) }}</td>
         </tr>
                 {% endif %}
                 {% endfor %}
@@ -193,9 +201,9 @@
                 {% for result in page_comparison %}
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.date }}</a></td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.ttfb }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.lcp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.ttfb) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.lcp) }}</td>
         </tr>
                 {% endfor %}
         </tbody>
@@ -214,9 +222,9 @@
                 {% for result in action_comparison %}
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.date }}</a></td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.inp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.cls) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.inp) }}</td>
         </tr>
                 {% endfor %}
         </tbody>
@@ -247,15 +255,15 @@
                 {% for result in baseline_comparison_pages %}
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.name }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.ttfb }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.ttfb_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.ttfb_diff_color }}">{{ result.ttfb_diff }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_diff_color }}">{{ result.tbt_diff }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.lcp }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.lcp_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lcp_diff_color }}">{{ result.lcp_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.ttfb) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.ttfb_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.ttfb_diff_color }}">{{ display_value(result.ttfb_diff) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_diff_color }}">{{ display_value(result.tbt_diff) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.lcp) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.lcp_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lcp_diff_color }}">{{ display_value(result.lcp_diff) }}</td>
         </tr>
                 {% endfor %}
         </tbody>
@@ -287,15 +295,15 @@
                 {% for result in baseline_comparison_actions %}
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.name }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.cls_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_diff_color }}">{{ result.cls_diff }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_diff_color }}">{{ result.tbt_diff }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.inp }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.inp_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.inp_diff_color }}">{{ result.inp_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.cls) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.cls_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_diff_color }}">{{ display_value(result.cls_diff) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_diff_color }}">{{ display_value(result.tbt_diff) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.inp) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.inp_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.inp_diff_color }}">{{ display_value(result.inp_diff) }}</td>
         </tr>
                 {% endfor %}
         </tbody>

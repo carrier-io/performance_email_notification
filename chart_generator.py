@@ -128,17 +128,34 @@ def ui_metrics_chart_pages(datapoints):
     y_max = 0
     x_max = 0
     x_max = max(datapoints['values']) if max(datapoints['values']) > x_max else x_max
+    
+    # Determine which metrics have actual data
+    metrics_to_plot = []
     for each in ["ttfb", "tbt", "lcp"]:
-        y_max = max(datapoints[each]) if max(datapoints[each]) > y_max else y_max
-    _, = ax.plot(datapoints['values'], datapoints['ttfb'], linewidth=2, label="TTFB")
-    _, = ax.plot(datapoints['values'], datapoints['tbt'], linewidth=2, label="TBT")
-    _, = ax.plot(datapoints['values'], datapoints['lcp'], linewidth=2, label="LCP")
-    #_, = ax.plot(datapoints['values'], datapoints['keys'], 'o', linewidth=4, color=YELLOW)
+        if datapoints.get(f'{each}_has_data', True):  # Default to True if not specified
+            y_max = max(datapoints[each]) if max(datapoints[each]) > y_max else y_max
+            metrics_to_plot.append(each)
+    
+    # Only plot metrics that have data
+    plot_lines = []
+    if 'ttfb' in metrics_to_plot:
+        line, = ax.plot(datapoints['values'], datapoints['ttfb'], linewidth=2, label="TTFB")
+        plot_lines.append(line)
+    if 'tbt' in metrics_to_plot:
+        line, = ax.plot(datapoints['values'], datapoints['tbt'], linewidth=2, label="TBT")
+        plot_lines.append(line)
+    if 'lcp' in metrics_to_plot:
+        line, = ax.plot(datapoints['values'], datapoints['lcp'], linewidth=2, label="LCP")
+        plot_lines.append(line)
 
-    for each in ["ttfb", "tbt", "lcp"]:
+    # Annotate only metrics that have data
+    for each in metrics_to_plot:
         for index, value in enumerate(datapoints[each]):
             ax.annotate(str(value), xy=(datapoints['values'][index], value + y_max * 0.05))
-    ax.legend(loc='upper left')
+    
+    # Only show legend if there are metrics to plot
+    if plot_lines:
+        ax.legend(loc='upper left')
     ax.set_xlabel(datapoints['x_axis'])
     ax.set_ylabel(datapoints['y_axis'])
     # ax.set_title(datapoints['title'])
@@ -163,20 +180,36 @@ def ui_metrics_chart_actions(datapoints):
     y_max = 0
     x_max = 0
     x_max = max(datapoints['values']) if max(datapoints['values']) > x_max else x_max
+    
+    # Determine which metrics have actual data
+    metrics_to_plot = []
     for each in ["cls", "tbt", "inp"]:
-        if each in datapoints and datapoints[each]:
-            y_max = max(datapoints[each]) if max(datapoints[each]) > y_max else y_max
-    _, = ax.plot(datapoints['values'], datapoints['cls'], linewidth=2, label="CLS")
-    _, = ax.plot(datapoints['values'], datapoints['tbt'], linewidth=2, label="TBT")
-    if 'inp' in datapoints and datapoints['inp']:
-        _, = ax.plot(datapoints['values'], datapoints['inp'], linewidth=2, label="INP")
-    #_, = ax.plot(datapoints['values'], datapoints['keys'], 'o', linewidth=4, color=YELLOW)
+        if datapoints.get(f'{each}_has_data', True):  # Default to True if not specified
+            if each in datapoints and datapoints[each]:
+                y_max = max(datapoints[each]) if max(datapoints[each]) > y_max else y_max
+                metrics_to_plot.append(each)
+    
+    # Only plot metrics that have data
+    plot_lines = []
+    if 'cls' in metrics_to_plot:
+        line, = ax.plot(datapoints['values'], datapoints['cls'], linewidth=2, label="CLS")
+        plot_lines.append(line)
+    if 'tbt' in metrics_to_plot:
+        line, = ax.plot(datapoints['values'], datapoints['tbt'], linewidth=2, label="TBT")
+        plot_lines.append(line)
+    if 'inp' in metrics_to_plot:
+        line, = ax.plot(datapoints['values'], datapoints['inp'], linewidth=2, label="INP")
+        plot_lines.append(line)
 
-    for each in ["cls", "tbt", "inp"]:
+    # Annotate only metrics that have data
+    for each in metrics_to_plot:
         if each in datapoints and datapoints[each]:
             for index, value in enumerate(datapoints[each]):
                 ax.annotate(str(value), xy=(datapoints['values'][index], value + y_max * 0.05))
-    ax.legend(loc='upper left')
+    
+    # Only show legend if there are metrics to plot
+    if plot_lines:
+        ax.legend(loc='upper left')
     ax.set_xlabel(datapoints['x_axis'])
     ax.set_ylabel(datapoints['y_axis'])
     # ax.set_title(datapoints['title'])
