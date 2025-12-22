@@ -122,6 +122,7 @@
         </div>
     </div>
 
+    {% if results|selectattr("type", "equalto", "page")|list|length > 0 %}
     <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Results table. Pages</p>
     <table style=" width: 100%;">
         <thead>
@@ -159,7 +160,9 @@
                 {% endfor %}
         </tbody>
     </table>
+    {% endif %}
 
+    {% if results|selectattr("type", "equalto", "action")|list|length > 0 %}
     <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Results table. Actions</p>
     <table style=" width: 100%;">
         <thead>
@@ -185,8 +188,9 @@
                 {% endfor %}
         </tbody>
     </table>
+    {% endif %}
 
-
+    {% if results|selectattr("type", "equalto", "page")|list|length > 0 %}
     <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Comparison table. Pages</p>
     <table style="width: 100%;">
         <thead>
@@ -208,6 +212,8 @@
                 {% endfor %}
         </tbody>
     </table>
+    {% endif %}
+    {% if results|selectattr("type", "equalto", "action")|list|length > 0 %}
     <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Comparison table. Actions</p>
     <table style="width: 100%;">
         <thead>
@@ -229,6 +235,7 @@
                 {% endfor %}
         </tbody>
     </table>
+    {% endif %}
         {% if baseline_comparison_pages %}
     <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Baseline comparison. Pages</p>
     <table style="width: 100%;">
