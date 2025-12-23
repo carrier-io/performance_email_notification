@@ -1,20 +1,20 @@
 from datetime import datetime
 import pytz
-
 import requests
 from jinja2 import Environment, FileSystemLoader
-from chart_generator import ui_metrics_chart_pages, ui_metrics_chart_actions
 from email.mime.image import MIMEImage
-from email_notifications import Email
 
+from chart_generator import ui_metrics_chart_pages, ui_metrics_chart_actions
+from email_notifications import Email
+from thresholds_comparison import ThresholdsComparison
 
 GREEN = '#18B64D'
 YELLOW = '#FFA400'
 RED = '#FF0000'
 GRAY = '#CCCCCC'
 
-class UIEmailNotification(object):
 
+class UIEmailNotification:
     def __init__(self, arguments):
         self.test_id = arguments['test_id']
         self.gelloper_url = arguments['galloper_url']
@@ -24,273 +24,295 @@ class UIEmailNotification(object):
         self.test_name = arguments['test']
         self.args = arguments
 
-    def ui_email_notification(self):
-        info = self.__get_test_info()
-        last_reports = self.__get_last_report(info['name'], 10)
-        tests_data = []
-        test_counter = 0
-        for each in last_reports:
-            if each["test_status"]["status"] in ["Finished", "Success", "Failed"]:
-                if test_counter >= 5:
-                    break
-                report = {"pages": [], "actions": []}
-                results_info = self.__get_results_info(each["uid"])
-                for result in results_info:
-                    if result["type"] == "page":
-                        report["pages"].append(result)
-                    else:
-                        report["actions"].append(result)
-                tests_data.append(report)
-                test_counter += 1
 
-        page_comparison, action_comparison = [], []
-        for index, test in enumerate(tests_data):
-            aggregated_test_data = {}
-            for metric in ["load_time", "tbt", "fcp", "lcp", "ttfb"]:
-                try:
-                    _arr = [int(each[metric]) for each in test["pages"] if metric in each]
-                    aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2) if len(_arr) else 0
-                except (KeyError, ValueError, TypeError) as e:
-                    print(f"[WARNING] Missing or invalid metric '{metric}' in pages data: {e}")
-                    aggregated_test_data[metric] = 0
-            aggregated_test_data["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
-            aggregated_test_data["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
-            page_comparison.append(aggregated_test_data)
+    def _safe_metric_conversion(self, value, metric_name, is_cls=False, divisor=1000):
+        """Convert metric value safely with error handling."""
+        try:
+            if value == "Requires newer\nLighthouse version":
+                return value
+            return round(float(value) / divisor, 2) if not is_cls else round(float(value), 2)
+        except (ValueError, TypeError) as e:
+            print(f"[WARNING] Invalid value for metric '{metric_name}': {e}")
+            return "Requires newer\nLighthouse version"
 
-            aggregated_test_data = {}
-            for metric in ["cls", "tbt", "inp"]:
-                try:
+    def _aggregate_metrics(self, test_data, metric_names, is_cls_metric=False):
+        """Aggregate metrics from test data with safe averaging."""
+        aggregated = {}
+        for metric in metric_names:
+            try:
+                if metric == "cls":
+                    _arr = [float(item[metric]) for item in test_data if metric in item]
+                else:
+                    _arr = [int(item[metric]) for item in test_data if metric in item]
+                
+                if len(_arr) > 0:
                     if metric == "cls":
-                        _arr = [float(each[metric]) for each in test["actions"] if metric in each]
-                        aggregated_test_data[metric] = round(sum(_arr) / len(_arr), 2) if len(_arr) else 0
+                        aggregated[metric] = round(sum(_arr) / len(_arr), 2)
                     else:
-                        _arr = [int(each[metric]) for each in test["actions"] if metric in each]
-                        aggregated_test_data[metric] = round((sum(_arr) / len(_arr)) / 1000, 2) if len(_arr) else 0
-                except (KeyError, ValueError, TypeError) as e:
-                    print(f"[WARNING] Missing or invalid metric '{metric}' in actions data: {e}")
-                    aggregated_test_data[metric] = 0
-            aggregated_test_data["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
-            aggregated_test_data["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
-            action_comparison.append(aggregated_test_data)
+                        aggregated[metric] = round((sum(_arr) / len(_arr)) / 1000, 2)
+                else:
+                    aggregated[metric] = "Requires newer\nLighthouse version"
+            except (KeyError, ValueError, TypeError) as e:
+                print(f"[WARNING] Missing or invalid metric '{metric}': {e}")
+                aggregated[metric] = "Requires newer\nLighthouse version"
+        return aggregated
 
-        user_list = self.args['user_list']
-        date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-        subject = f"[UI] Test results for {info['name']}. From {date}."
+    def _build_comparison_data(self, last_reports, tests_data):
+        """Build page and action comparison data from test results."""
+        page_comparison, action_comparison = [], []
+        
+        for index, test in enumerate(tests_data):
+            page_metrics = self._aggregate_metrics(test["pages"], ["load_time", "tbt", "fcp", "lcp", "ttfb"])
+            page_metrics["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
+            page_metrics["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
+            page_comparison.append(page_metrics)
 
-        report_info = self.__get_report_info()
-        missed_thresholds = round(float(report_info["thresholds_failed"] / report_info["thresholds_total"]) * 100, 2)\
-            if report_info["thresholds_total"] else 0
-        results_info = self.__get_results_info(self.report_id)
-        for each in results_info:
-            each["report"] = f"{self.gelloper_url}{each['report'][0]}"
+            action_metrics = self._aggregate_metrics(test["actions"], ["cls", "tbt", "inp"])
+            action_metrics["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
+            action_metrics["report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
+            action_comparison.append(action_metrics)
+
+        return page_comparison, action_comparison
+
+    def _apply_threshold_colors(self, results_info, thresholds_grouped, thresholds_processor, report_info):
+        """Apply threshold-based color coding to results."""
+        total_checked = failed_count = 0
+
+        for result in results_info:
+            identifier = result.get('identifier', result.get('name'))
+            result_type = result.get('type', 'page')
+            
+            applicable_thresholds = (
+                thresholds_grouped.get('every', []) + 
+                thresholds_grouped.get(identifier, []) +
+                thresholds_grouped.get('all', [])
+            )
+            
+            metrics_to_check = ["load_time", "dom", "fcp", "lcp", "cls", "tbt", "ttfb", "fvc", "lvc"] \
+                if result_type == "page" else ["cls", "tbt", "inp"]
+            
+            for metric_short in metrics_to_check:
+                if metric_short not in result:
+                    continue
+                    
+                metric_full = thresholds_processor.METRICS_MAPPER.get(metric_short, metric_short)
+                metric_thresholds = [th for th in applicable_thresholds if th.get('target') == metric_full]
+                
+                if not metric_thresholds:
+                    result[f"{metric_short}_color"] = ""
+                    continue
+
+                actual_value = float(result[metric_short]) if metric_short == "cls" else int(result[metric_short])
+                is_failed = False
+
+                for threshold in metric_thresholds:
+                    threshold_value = threshold.get('value', 0)
+                    if metric_short != "cls":
+                        threshold_value *= 1000
+                    
+                    comparison = threshold.get('comparison', 'lte')
+                    total_checked += 1
+                    
+                    if thresholds_processor.is_threshold_failed(actual_value, comparison, threshold_value):
+                        is_failed = True
+                        failed_count += 1
+                        print(f"[THRESHOLD VIOLATION] {result.get('name')} - {metric_short}: {actual_value} violates {comparison} {threshold_value}")
+                        break
+                
+                result[f"{metric_short}_color"] = f"color: {RED};" if is_failed else f"color: {GREEN};"
+
+        missed_pct = round(float(failed_count / total_checked) * 100, 2) if total_checked > 0 else 0
+        print(f"[THRESHOLDS SUMMARY] Total: {total_checked}, Failed: {failed_count}, Missed: {missed_pct}%")
+        return missed_pct
+
+    def _convert_result_units(self, results_info):
+        """Convert result units from milliseconds to seconds."""
+        for result in results_info:
+            result["report"] = f"{self.gelloper_url}{result['report'][0]}"
+            
             for metric in ["load_time", "dom", "fcp", "lcp", "tbt", "ttfb", "fvc", "lvc", "inp"]:
-                if metric in each:
-                    try:
-                        each[metric] = round(int(each[metric]) / 1000, 2)
-                    except (ValueError, TypeError) as e:
-                        print(f"[WARNING] Invalid value for metric '{metric}' in result '{each.get('name', 'unknown')}': {e}")
-                        each[metric] = 0
-            if "cls" in each:
-                try:
-                    each["cls"] = round(float(each["cls"]), 2)
-                except (ValueError, TypeError) as e:
-                    print(f"[WARNING] Invalid value for CLS in result '{each.get('name', 'unknown')}': {e}")
-                    each["cls"] = 0
+                if metric in result:
+                    result[metric] = self._safe_metric_conversion(result[metric], metric)
+                else:
+                    result[metric] = "Requires newer\nLighthouse version"
+            
+            if "cls" in result:
+                result["cls"] = self._safe_metric_conversion(result["cls"], "cls", is_cls=True, divisor=1)
+            else:
+                result["cls"] = "Requires newer\nLighthouse version"
+
+    def _process_baseline_comparison(self, baseline_info, results_info, baseline_report_info):
+        """Process baseline comparison and calculate degradation rate."""
+        baseline_results = self._aggregate_results_by_identifier(baseline_info, is_baseline=True)
+        current_results = self._aggregate_results_by_identifier(results_info, is_baseline=False)
+        
+        aggregated_baseline = self._finalize_aggregated_results(baseline_results)
+        aggregated_current = self._finalize_aggregated_results(current_results)
+        
+        baseline_comparison_pages, baseline_comparison_actions = [], []
+        count, failed = 0, 0
+
+        for current in aggregated_current:
+            baseline = next((b for b in aggregated_baseline if b["identifier"] == current["identifier"]), None)
+            if not baseline:
+                continue
+
+            comparison = {"name": current["name"]}
+            metrics = ["load_time", "fcp", "lcp", "tbt", "ttfb"] if current["type"] == "page" else ["tbt", "cls", "inp"]
+            
+            for metric in metrics:
+                comparison[metric] = current[metric]
+                comparison[f"{metric}_baseline"] = baseline[metric]
+                
+                if current[metric] == "Requires newer\nLighthouse version" or baseline[metric] == "Requires newer\nLighthouse version":
+                    comparison[f"{metric}_diff"] = "Requires newer\nLighthouse version"
+                    comparison[f"{metric}_diff_color"] = ""
+                else:
+                    count += 1
+                    diff = round(float(current[metric]) - float(baseline[metric]), 2)
+                    if diff > 0:
+                        failed += 1
+                        comparison[f"{metric}_diff"] = f'+{diff}'
+                        comparison[f"{metric}_diff_color"] = "color:red;"
+                    else:
+                        comparison[f"{metric}_diff"] = diff
+                        comparison[f"{metric}_diff_color"] = "color:green;"
+            
+            target_list = baseline_comparison_pages if current["type"] == "page" else baseline_comparison_actions
+            target_list.append(comparison)
+
+        degradation_rate = round(float(failed / count) * 100, 2) if count else 0
+        return baseline_comparison_pages, baseline_comparison_actions, degradation_rate, aggregated_baseline
+
+    def _aggregate_results_by_identifier(self, results, is_baseline):
+        """Aggregate results by identifier for comparison."""
+        aggregated = {}
+        
+        for result in results:
+            identifier = result["identifier"]
+            if identifier not in aggregated:
+                aggregated[identifier] = {"name": result["name"], "type": result["type"]}
+            
+            metrics = ["load_time", "fcp", "lcp", "tbt", "ttfb"] if result["type"] == "page" else ["tbt", "cls", "inp"]
+            
+            for metric in metrics:
+                if metric not in result:
+                    self._append_metric_value(aggregated[identifier], metric, "Requires newer\nLighthouse version")
+                    continue
+                
+                value = result[metric]
+                if value == "Requires newer\nLighthouse version":
+                    self._append_metric_value(aggregated[identifier], metric, value)
+                elif is_baseline:
+                    converted = self._safe_metric_conversion(value, metric, is_cls=(metric == "cls"))
+                    self._append_metric_value(aggregated[identifier], metric, converted)
+                else:
+                    self._append_metric_value(aggregated[identifier], metric, float(value))
+        
+        return aggregated
+
+    def _append_metric_value(self, target_dict, metric, value):
+        """Helper to append metric value to aggregated dict."""
+        if metric not in target_dict:
+            target_dict[metric] = []
+        target_dict[metric].append(value)
+
+    def _finalize_aggregated_results(self, aggregated_dict):
+        """Convert aggregated metric lists to averages."""
+        finalized = []
+        
+        for identifier, data in aggregated_dict.items():
+            result = {"identifier": identifier, "name": data["name"], "type": data["type"]}
+            
+            for metric in ["load_time", "fcp", "lcp", "tbt", "inp", "cls", "ttfb"]:
+                if metric not in data:
+                    result[metric] = "Requires newer\nLighthouse version"
+                    continue
+                
+                values = data[metric]
+                if "Requires newer\nLighthouse version" in values:
+                    result[metric] = "Requires newer\nLighthouse version"
+                else:
+                    result[metric] = round(sum(values) / len(values), 2)
+            
+            finalized.append(result)
+        
+        return finalized
+
+
+    def ui_email_notification(self):
+        info = self._get_test_info()
+        last_reports = self._get_last_report(info['name'], 10)
+        
+        tests_data = []
+        for each in last_reports:
+            if each["test_status"]["status"] not in ["Finished", "Success", "Failed"] or len(tests_data) >= 5:
+                continue
+            
+            report = {"pages": [], "actions": []}
+            results_info = self._get_results_info(each["uid"])
+            for result in results_info:
+                report["pages" if result["type"] == "page" else "actions"].append(result)
+            tests_data.append(report)
+
+        page_comparison, action_comparison = self._build_comparison_data(last_reports, tests_data)
+
+        report_info = self._get_report_info()
+        report_uid = report_info.get("uid", self.report_id)
+        results_info = self._get_results_info(report_uid)
+        test_environment = report_info["environment"]
+
+        thresholds_processor = ThresholdsComparison(
+            self.gelloper_url, self.gelloper_token, self.galloper_project_id, self.report_id
+        )
+        
+        try:
+            raw_thresholds = thresholds_processor.get_thresholds_info()
+            print(f"[RAW THRESHOLDS] Total: {len(raw_thresholds)}")
+            
+            thresholds_grouped = thresholds_processor.get_thresholds_grouped_by_scope(
+                report_info['name'], test_environment
+            )
+            print(f"[THRESHOLDS] Loaded {sum(len(v) for v in thresholds_grouped.values())} across {len(thresholds_grouped)} scopes")
+        except Exception as e:
+            print(f"[WARNING] Could not load thresholds: {e}")
+            thresholds_grouped = {}
+
+        total_thresholds_for_test = sum(len(v) for v in thresholds_grouped.values())
+        missed_thresholds = self._apply_threshold_colors(results_info, thresholds_grouped, thresholds_processor, report_info)
+        self._convert_result_units(results_info)
 
         try:
-            baseline_id = self.__get_baseline_report(report_info['name'], report_info['environment'])
+            baseline_id = self._get_baseline_report(report_info['name'], report_info['environment'])
             base_id = baseline_id["baseline_id"]
         except Exception as e:
             print(e)
             base_id = None
-        baseline_info = []
-        baseline_test_url = ""
-        baseline_test_date = ""
+
+        baseline_info, baseline_test_url, baseline_test_date = [], "", ""
+        baseline_comparison_pages, baseline_comparison_actions = [], []
+        aggregated_baseline = []
+        degradation_rate = 0
+
         if base_id:
-            baseline_report_info = self.__get_url(f"/ui_performance/reports/{self.galloper_project_id}?report_id={base_id}")
-            baseline_info = self.__get_results_info(base_id)
+            baseline_report_info = self._get_url(f"/ui_performance/reports/{self.galloper_project_id}?report_id={base_id}")
+            baseline_info = self._get_results_info(base_id)
             baseline_test_url = f"{self.gelloper_url}/-/performance/ui/results?result_id={baseline_report_info['id']}"
             baseline_test_date = baseline_report_info['start_time']
-        baseline_comparison_pages = []
-        baseline_comparison_actions = []
-        aggregated_baseline, aggregated_current_results = [], []
-        if baseline_info:
-            _baseline_results = {}
-            for each in baseline_info:
-                if each["identifier"] not in _baseline_results.keys():
-                    _baseline_results[each["identifier"]] = {"name": each["name"], "type": each["type"]}
-                    if each["type"] == "page":
-                        for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
-                            try:
-                                if metric in each:
-                                    _baseline_results[each["identifier"]][metric] = [round(int(each[metric]) / 1000, 2)]
-                                else:
-                                    _baseline_results[each["identifier"]][metric] = [0]
-                            except (ValueError, TypeError, KeyError) as e:
-                                print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _baseline_results[each["identifier"]][metric] = [0]
-                    else:
-                        for metric in ["tbt", "cls", "inp"]:
-                            try:
-                                if metric in each:
-                                    if metric == "cls":
-                                        _baseline_results[each["identifier"]][metric] = [round(float(each[metric]), 2)]
-                                    else:
-                                        _baseline_results[each["identifier"]][metric] = [round(int(each[metric]) / 1000, 2)]
-                                else:
-                                    _baseline_results[each["identifier"]][metric] = [0]
-                            except (ValueError, TypeError, KeyError) as e:
-                                print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _baseline_results[each["identifier"]][metric] = [0]
-                else:
-                    if each["type"] == "page":
-                        for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
-                            try:
-                                if metric in each:
-                                    _baseline_results[each["identifier"]][metric].append(round(int(each[metric]) / 1000, 2))
-                                else:
-                                    _baseline_results[each["identifier"]][metric].append(0)
-                            except (ValueError, TypeError, KeyError) as e:
-                                print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _baseline_results[each["identifier"]][metric].append(0)
-                    else:
-                        for metric in ["tbt", "cls", "inp"]:
-                            try:
-                                if metric in each:
-                                    if metric == "cls":
-                                        _baseline_results[each["identifier"]][metric].append(round(float(each[metric]), 2))
-                                    else:
-                                        _baseline_results[each["identifier"]][metric].append(round(int(each[metric]) / 1000, 2))
-                                else:
-                                    _baseline_results[each["identifier"]][metric].append(0)
-                            except (ValueError, TypeError, KeyError) as e:
-                                print(f"[WARNING] Invalid baseline metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _baseline_results[each["identifier"]][metric].append(0)
-            for each in _baseline_results:
-                _ = {"identifier": each, "name": _baseline_results[each]["name"], "type": _baseline_results[each]["type"]}
-                for metric in ["load_time", "fcp", "lcp", "tbt", "inp", "cls", "ttfb"]:
-                    if metric in _baseline_results[each].keys():
-                        if metric == "cls":
-                            _[metric] = round(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]), 2)
-                        else:
-                            _[metric] = round(sum(_baseline_results[each][metric])/len(_baseline_results[each][metric]), 2)
-                aggregated_baseline.append(_)
 
-            # TODO refactoring
-            _current_results = {}
-            for each in results_info:
-                if each["identifier"] not in _current_results.keys():
-                    _current_results[each["identifier"]] = {"name": each["name"], "type": each["type"]}
-                    if each["type"] == "page":
-                        for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
-                            try:
-                                if metric in each:
-                                    _current_results[each["identifier"]][metric] = [float(each[metric])]
-                                else:
-                                    _current_results[each["identifier"]][metric] = [0.0]
-                            except (ValueError, TypeError, KeyError) as e:
-                                print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _current_results[each["identifier"]][metric] = [0.0]
-                    else:
-                        for metric in ["tbt", "cls", "inp"]:
-                            try:
-                                if metric in each:
-                                    if metric == "cls":
-                                        _current_results[each["identifier"]][metric] = [round(float(each[metric]), 2)]
-                                    else:
-                                        _current_results[each["identifier"]][metric] = [float(each[metric])]
-                                else:
-                                    _current_results[each["identifier"]][metric] = [0.0]
-                            except (ValueError, TypeError, KeyError) as e:
-                                print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _current_results[each["identifier"]][metric] = [0.0]
-                else:
-                    if each["type"] == "page":
-                        for metric in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
-                            try:
-                                if metric in each:
-                                    _current_results[each["identifier"]][metric].append(float(each[metric]))
-                                else:
-                                    _current_results[each["identifier"]][metric].append(0.0)
-                            except (ValueError, TypeError, KeyError) as e:
-                                print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _current_results[each["identifier"]][metric].append(0.0)
-                    else:
-                        for metric in ["tbt", "cls", "inp"]:
-                            try:
-                                if metric in each:
-                                    if metric == "cls":
-                                        _current_results[each["identifier"]][metric].append(round(float(each[metric]), 2))
-                                    else:
-                                        _current_results[each["identifier"]][metric].append(float(each[metric]))
-                                else:
-                                    _current_results[each["identifier"]][metric].append(0.0)
-                            except (ValueError, TypeError, KeyError) as e:
-                                print(f"[WARNING] Invalid current metric '{metric}' for '{each.get('name', 'unknown')}': {e}")
-                                _current_results[each["identifier"]][metric].append(0.0)
-            for each in _current_results:
-                _ = {"identifier": each, "name": _current_results[each]["name"], "type": _current_results[each]["type"]}
-                for metric in ["load_time", "fcp", "lcp", "tbt", "inp", "cls", "ttfb"]:
-                    if metric in _current_results[each].keys():
-                        if metric == "cls":
-                            _[metric] = round(sum(_current_results[each][metric]) / len(_current_results[each][metric]), 2)
-                        else:
-                            _[metric] = round(sum(_current_results[each][metric]) / len(_current_results[each][metric]), 2)
-                aggregated_current_results.append(_)
+            baseline_comparison_pages, baseline_comparison_actions, degradation_rate, aggregated_baseline = \
+                self._process_baseline_comparison(baseline_info, results_info, baseline_report_info)
 
-        degradation_rate = 0
-        if aggregated_baseline:
-            _count = 0
-            _failed = 0
-            for current_result in aggregated_current_results:
-                for baseline_result in aggregated_baseline:
-                    if current_result["identifier"] == baseline_result["identifier"]:
-                        comparison = {"name": current_result["name"]}
-                        if current_result["type"] == "page":
-                            for each in ["load_time", "fcp", "lcp", "tbt", "ttfb"]:
-                                _count += 1
-                                comparison[each] = current_result[each]
-                                comparison[f"{each}_baseline"] = baseline_result[each]
-                                comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
-                                if comparison[f"{each}_diff"] > 0:
-                                    _failed += 1
-                                    comparison[f"{each}_diff"] = f'+{comparison[f"{each}_diff"]}'
-                                    comparison[f"{each}_diff_color"] = "color:red;"
-                                else:
-                                    comparison[f"{each}_diff_color"] = "color:green;"
-                            baseline_comparison_pages.append(comparison)
-                        else:
-                            for each in ["tbt", "cls", "inp"]:
-                                _count += 1
-                                comparison[each] = current_result[each]
-                                comparison[f"{each}_baseline"] = baseline_result[each]
-                                if each == "cls":
-                                    comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
-                                else:
-                                    comparison[f"{each}_diff"] = round(float(current_result[each]) - float(baseline_result[each]), 2)
-                                if comparison[f"{each}_diff"] > 0:
-                                    _failed += 1
-                                    comparison[f"{each}_diff"] = f'+{comparison[f"{each}_diff"]}'
-                                    comparison[f"{each}_diff_color"] = "color:red;"
-                                else:
-                                    comparison[f"{each}_diff_color"] = "color:green;"
-                            baseline_comparison_actions.append(comparison)
-            degradation_rate = round(float(_failed/_count) * 100, 2) if _count else 0
-
-        status = "PASSED"
-        color = GREEN
+        status, color = "PASSED", GREEN
         if self.args.get("performance_degradation_rate") and degradation_rate > self.args["performance_degradation_rate"]:
-            status = "FAILED"
-            color = RED
+            status, color = "FAILED", RED
         if self.args.get("missed_thresholds") and missed_thresholds > self.args["missed_thresholds"]:
-            status = "FAILED"
-            color = RED
-        # Get browser version - try report_info first, then fall back to results_info
+            status, color = "FAILED", RED
+
         browser_version = report_info.get('browser_version')
         if not browser_version or browser_version == 'undefined':
             browser_version = results_info[0].get('browser_version', 'Unknown') if results_info else 'Unknown'
-        print(f"[BROWSER VERSION] Parsed version: {browser_version}")
-        
+
         t_params = {
             "scenario": report_info['name'],
             "baseline_test_url": baseline_test_url,
@@ -305,72 +327,88 @@ class UIEmailNotification(object):
             "browser": report_info['browser'].capitalize(),
             "version": browser_version,
             "loops": report_info["loops"],
-            "pages": len(results_info)
+            "pages": len(results_info),
+            "total_thresholds": total_thresholds_for_test
         }
-        email_body = self.__get_email_body(t_params, results_info, page_comparison, action_comparison,
-                                           baseline_comparison_pages, baseline_comparison_actions, degradation_rate,
-                                           missed_thresholds, baseline_info, aggregated_baseline)
 
-        charts = []
-        charts.append(self.create_ui_metrics_chart_pages(page_comparison))
-        charts.append(self.create_ui_metrics_chart_actions(action_comparison))
+        date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+        subject = f"[UI] Test results for {info['name']}. From {date}."
+        email_body = self._get_email_body(
+            t_params, results_info, page_comparison, action_comparison,
+            baseline_comparison_pages, baseline_comparison_actions, degradation_rate,
+            missed_thresholds, baseline_info, aggregated_baseline
+        )
 
-        return Email(self.test_name, subject, user_list, email_body, charts, date)
+        charts = [
+            self.create_ui_metrics_chart_pages(page_comparison),
+            self.create_ui_metrics_chart_actions(action_comparison)
+        ]
 
-    def __extract_recipient_emails(self, info):
-        return info['emails'].split(',')
+        return Email(self.test_name, subject, self.args['user_list'], email_body, charts, date)
 
-    def __get_test_info(self):
-        return self.__get_url(
-            f"/ui_performance/test/{self.galloper_project_id}/{self.test_id}?raw=1")
+    def _get_test_info(self):
+        return self._get_url(f"/ui_performance/test/{self.galloper_project_id}/{self.test_id}?raw=1")
 
-    def __get_baseline_report(self, name, env):
-        return self.__get_url(
-            f"/ui_performance/baseline/{self.galloper_project_id}?test_name={name}&env={env}")
+    def _get_baseline_report(self, name, env):
+        return self._get_url(f"/ui_performance/baseline/{self.galloper_project_id}?test_name={name}&env={env}")
 
-    def __get_last_report(self, name, count):
-        return self.__get_url(f"/ui_performance/reports/{self.galloper_project_id}?name={name}&count={count}")
+    def _get_last_report(self, name, count):
+        return self._get_url(f"/ui_performance/reports/{self.galloper_project_id}?name={name}&count={count}")
 
-    def __get_report_info(self):
-        return self.__get_url(f"/ui_performance/reports/{self.galloper_project_id}?report_id={self.report_id}")
+    def _get_report_info(self):
+        return self._get_url(f"/ui_performance/reports/{self.galloper_project_id}?report_id={self.report_id}")
 
-    def __get_results_info(self, report_id):
-        return self.__get_url(f"/ui_performance/results/{self.galloper_project_id}/{report_id}?order=asc")
+    def _get_results_info(self, report_id):
+        return self._get_url(f"/ui_performance/results/{self.galloper_project_id}/{report_id}?order=asc")
 
-    def __get_email_body(self, t_params, results_info, page_comparison, action_comparison,
-                         baseline_comparison_pages, baseline_comparison_actions, degradation_rate, missed_thresholds, baseline_info, aggregated_baseline):
-        env = Environment(
-            loader=FileSystemLoader('./templates'))
+    def _get_email_body(self, t_params, results_info, page_comparison, action_comparison,
+                        baseline_comparison_pages, baseline_comparison_actions, degradation_rate, 
+                        missed_thresholds, baseline_info, aggregated_baseline):
+        env = Environment(loader=FileSystemLoader('./templates'))
         template = env.get_template("ui_email_template.html")
-        return template.render(t_params=t_params, results=results_info, page_comparison=page_comparison,
-                               action_comparison=action_comparison, baseline_comparison_pages=baseline_comparison_pages,
-                               baseline_comparison_actions=baseline_comparison_actions,
-                               degradation_rate=degradation_rate, missed_thresholds=missed_thresholds, 
-                               baseline_info=baseline_info, aggregated_baseline=aggregated_baseline)
+        return template.render(
+            t_params=t_params, results=results_info, page_comparison=page_comparison,
+            action_comparison=action_comparison, baseline_comparison_pages=baseline_comparison_pages,
+            baseline_comparison_actions=baseline_comparison_actions,
+            degradation_rate=degradation_rate, missed_thresholds=missed_thresholds,
+            baseline_info=baseline_info, aggregated_baseline=aggregated_baseline
+        )
 
-    def __get_url(self, url):
+    def _get_url(self, url):
         resp = requests.get(
-            f"{self.gelloper_url}/api/v1{url}", headers={
+            f"{self.gelloper_url}/api/v1{url}",
+            headers={
                 'Authorization': f'bearer {self.gelloper_token}',
                 'Content-type': 'application/json'
-            })
-
+            }
+        )
         if resp.status_code != 200:
             raise Exception(f"Error {resp}")
-
         return resp.json()
+
+
 
     @staticmethod
     def create_ui_metrics_chart_pages(builds):
         labels, x, ttfb, tbt, lcp = [], [], [], [], []
-        count = 1
-        for test in builds:
+        ttfb_original, tbt_original, lcp_original = [], [], []
+        
+        for idx, test in enumerate(builds, 1):
             labels.append(test['date'])
-            ttfb.append(round(test['ttfb'], 2))
-            tbt.append(round(test['tbt'], 2))
-            lcp.append(round(test['lcp'], 2))
-            x.append(count)
-            count += 1
+            x.append(idx)
+            
+            ttfb_original.append(test['ttfb'])
+            tbt_original.append(test['tbt'])
+            lcp_original.append(test['lcp'])
+            
+            ttfb.append(round(test['ttfb'], 2) if isinstance(test['ttfb'], (int, float)) else 0)
+            tbt.append(round(test['tbt'], 2) if isinstance(test['tbt'], (int, float)) else 0)
+            lcp.append(round(test['lcp'], 2) if isinstance(test['lcp'], (int, float)) else 0)
+
+        ttfb_has_data = any(isinstance(v, (int, float)) for v in ttfb_original)
+        tbt_has_data = any(isinstance(v, (int, float)) for v in tbt_original)
+        lcp_has_data = any(isinstance(v, (int, float)) for v in lcp_original)
+
         datapoints = {
             'title': 'UI metrics',
             'label': 'UI metrics',
@@ -382,27 +420,40 @@ class UIEmailNotification(object):
             'ttfb': ttfb[::-1],
             'tbt': tbt[::-1],
             'lcp': lcp[::-1],
+            'ttfb_has_data': ttfb_has_data,
+            'tbt_has_data': tbt_has_data,
+            'lcp_has_data': lcp_has_data,
             'values': x,
             'labels': labels[::-1]
         }
+        
         ui_metrics_chart_pages(datapoints)
-        fp = open('/tmp/ui_metrics_pages.png', 'rb')
-        image = MIMEImage(fp.read())
-        image.add_header('Content-ID', '<ui_metrics_pages>')
-        fp.close()
+        with open('/tmp/ui_metrics_pages.png', 'rb') as fp:
+            image = MIMEImage(fp.read())
+            image.add_header('Content-ID', '<ui_metrics_pages>')
         return image
 
     @staticmethod
     def create_ui_metrics_chart_actions(builds):
         labels, x, cls, tbt, inp = [], [], [], [], []
-        count = 1
-        for test in builds:
+        cls_original, tbt_original, inp_original = [], [], []
+        
+        for idx, test in enumerate(builds, 1):
             labels.append(test['date'])
-            cls.append(round(test['cls'], 2))
-            tbt.append(round(test['tbt'], 2))
-            inp.append(round(test['inp'], 2))
-            x.append(count)
-            count += 1
+            x.append(idx)
+            
+            cls_original.append(test['cls'])
+            tbt_original.append(test['tbt'])
+            inp_original.append(test['inp'])
+            
+            cls.append(round(test['cls'], 2) if isinstance(test['cls'], (int, float)) else 0)
+            tbt.append(round(test['tbt'], 2) if isinstance(test['tbt'], (int, float)) else 0)
+            inp.append(round(test['inp'], 2) if isinstance(test['inp'], (int, float)) else 0)
+
+        cls_has_data = any(isinstance(v, (int, float)) for v in cls_original)
+        tbt_has_data = any(isinstance(v, (int, float)) for v in tbt_original)
+        inp_has_data = any(isinstance(v, (int, float)) for v in inp_original)
+
         datapoints = {
             'title': 'UI metrics Actions',
             'label': 'UI metrics Actions',
@@ -414,40 +465,31 @@ class UIEmailNotification(object):
             'cls': cls[::-1],
             'tbt': tbt[::-1],
             'inp': inp[::-1],
+            'cls_has_data': cls_has_data,
+            'tbt_has_data': tbt_has_data,
+            'inp_has_data': inp_has_data,
             'values': x,
             'labels': labels[::-1]
         }
+        
         ui_metrics_chart_actions(datapoints)
-        fp = open('/tmp/ui_metrics_actions.png', 'rb')
-        image = MIMEImage(fp.read())
-        image.add_header('Content-ID', '<ui_metrics_actions>')
-        fp.close()
+        with open('/tmp/ui_metrics_actions.png', 'rb') as fp:
+            image = MIMEImage(fp.read())
+            image.add_header('Content-ID', '<ui_metrics_actions>')
         return image
 
     @staticmethod
     def convert_short_date_to_cet(short_date_str, output_format='%Y-%m-%d %H:%M:%S'):
-        """
-        Convert UTC datetime string to CET/CEST timezone.
-        Args:
-            short_date_str: UTC datetime string in format 'YYYY-MM-DDTHH:MM:SS' or 'YY-MM-DDTHH:MM:SS'
-            output_format: Output format for datetime string
-        Returns:
-            Datetime string in CET/CEST timezone
-        """
+        """Convert UTC datetime string to CET/CEST timezone."""
         utc_tz = pytz.UTC
-        cet_tz = pytz.timezone('Europe/Paris')  # CET/CEST timezone
-        # Check if year is already 4 digits or needs 20 prefix
+        cet_tz = pytz.timezone('Europe/Paris')
+        
         date_part = short_date_str.split('T')[0]
         year_part = date_part.split('-')[0]
-        if len(year_part) == 2:
-            # Add century prefix for 2-digit year
-            full_datetime_str = f"20{short_date_str}"
-        else:
-            # Already has 4-digit year
-            full_datetime_str = short_date_str
-        utc_dt = datetime.strptime(full_datetime_str, '%Y-%m-%dT%H:%M:%S')
-        utc_dt = utc_tz.localize(utc_dt)
-        # Convert to CET
+        full_datetime_str = f"20{short_date_str}" if len(year_part) == 2 else short_date_str
+        
+        utc_dt = utc_tz.localize(datetime.strptime(full_datetime_str, '%Y-%m-%dT%H:%M:%S'))
         cet_dt = utc_dt.astimezone(cet_tz)
-
+        
         return cet_dt.strftime(output_format)
+
