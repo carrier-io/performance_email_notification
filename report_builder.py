@@ -158,7 +158,7 @@ class ReportBuilder:
         baseline_and_thresholds_temp = self.get_baseline_and_thresholds(args, last_test_data, baseline, comparison_metric, thresholds)
         
         test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation, report_data)
-        
+        test_description["users"] = report_data["vusers"]
         # Add SLA mismatch warning if detected
         if baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
             sla_metric = baseline_and_thresholds_temp['sla_configured_metric']
