@@ -1,89 +1,90 @@
 # Copyright 2019 getcarrier.io
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Licensed under the Apache License, Version 2.0
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-plt.rcParams.update({'font.size': 14})
-
 from matplotlib.ticker import ScalarFormatter
+
+plt.rcParams.update({'font.size': 14})
 
 YELLOW = '#FFA400'
 
-def alerts_linechart(datapoints):
-    fig, ax = plt.subplots(figsize=(datapoints['width'] * 1, datapoints['height'] * 1.5), dpi=72,
-                           facecolor='w')
-    y_max = 0
-    x_max = 0
-    x_max = max(datapoints['values']) if max(datapoints['values']) > x_max else x_max
-    y_max = max(datapoints['keys']) if max(datapoints['keys']) > y_max else y_max
-    _, = ax.plot(datapoints['values'], datapoints['keys'], '--', linewidth=2,
-                 label=datapoints['label'], color=YELLOW)
-    _, = ax.plot(datapoints['values'], datapoints['keys'], 'o', linewidth=4, color=YELLOW)
 
-    for index, value in enumerate(datapoints['keys']):
-        ax.annotate(str(value), xy=(datapoints['values'][index], value + y_max * 0.05))
-    # ax.legend(loc='lower right')
-    ax.set_xlabel(datapoints['x_axis'])
-    ax.set_ylabel(datapoints['y_axis'])
-    # ax.set_title(datapoints['title'])
+def _setup_chart_style(ax, x_max, y_max, datapoints):
+    """Configure common chart styling."""
     plt.xlim(0, x_max + 1)
     plt.ylim(0, y_max + y_max * 0.15)
     ax.grid(color="#E3E3E3")
-    ax.set_xticklabels(
-        [str(dp) for dp in datapoints['values']] if not datapoints.get('labels') else datapoints[
-            'labels'])
+    ax.set_xlabel(datapoints['x_axis'])
+    ax.set_ylabel(datapoints['y_axis'])
+    ax.set_xticklabels(datapoints.get('labels', [str(dp) for dp in datapoints['values']]))
     ax.set_xticks(datapoints['values'])
-    ax.spines['bottom'].set_color('#E3E3E3')
-    ax.spines['top'].set_color('#ffffff') 
-    ax.spines['right'].set_color('#ffffff')
-    ax.spines['left'].set_color('#ffffff')
+    
+    for spine in ['bottom']:
+        ax.spines[spine].set_color('#E3E3E3')
+    for spine in ['top', 'right', 'left']:
+        ax.spines[spine].set_color('#ffffff')
+
+
+def _annotate_values(ax, values, x_coords, y_offset_pct=0.05):
+    """Add value annotations above data points."""
+    y_max = max(values) if values else 0
+    for index, value in enumerate(values):
+        ax.annotate(str(value), xy=(x_coords[index], value + y_max * y_offset_pct))
+
+
+def alerts_linechart(datapoints):
+    """Generate alert trends line chart."""
+    fig, ax = plt.subplots(figsize=(datapoints['width'], datapoints['height'] * 1.5), 
+                          dpi=72, facecolor='w')
+    
+    x_max = max(datapoints['values'])
+    y_max = max(datapoints['keys'])
+    
+    ax.plot(datapoints['values'], datapoints['keys'], '--', linewidth=2,
+            label=datapoints['label'], color=YELLOW)
+    ax.plot(datapoints['values'], datapoints['keys'], 'o', linewidth=4, color=YELLOW)
+    
+    _annotate_values(ax, datapoints['keys'], datapoints['values'])
+    _setup_chart_style(ax, x_max, y_max, datapoints)
+    
     fig.savefig(datapoints['path_to_save'], bbox_inches='tight')
     plt.close()
 
 
 def barchart(datapoints):
-    fig, ax = plt.subplots(figsize=(datapoints['width'] * 2, datapoints['height'] * 2), dpi=300,
-                           facecolor='w')
-    utility_index = datapoints['utility_keys']
-    plt.bar(utility_index, datapoints['utility_request'], color='white')
-    green_index = datapoints['green_keys']
-    plt.bar(green_index, datapoints['green_request'], color='green')
-    red_index = datapoints['red_keys']
-    plt.bar(red_index, datapoints['red_request'], color='red')
-    yellow_index = datapoints['yellow_keys']
-    plt.bar(yellow_index, datapoints['yellow_request'], color='orange')
-    for index, value in enumerate(datapoints['green_request']):
-        ax.annotate(" " + str(value) + " s", xy=(int(datapoints['green_keys'][index])-0.1, value + 0.05), rotation=90,
-                    verticalalignment='bottom')
-    for index, value in enumerate(datapoints['yellow_request']):
-        ax.annotate(str(float(value)*-1) + " s ", xy=(int(datapoints['yellow_keys'][index])-0.1, value - 0.05),
-                    rotation=90, verticalalignment='top')
-    for index, value in enumerate(datapoints['red_request']):
-        ax.annotate(str(float(value)*-1) + " s ", xy=(int(datapoints['red_keys'][index])-0.1, value - 0.05),
-                    rotation=90, verticalalignment='top')
-    for index, value in enumerate(datapoints['green_request_name']):
-        ax.annotate(str(value) + " ", xy=(int(datapoints['green_keys'][index])-0.1, -0.1), rotation=90,
-                    verticalalignment='top')
-    for index, value in enumerate(datapoints['yellow_request_name']):
-        ax.annotate(" " + str(value), xy=(int(datapoints['yellow_keys'][index])-0.1, 0.1), rotation=90,
-                    verticalalignment='bottom')
-    for index, value in enumerate(datapoints['red_request_name']):
-        ax.annotate(" " + str(value), xy=(int(datapoints['red_keys'][index])-0.1, 0.1), rotation=90,
-                    verticalalignment='bottom')
-
-    plt.yscale('symlog', basey=2, linthreshy=5.0)
+    """Generate comparison bar chart with positive/negative values."""
+    fig, ax = plt.subplots(figsize=(datapoints['width'] * 2, datapoints['height'] * 2), 
+                          dpi=300, facecolor='w')
+    
+    bar_configs = [
+        (datapoints['utility_keys'], datapoints['utility_request'], 'white', None, None),
+        (datapoints['green_keys'], datapoints['green_request'], 'green', 
+         datapoints['green_request_name'], 1),
+        (datapoints['red_keys'], datapoints['red_request'], 'red', 
+         datapoints['red_request_name'], -1),
+        (datapoints['yellow_keys'], datapoints['yellow_request'], 'orange', 
+         datapoints['yellow_request_name'], -1)
+    ]
+    
+    for keys, values, color, names, multiplier in bar_configs:
+        plt.bar(keys, values, color=color)
+        
+        if names and multiplier:
+            for index, value in enumerate(values):
+                if multiplier > 0:
+                    ax.annotate(f" {value} s", xy=(int(keys[index]) - 0.1, value + 0.05),
+                              rotation=90, verticalalignment='bottom')
+                    ax.annotate(f"{names[index]} ", xy=(int(keys[index]) - 0.1, -0.1),
+                              rotation=90, verticalalignment='top')
+                else:
+                    ax.annotate(f"{float(value) * -1} s ", xy=(int(keys[index]) - 0.1, value - 0.05),
+                              rotation=90, verticalalignment='top')
+                    ax.annotate(f" {names[index]}", xy=(int(keys[index]) - 0.1, 0.1),
+                              rotation=90, verticalalignment='bottom')
+    
+    plt.yscale('symlog', base=2, linthresh=5.0)
     ax.get_yaxis().set_major_formatter(ScalarFormatter())
     ax.set_frame_on(False)
     ax.axhline(linewidth=1, color='black')
@@ -91,138 +92,86 @@ def barchart(datapoints):
     ax.set_xticks([])
     ax.set_yticklabels([])
     ax.set_yticks([])
+    
     fig.savefig(datapoints['path_to_save'], bbox_inches='tight')
     plt.close()
 
 
 def ui_comparison_linechart(datapoints):
-    fig, ax = plt.subplots(figsize=(datapoints['width'] * 2, datapoints['height'] * 2), dpi=300,
-                           facecolor='w')
+    """Generate UI performance comparison stacked bar chart."""
+    fig, ax = plt.subplots(figsize=(datapoints['width'] * 2, datapoints['height'] * 2), 
+                          dpi=300, facecolor='w')
+    
     b1 = ax.bar(datapoints['keys'], datapoints['latency_values'], color='#7EB26D')
     b2 = ax.bar(datapoints['keys'], datapoints['transfer_values'],
                 bottom=datapoints['latency_values'], color='#EAB839')
     b3 = ax.bar(datapoints['keys'], datapoints['tbt_values'],
-                bottom=[x + y for x, y in zip(datapoints['transfer_values'], datapoints['latency_values'])],
+                bottom=[x + y for x, y in zip(datapoints['transfer_values'], 
+                                               datapoints['latency_values'])],
                 color='#6ED0E0')
     b4 = ax.bar(datapoints['keys'], datapoints['ttl_values'],
-                bottom=[x + y + z for x, y, z in zip(datapoints['transfer_values'],
-                                                     datapoints['latency_values'],
-                                                     datapoints['tbt_values'])],
+                bottom=[sum(x) for x in zip(datapoints['transfer_values'],
+                                            datapoints['latency_values'],
+                                            datapoints['tbt_values'])],
                 color='#EF843C')
-    ax.legend((b1[0], b2[0], b3[0], b4[0]), ('latency', 'transfer', 'tbt', 'ttl'), loc='upper right')
+    
+    ax.legend((b1[0], b2[0], b3[0], b4[0]), ('latency', 'transfer', 'tbt', 'ttl'), 
+             loc='upper right')
     ax.set_xlabel(datapoints['x_axis'])
     ax.set_ylabel(datapoints['y_axis'])
     ax.set_title(datapoints['title'])
-    plt.xlim(0, datapoints['keys'].__len__() + 1)
-    ax.set_xticklabels(
-        [str(dp) for dp in datapoints['keys']] if not datapoints.get('labels') else datapoints[
-            'labels'])
+    plt.xlim(0, len(datapoints['keys']) + 1)
+    ax.set_xticklabels(datapoints.get('labels', [str(dp) for dp in datapoints['keys']]))
     ax.set_xticks(datapoints['keys'])
+    
     fig.savefig(datapoints['path_to_save'], bbox_inches='tight')
     plt.close()
 
 
-def ui_metrics_chart_pages(datapoints):
-    fig, ax = plt.subplots(figsize=(datapoints['width'] * 1, datapoints['height'] * 1.5), dpi=72,
-                           facecolor='w')
-    y_max = 0
-    x_max = 0
-    x_max = max(datapoints['values']) if max(datapoints['values']) > x_max else x_max
-    
-    # Determine which metrics have actual data
-    metrics_to_plot = []
-    for each in ["ttfb", "tbt", "lcp"]:
-        if datapoints.get(f'{each}_has_data', True):  # Default to True if not specified
-            y_max = max(datapoints[each]) if max(datapoints[each]) > y_max else y_max
-            metrics_to_plot.append(each)
-    
-    # Only plot metrics that have data
+def _plot_metrics(ax, datapoints, metrics_config):
+    """Plot metrics that have data and return max values."""
+    y_max = x_max = 0
+    x_max = max(datapoints['values'])
     plot_lines = []
-    if 'ttfb' in metrics_to_plot:
-        line, = ax.plot(datapoints['values'], datapoints['ttfb'], linewidth=2, label="TTFB")
-        plot_lines.append(line)
-    if 'tbt' in metrics_to_plot:
-        line, = ax.plot(datapoints['values'], datapoints['tbt'], linewidth=2, label="TBT")
-        plot_lines.append(line)
-    if 'lcp' in metrics_to_plot:
-        line, = ax.plot(datapoints['values'], datapoints['lcp'], linewidth=2, label="LCP")
-        plot_lines.append(line)
-
-    # Annotate only metrics that have data
-    for each in metrics_to_plot:
-        for index, value in enumerate(datapoints[each]):
-            ax.annotate(str(value), xy=(datapoints['values'][index], value + y_max * 0.05))
     
-    # Only show legend if there are metrics to plot
+    for metric, label in metrics_config:
+        has_data_key = f'{metric}_has_data'
+        if datapoints.get(has_data_key, True) and metric in datapoints and datapoints[metric]:
+            y_max = max(max(datapoints[metric]), y_max)
+            line, = ax.plot(datapoints['values'], datapoints[metric], linewidth=2, label=label)
+            plot_lines.append((line, metric))
+    
+    for line, metric in plot_lines:
+        _annotate_values(ax, datapoints[metric], datapoints['values'])
+    
     if plot_lines:
         ax.legend(loc='upper left')
-    ax.set_xlabel(datapoints['x_axis'])
-    ax.set_ylabel(datapoints['y_axis'])
-    # ax.set_title(datapoints['title'])
-    plt.xlim(0, x_max + 1)
-    plt.ylim(0, y_max + y_max * 0.15)
-    ax.grid(color="#E3E3E3")
-    ax.set_xticklabels(
-        [str(dp) for dp in datapoints['values']] if not datapoints.get('labels') else datapoints[
-            'labels'])
-    ax.set_xticks(datapoints['values'])
-    ax.spines['bottom'].set_color('#E3E3E3')
-    ax.spines['top'].set_color('#ffffff')
-    ax.spines['right'].set_color('#ffffff')
-    ax.spines['left'].set_color('#ffffff')
+    
+    return x_max, y_max
+
+
+def ui_metrics_chart_pages(datapoints):
+    """Generate UI page metrics trend chart."""
+    fig, ax = plt.subplots(figsize=(datapoints['width'], datapoints['height'] * 1.5), 
+                          dpi=72, facecolor='w')
+    
+    metrics_config = [('ttfb', 'TTFB'), ('tbt', 'TBT'), ('lcp', 'LCP')]
+    x_max, y_max = _plot_metrics(ax, datapoints, metrics_config)
+    _setup_chart_style(ax, x_max, y_max, datapoints)
+    
     fig.savefig(datapoints['path_to_save'], bbox_inches='tight')
     plt.close()
 
 
 def ui_metrics_chart_actions(datapoints):
-    fig, ax = plt.subplots(figsize=(datapoints['width'] * 1, datapoints['height'] * 1.5), dpi=72,
-                           facecolor='w')
-    y_max = 0
-    x_max = 0
-    x_max = max(datapoints['values']) if max(datapoints['values']) > x_max else x_max
+    """Generate UI action metrics trend chart."""
+    fig, ax = plt.subplots(figsize=(datapoints['width'], datapoints['height'] * 1.5), 
+                          dpi=72, facecolor='w')
     
-    # Determine which metrics have actual data
-    metrics_to_plot = []
-    for each in ["cls", "tbt", "inp"]:
-        if datapoints.get(f'{each}_has_data', True):  # Default to True if not specified
-            if each in datapoints and datapoints[each]:
-                y_max = max(datapoints[each]) if max(datapoints[each]) > y_max else y_max
-                metrics_to_plot.append(each)
+    metrics_config = [('cls', 'CLS'), ('tbt', 'TBT'), ('inp', 'INP')]
+    x_max, y_max = _plot_metrics(ax, datapoints, metrics_config)
+    _setup_chart_style(ax, x_max, y_max, datapoints)
     
-    # Only plot metrics that have data
-    plot_lines = []
-    if 'cls' in metrics_to_plot:
-        line, = ax.plot(datapoints['values'], datapoints['cls'], linewidth=2, label="CLS")
-        plot_lines.append(line)
-    if 'tbt' in metrics_to_plot:
-        line, = ax.plot(datapoints['values'], datapoints['tbt'], linewidth=2, label="TBT")
-        plot_lines.append(line)
-    if 'inp' in metrics_to_plot:
-        line, = ax.plot(datapoints['values'], datapoints['inp'], linewidth=2, label="INP")
-        plot_lines.append(line)
-
-    # Annotate only metrics that have data
-    for each in metrics_to_plot:
-        if each in datapoints and datapoints[each]:
-            for index, value in enumerate(datapoints[each]):
-                ax.annotate(str(value), xy=(datapoints['values'][index], value + y_max * 0.05))
-    
-    # Only show legend if there are metrics to plot
-    if plot_lines:
-        ax.legend(loc='upper left')
-    ax.set_xlabel(datapoints['x_axis'])
-    ax.set_ylabel(datapoints['y_axis'])
-    # ax.set_title(datapoints['title'])
-    plt.xlim(0, x_max + 1)
-    plt.ylim(0, y_max + y_max * 0.15)
-    ax.grid(color="#E3E3E3")
-    ax.set_xticklabels(
-        [str(dp) for dp in datapoints['values']] if not datapoints.get('labels') else datapoints[
-            'labels'])
-    ax.set_xticks(datapoints['values'])
-    ax.spines['bottom'].set_color('#E3E3E3')
-    ax.spines['top'].set_color('#ffffff')
-    ax.spines['right'].set_color('#ffffff')
-    ax.spines['left'].set_color('#ffffff')
     fig.savefig(datapoints['path_to_save'], bbox_inches='tight')
     plt.close()
+
