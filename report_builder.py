@@ -204,6 +204,10 @@ class ReportBuilder:
         
         test_description = self.create_test_description(args, last_test_data, baseline, comparison_metric, violation, report_data)
         
+        # Override users count with vusers from report_data if available
+        if report_data and 'vusers' in report_data:
+            test_description["users"] = report_data["vusers"]
+        
         # Check Quality Gate settings once
         summary_rt_check = args.get("quality_gate_config", {}).get("settings", {}).get("summary_results", {}).get('check_response_time')
         
@@ -228,9 +232,6 @@ class ReportBuilder:
         
         elif baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
             # Priority 4: SLA metric mismatch detected (no "all" SLA or wrong metric)
-        test_description["users"] = report_data["vusers"]
-        # Add SLA mismatch warning if detected
-        if baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
             sla_metric = baseline_and_thresholds_temp['sla_configured_metric']
             if sla_metric == comparison_metric:
                 # Case 4a: SLA for comparison_metric exists but no "all"
