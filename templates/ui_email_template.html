@@ -12,10 +12,18 @@
             font-family: 'Open Sans', sans-serif;
             line-height: 24px;
         }
+        .outdated {
+            font-style: italic;
+            color: #999;
+            display: block;
+            text-align: center;
+        }
     </style>
 </head>
 
-<body>
+    {% macro display_value(value) -%}
+        {% if "Requires newer" in value|string %}<span class="outdated">{{ value|replace("\n", "<br>")|safe }}</span>{% else %}{{ value }}{% endif %}
+    {%- endmacro %}<body>
 <table style="color: #fff; background: #875FFC; padding: 31px; font-size: 16px; font-weight: 600;">
     <tr>
         <td>
@@ -37,13 +45,15 @@
                     <span>{{ t_params.status }}</span>
                 </div>
             </td>
+            {% if t_params.total_thresholds > 0 %}
             <td style="background: #F6F9FC; padding: 4px 12px;">
                 <div style="color: #32325D; font-size: 16px; font-weight: 400;">
                     <span style="margin-right: 30px">Threshold: {{ t_params.missed_thresholds }}%</span>
                     <img src="succeed.png" alt="">
                 </div>
             </td>
-            {% if baseline_comparison_actions %}
+            {% endif %}
+            {% if baseline_comparison_actions or baseline_comparison_pages %}
             <td style="background: #F6F9FC; padding: 4px 12px;">
                 <div style="color: #32325D; font-size: 16px; font-weight: 400;">
                     <span style="margin-right: 30px"><a href={{ t_params.baseline_test_url }}>Baseline</a>: {{ t_params.degradation_rate }}%</span>
@@ -53,6 +63,22 @@
             {% endif %}
         </tr>
     </table>
+
+    {% if t_params.total_thresholds == 0 %}
+    <div style="margin: 24px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #2196F3; border-radius: 4px;">
+        <p style="margin: 0; color: #1565C0; font-size: 14px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> Please set the thresholds to compare the metrics against them.
+        </p>
+    </div>
+    {% endif %}
+    {% if not baseline_comparison_actions and not baseline_comparison_pages %}
+    <div style="margin: 24px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #2196F3; border-radius: 4px;">
+        <p style="margin: 0; color: #1565C0; font-size: 14px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> Please select a baseline test so the metrics can be compared against it.
+        </p>
+    </div>
+    {% endif %}
+
     <div style="margin-top: 24px;">
         <table style="width: 100%;">
             <tbody>
@@ -83,20 +109,25 @@
             </tbody>
         </table>
     </div>
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">UI metrics trend. Pages</p>
+    {% if results|selectattr("type", "equalto", "page")|list|length > 0 %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Pagesons UI Metrics Trend</p>
     <div>
         <div align="center">
             <img src="cid:ui_metrics_pages"/>
         </div>
     </div>
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">UI metrics trend. Actions</p>
+    {% endif %}
+    {% if results|selectattr("type", "equalto", "action")|list|length > 0 %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Actions UI Metrics Trend</p>
     <div>
         <div align="center">
             <img src="cid:ui_metrics_actions"/>
         </div>
     </div>
+    {% endif %}
 
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Results table. Pages</p>
+    {% if results|selectattr("type", "equalto", "page")|list|length > 0 %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Pages Results Overview</p>
     <table style=" width: 100%;">
         <thead>
         <tr>
@@ -119,22 +150,24 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.name }}</a></td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.load_time }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.dom }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.fcp }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.lcp }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.ttfb }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.fvc }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.lvc }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.load_time_color }}">{{ display_value(result.load_time) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.dom_color }}">{{ display_value(result.dom) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.fcp_color }}">{{ display_value(result.fcp) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lcp_color }}">{{ display_value(result.lcp) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_color }}">{{ display_value(result.cls) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_color }}">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.ttfb_color }}">{{ display_value(result.ttfb) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.fvc_color }}">{{ display_value(result.fvc) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lvc_color }}">{{ display_value(result.lvc) }}</td>
         </tr>
                 {% endif %}
                 {% endfor %}
         </tbody>
     </table>
+    {% endif %}
 
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Results table. Actions</p>
+    {% if results|selectattr("type", "equalto", "action")|list|length > 0 %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Actions Results Overview</p>
     <table style=" width: 100%;">
         <thead>
         <tr>
@@ -151,60 +184,86 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.name }}</a></td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.inp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_color }}">{{ display_value(result.cls) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_color }}">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.inp_color }}">{{ display_value(result.inp) }}</td>
         </tr>
                 {% endif %}
                 {% endfor %}
         </tbody>
     </table>
+    {% endif %}
 
-
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Comparison table. Pages</p>
+    {% if results|selectattr("type", "equalto", "page")|list|length > 0 %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Pages Comparison Across the Last Five Test Runs</p>
     <table style="width: 100%;">
         <thead>
         <tr>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Date</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">TTFB, sec</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">TBT, sec</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">LCP, sec</th>
+            <th rowspan="2" style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Date</th>
+            <th colspan="2" style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Time To First Byte (TTFB), sec</th>
+            <th colspan="2" style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Total Blocking Time (TBT), sec</th>
+            <th colspan="2" style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Largest Contentful Paint (LCP), sec</th>
+        </tr>   
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Value</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Change</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Value</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Change</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Value</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Change</th>
         </tr>
         </thead>
         <tbody>
                 {% for result in page_comparison %}
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.date }}</a></td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.ttfb }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.lcp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.ttfb) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {% if loop.first %}color: #32325D;{% elif "Requires newer" in page_comparison[0].ttfb|string or "Requires newer" in result.ttfb|string %}color: #32325D;{% else %}{% set diff = result.ttfb|float - page_comparison[0].ttfb|float %}{% if diff <= 0 %}color: #27AE60;{% else %}color: #E74C3C;{% endif %}{% endif %}">{% if loop.first %}—{% elif "Requires newer" in page_comparison[0].ttfb|string or "Requires newer" in result.ttfb|string %}{{ display_value(result.ttfb) }}{% else %}{% set diff = result.ttfb|float - page_comparison[0].ttfb|float %}{% if diff > 0 %}+{% endif %}{{ "%.2f"|format(diff) }}{% endif %}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {% if loop.first %}color: #32325D;{% elif "Requires newer" in page_comparison[0].tbt|string or "Requires newer" in result.tbt|string %}color: #32325D;{% else %}{% set diff = result.tbt|float - page_comparison[0].tbt|float %}{% if diff <= 0 %}color: #27AE60;{% else %}color: #E74C3C;{% endif %}{% endif %}">{% if loop.first %}—{% elif "Requires newer" in page_comparison[0].tbt|string or "Requires newer" in result.tbt|string %}{{ display_value(result.tbt) }}{% else %}{% set diff = result.tbt|float - page_comparison[0].tbt|float %}{% if diff > 0 %}+{% endif %}{{ "%.2f"|format(diff) }}{% endif %}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.lcp) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {% if loop.first %}color: #32325D;{% elif "Requires newer" in page_comparison[0].lcp|string or "Requires newer" in result.lcp|string %}color: #32325D;{% else %}{% set diff = result.lcp|float - page_comparison[0].lcp|float %}{% if diff <= 0 %}color: #27AE60;{% else %}color: #E74C3C;{% endif %}{% endif %}">{% if loop.first %}—{% elif "Requires newer" in page_comparison[0].lcp|string or "Requires newer" in result.lcp|string %}{{ display_value(result.lcp) }}{% else %}{% set diff = result.lcp|float - page_comparison[0].lcp|float %}{% if diff > 0 %}+{% endif %}{{ "%.2f"|format(diff) }}{% endif %}</td>
         </tr>
                 {% endfor %}
         </tbody>
     </table>
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Comparison table. Actions</p>
+    {% endif %}
+    {% if results|selectattr("type", "equalto", "action")|list|length > 0 %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Actions Comparison Across the Last Five Test Runs</p>
     <table style="width: 100%;">
         <thead>
         <tr>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Date</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">CLS</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">TBT, sec</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">INP, sec</th>
+            <th rowspan="2" style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Date</th>
+            <th colspan="2" style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Cumulative Layout Shift (CLS)</th>
+            <th colspan="2" style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Total Blocking Time (TBT), sec</th>
+            <th colspan="2" style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Interaction to Next Paint (INP), sec</th>
+        </tr>
+        <tr>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Value</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Change</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Value</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Change</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Value</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; text-align: center;">Change</th>
         </tr>
         </thead>
         <tbody>
                 {% for result in action_comparison %}
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.date }}</a></td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.inp }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.cls) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {% if loop.first %}color: #32325D;{% elif "Requires newer" in action_comparison[0].cls|string or "Requires newer" in result.cls|string %}color: #32325D;{% else %}{% set diff = result.cls|float - action_comparison[0].cls|float %}{% if diff <= 0 %}color: #27AE60;{% else %}color: #E74C3C;{% endif %}{% endif %}">{% if loop.first %}—{% elif "Requires newer" in action_comparison[0].cls|string or "Requires newer" in result.cls|string %}{{ display_value(result.cls) }}{% else %}{% set diff = result.cls|float - action_comparison[0].cls|float %}{% if diff > 0 %}+{% endif %}{{ "%.2f"|format(diff) }}{% endif %}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {% if loop.first %}color: #32325D;{% elif "Requires newer" in action_comparison[0].tbt|string or "Requires newer" in result.tbt|string %}color: #32325D;{% else %}{% set diff = result.tbt|float - action_comparison[0].tbt|float %}{% if diff <= 0 %}color: #27AE60;{% else %}color: #E74C3C;{% endif %}{% endif %}">{% if loop.first %}—{% elif "Requires newer" in action_comparison[0].tbt|string or "Requires newer" in result.tbt|string %}{{ display_value(result.tbt) }}{% else %}{% set diff = result.tbt|float - action_comparison[0].tbt|float %}{% if diff > 0 %}+{% endif %}{{ "%.2f"|format(diff) }}{% endif %}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.inp) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {% if loop.first %}color: #32325D;{% elif "Requires newer" in action_comparison[0].inp|string or "Requires newer" in result.inp|string %}color: #32325D;{% else %}{% set diff = result.inp|float - action_comparison[0].inp|float %}{% if diff <= 0 %}color: #27AE60;{% else %}color: #E74C3C;{% endif %}{% endif %}">{% if loop.first %}—{% elif "Requires newer" in action_comparison[0].inp|string or "Requires newer" in result.inp|string %}{{ display_value(result.inp) }}{% else %}{% set diff = result.inp|float - action_comparison[0].inp|float %}{% if diff > 0 %}+{% endif %}{{ "%.2f"|format(diff) }}{% endif %}</td>
         </tr>
                 {% endfor %}
         </tbody>
     </table>
+    {% endif %}
         {% if baseline_comparison_pages %}
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Baseline comparison. Pages</p>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Pages Baseline Comparison</p>
     <table style="width: 100%;">
         <thead>
         <tr>
@@ -229,22 +288,22 @@
                 {% for result in baseline_comparison_pages %}
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.name }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.ttfb }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.ttfb_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.ttfb_diff_color }}">{{ result.ttfb_diff }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_diff_color }}">{{ result.tbt_diff }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.lcp }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.lcp_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lcp_diff_color }}">{{ result.lcp_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.ttfb) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.ttfb_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.ttfb_diff_color }}">{{ display_value(result.ttfb_diff) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_diff_color }}">{{ display_value(result.tbt_diff) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.lcp) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.lcp_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.lcp_diff_color }}">{{ display_value(result.lcp_diff) }}</td>
         </tr>
                 {% endfor %}
         </tbody>
     </table>
         {% endif %}
         {% if baseline_comparison_actions %}
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Baseline comparison. Actions</p>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Actions Baseline Comparison</p>
     <table style="width: 100%;">
         <thead>
         <tr>
@@ -269,15 +328,15 @@
                 {% for result in baseline_comparison_actions %}
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ result.name }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.cls }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.cls_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_diff_color }}">{{ result.cls_diff }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.tbt_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_diff_color }}">{{ result.tbt_diff }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.inp }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.inp_baseline }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.inp_diff_color }}">{{ result.inp_diff }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.cls) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.cls_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_diff_color }}">{{ display_value(result.cls_diff) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.tbt_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_diff_color }}">{{ display_value(result.tbt_diff) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.inp) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ display_value(result.inp_baseline) }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.inp_diff_color }}">{{ display_value(result.inp_diff) }}</td>
         </tr>
                 {% endfor %}
         </tbody>

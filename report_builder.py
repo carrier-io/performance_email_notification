@@ -228,6 +228,9 @@ class ReportBuilder:
         
         elif baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
             # Priority 4: SLA metric mismatch detected (no "all" SLA or wrong metric)
+        test_description["users"] = report_data["vusers"]
+        # Add SLA mismatch warning if detected
+        if baseline_and_thresholds_temp.get('sla_metric_mismatch') and baseline_and_thresholds_temp.get('sla_configured_metric'):
             sla_metric = baseline_and_thresholds_temp['sla_configured_metric']
             if sla_metric == comparison_metric:
                 # Case 4a: SLA for comparison_metric exists but no "all"
