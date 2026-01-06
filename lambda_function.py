@@ -23,6 +23,8 @@ from typing import Union
 
 
 def lambda_handler(event: Union[list, dict], context):
+    # TODO test comment
+    print("test print")
     try:
         args = parse_args(event)
         print(args)
