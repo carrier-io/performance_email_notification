@@ -19,12 +19,40 @@ repo = g.get_repo(REPO_NAME)
 pr = repo.get_pull(int(PR_NUMBER))
 files = pr.get_files()
 
+# Fetch PR description
+pr_description = pr.body or ""
+
+# Fetch PR review comments (inline code comments)
+review_comments = pr.get_review_comments()
+review_comments_text = "\n".join(
+    [f"{c.user.login}: {c.body}" for c in review_comments]
+)
+
+# Fetch PR issue comments (general discussion)
+issue_comments = pr.get_issue_comments()
+issue_comments_text = "\n".join(
+    [f"{c.user.login}: {c.body}" for c in issue_comments]
+)
+
+# Combine all context
+pr_context = f"""
+PR Description:
+{pr_description}
+
+Review Comments:
+{review_comments_text}
+
+Discussion Comments:
+{issue_comments_text}
+"""
+
 changes = ""
 for file in files:
     if file.patch:
         changes += f"File: {file.filename}\n{file.patch}\n"
 
 rules = """
+- Consider the PR description and all PR comments for additional context, and ensure that any questions or concerns raised there are addressed in the code or in your review.
 - Check if there are no conflicts.
 - Check that package/email_notification.zip is updated with all new code changes.
 - Check for TODO comments left in code.
@@ -40,6 +68,9 @@ params = {"key": GEMINI_API_KEY}
 prompt = f"""
 You are a code reviewer. Analyze the following PR changes according to these rules:
 {rules}
+
+PR context (description and comments):
+{pr_context}
 
 PR changes:
 {changes}
