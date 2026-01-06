@@ -1,0 +1,26 @@
+name: Gemini PR Analysis
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  analyze_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install requests PyGithub
+
+      - name: Analyze PR with Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python .github/scripts/analyze_pr_gemini.py
