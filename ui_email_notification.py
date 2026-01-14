@@ -118,6 +118,8 @@ class UIEmailNotification:
                         failed_count += 1
                         print(f"[THRESHOLD VIOLATION] {result.get('name')} - {metric_short}: {actual_value} violates {comparison} {threshold_value}")
                         break
+                    else:
+                        print(f"[THRESHOLD PASS] {result.get('name')} - {metric_short}: {actual_value} complies with {comparison} {threshold_value}")
                 
                 result[f"{metric_short}_color"] = f"color: {RED};" if is_failed else f"color: {GREEN};"
 
@@ -158,7 +160,7 @@ class UIEmailNotification:
                 continue
 
             comparison = {"name": current["name"]}
-            metrics = ["load_time", "fcp", "lcp", "tbt", "ttfb"] if current["type"] == "page" else ["tbt", "cls", "inp"]
+            metrics = ["lcp", "tbt", "ttfb"] if current["type"] == "page" else ["tbt", "cls", "inp"]
             
             for metric in metrics:
                 comparison[metric] = current[metric]
@@ -262,6 +264,23 @@ class UIEmailNotification:
         results_info = self._get_results_info(report_uid)
         test_environment = report_info["environment"]
 
+        test_status = report_info.get("test_status", {})
+        status = test_status.get("status", "PASSED")
+        thresholds_total = report_info.get("thresholds_total", 0)
+        thresholds_failed = report_info.get("thresholds_failed", 0)
+        
+        if thresholds_total > 0:
+            missed_thresholds = round((thresholds_failed / thresholds_total) * 100, 1)
+        else:
+            missed_thresholds = 0
+        
+        if status == "Failed":
+            color = RED
+        elif status == "Finished":
+            color = None
+        else:
+            color = GREEN
+
         thresholds_processor = ThresholdsComparison(
             self.gelloper_url, self.gelloper_token, self.galloper_project_id, self.report_id
         )
@@ -278,8 +297,7 @@ class UIEmailNotification:
             print(f"[WARNING] Could not load thresholds: {e}")
             thresholds_grouped = {}
 
-        total_thresholds_for_test = sum(len(v) for v in thresholds_grouped.values())
-        missed_thresholds = self._apply_threshold_colors(results_info, thresholds_grouped, thresholds_processor, report_info)
+        local_missed_thresholds = self._apply_threshold_colors(results_info, thresholds_grouped, thresholds_processor, report_info)
         self._convert_result_units(results_info)
 
         try:
@@ -303,12 +321,6 @@ class UIEmailNotification:
             baseline_comparison_pages, baseline_comparison_actions, degradation_rate, aggregated_baseline = \
                 self._process_baseline_comparison(baseline_info, results_info, baseline_report_info)
 
-        status, color = "PASSED", GREEN
-        if self.args.get("performance_degradation_rate") and degradation_rate > self.args["performance_degradation_rate"]:
-            status, color = "FAILED", RED
-        if self.args.get("missed_thresholds") and missed_thresholds > self.args["missed_thresholds"]:
-            status, color = "FAILED", RED
-
         browser_version = report_info.get('browser_version')
         if not browser_version or browser_version == 'undefined':
             browser_version = results_info[0].get('browser_version', 'Unknown') if results_info else 'Unknown'
@@ -328,7 +340,7 @@ class UIEmailNotification:
             "version": browser_version,
             "loops": report_info["loops"],
             "pages": len(results_info),
-            "total_thresholds": total_thresholds_for_test
+            "total_thresholds": thresholds_total
         }
 
         date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
