@@ -527,7 +527,7 @@ class ReportBuilder:
 
     def create_charts(self, builds, last_test_data, baseline, comparison_metric):
         charts = []
-        if len(builds) > 1:
+        if len(builds) >= 1:
             charts.append(self.create_success_rate_chart(builds))
             charts.append(self.create_throughput_chart(builds))
             charts.append(self.create_response_time_chart(builds, comparison_metric))
