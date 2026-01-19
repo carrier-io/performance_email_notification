@@ -302,15 +302,10 @@ class ReportBuilder:
                        "missed_threshold_rate": args["missed_threshold_rate"],
                        "reasons_to_fail_report": args["reasons_to_fail_report"], "status": args["status"],
                        "color": STATUS_COLOR[args["status"].lower()]}
-        # Add SLA debug info if available
-        if 'sla_total_checked' in args:
-            test_params["sla_total_checked"] = args["sla_total_checked"]
-            test_params["sla_total_violated"] = args["sla_total_violated"]
-            test_params["sla_per_request_checked"] = args.get("sla_per_request_checked", 0)
-            test_params["sla_per_request_violated"] = args.get("sla_per_request_violated", 0)
-            test_params["sla_global_checked"] = args.get("sla_global_checked", 0)
-            test_params["sla_global_violated"] = args.get("sla_global_violated", 0)
-            test_params["sla_debug_comparisons"] = args.get("sla_debug_comparisons", [])
+        # Add SLA debug info if enabled
+        if args.get('sla_debug_enabled', False) and 'sla_debug_comparisons' in args:
+            test_params["sla_debug_enabled"] = True
+            test_params["sla_debug_comparisons"] = args["sla_debug_comparisons"]
         # Add baseline report URL if baseline exists and has build_id
         if baseline and len(baseline) > 0 and baseline[0].get("build_id"):
             baseline_build_id = baseline[0]["build_id"]
@@ -836,15 +831,35 @@ class ReportBuilder:
                 # Strict match: only lowercase "all"
                 if th.get('request_name', '') == 'all':
                     if th['target'] == 'error_rate':
-                        threshold_er_value = th['value']
-                        thresholds_error_rate = round(th["metric"] - th['value'], 2)
+                        # Apply deviation for error_rate
+                        threshold_original = th['value']
+                        deviation = th.get('deviation', 0)
+                        
+                        if th.get('comparison') in ['gt', 'gte']:
+                            threshold_er_value = round(threshold_original + deviation, 2)
+                        elif th.get('comparison') in ['lt', 'lte']:
+                            threshold_er_value = round(threshold_original - deviation, 2)
+                        else:
+                            threshold_er_value = round(threshold_original, 2)
+                        
+                        thresholds_error_rate = round(th["metric"] - threshold_er_value, 2)
                         if th['threshold'] == "red":
                             thresholds_er_color = RED
                         else:
                             thresholds_er_color = GREEN
                     if th['target'] == 'throughput':
-                        threshold_tp_value = th['value']
-                        thresholds_tp_rate = round(th["metric"] - th['value'], 2)
+                        # Apply deviation for throughput
+                        threshold_original = th['value']
+                        deviation = th.get('deviation', 0)
+                        
+                        if th.get('comparison') in ['gt', 'gte']:
+                            threshold_tp_value = round(threshold_original + deviation, 2)
+                        elif th.get('comparison') in ['lt', 'lte']:
+                            threshold_tp_value = round(threshold_original - deviation, 2)
+                        else:
+                            threshold_tp_value = round(threshold_original, 2)
+                        
+                        thresholds_tp_rate = round(th["metric"] - threshold_tp_value, 2)
                         if th['threshold'] == "red":
                             thresholds_tp_color = RED
                         else:
@@ -853,9 +868,20 @@ class ReportBuilder:
                         # Only use threshold if aggregation matches comparison_metric
                         th_aggregation = th.get('aggregation', 'pct95')
                         if th_aggregation == comparison_metric:
-                            # Round values first, then calculate difference
-                            threshold_rt_value = round(th['value'] / 1000, 2)
-                            current_metric_value = round(th["metric"] / 1000, 2)
+                            # Calculate threshold WITH deviation for display
+                            threshold_original = th['value'] / 1000
+                            deviation = th.get('deviation', 0) / 1000
+                            
+                            # Apply deviation based on comparison type
+                            if th.get('comparison') in ['gt', 'gte']:
+                                threshold_rt_value = round(threshold_original + deviation, 2)
+                            elif th.get('comparison') in ['lt', 'lte']:
+                                threshold_rt_value = round(threshold_original - deviation, 2)
+                            else:
+                                threshold_rt_value = round(threshold_original, 2)
+                            
+                            # metric is already in seconds (converted in compare_request_and_threhold)
+                            current_metric_value = round(th["metric"], 2)
                             thresholds_rt = round(current_metric_value - threshold_rt_value, 2)
                             thresholds_rt_color = RED if th['threshold'] == "red" else GREEN
         return {
@@ -895,6 +921,14 @@ class ReportBuilder:
         sla_configured_metric = None
         sla_configured_metrics = None
         sla_has_every = False
+        has_deviation = False  # Flag to check if any threshold has deviation > 0
+        
+        # Check if any threshold has deviation > 0 (check ALL thresholds, not just matching ones)
+        if thresholds:
+            for th in thresholds:
+                if th.get('deviation', 0) > 0:
+                    has_deviation = True
+                    break
         
         # Store all baseline data for checking if baseline exists (used for "Baseline disabled" message)
         baseline_enabled = args.get("quality_gate_config", {}).get("baseline", {}).get("checked")
@@ -1049,7 +1083,19 @@ class ReportBuilder:
             if thresholds_metrics and threshold_for_request:
                 # Round values first, then calculate difference
                 current_value = round(float(request[comparison_metric]) / 1000, 2)
-                threshold_value = round(float(threshold_for_request['value']) / 1000, 2)
+                
+                # Calculate threshold WITH deviation for display
+                threshold_original = float(threshold_for_request['value']) / 1000
+                deviation = threshold_for_request.get('deviation', 0) / 1000  # Convert to seconds
+                
+                # Apply deviation based on comparison type
+                if threshold_for_request.get('comparison') in ['gt', 'gte']:
+                    threshold_value = round(threshold_original + deviation, 2)
+                elif threshold_for_request.get('comparison') in ['lt', 'lte']:
+                    threshold_value = round(threshold_original - deviation, 2)
+                else:
+                    threshold_value = round(threshold_original, 2)
+                
                 req['threshold'] = round(current_value - threshold_value, 2)
                 req['threshold_value'] = threshold_value
                 if threshold_for_request['threshold'] == 'red':
@@ -1122,6 +1168,7 @@ class ReportBuilder:
             "has_missing_sla": has_missing_sla,
             "has_disabled_sla": has_disabled_sla,
             "has_disabled_baseline": has_disabled_baseline,
+            "has_deviation": has_deviation,
             "sla_metric_mismatch": sla_metric_mismatch,
             "sla_configured_metric": sla_configured_metric,
             "sla_configured_metrics": sla_configured_metrics if sla_metric_mismatch else None,
