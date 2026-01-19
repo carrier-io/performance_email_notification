@@ -136,7 +136,7 @@
     </div>
     {% endif %}
 
-    {% if baseline_and_thresholds.has_deviation %}
+    {% if baseline_and_thresholds.has_deviation and baseline_and_thresholds.show_threshold_column %}
     <div style="margin: 12px 12px; padding: 12px; background-color: #FFF9E6; border-left: 4px solid #FFC107; border-radius: 4px;">
         <p style="margin: 0; color: #8B6F00; font-size: 12px;">
             <span style="font-weight: 700;">ℹ️ Note:</span> SLA thresholds have configured acceptable deviation. Validation results take into account the allowed deviation range when comparing actual values against thresholds.
