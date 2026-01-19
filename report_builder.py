@@ -83,6 +83,7 @@ class ReportBuilder:
         """
         url = f"{galloper_url}/api/v1/backend_performance/reports/{galloper_project_id}?name={name}&limit={limit}"
         headers = {"Authorization": f"Bearer {token}"}
+        
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         data = response.json()
@@ -129,10 +130,16 @@ class ReportBuilder:
             print(f"Warning: Could not fetch baseline report_id: {e}")
             return None
     
-    def fetch_api_reports_for_comparison(self, args):
+    def fetch_api_reports_for_comparison(self, args, build_ids=None):
         """
         Fetch API reports to get start_time for historical tests.
         end_time is only included for the latest (first) report.
+        
+        Args:
+            args: Arguments dict with galloper_url, project_id, token, test name
+            build_ids: Optional list of specific build_ids we need data for.
+                      If provided, will fetch enough records to find all of them.
+        
         Returns a dict mapping build_id to report data.
         """
         try:
@@ -140,15 +147,23 @@ class ReportBuilder:
             galloper_url = args.get('galloper_url')
             project_id = args.get('project_id')
             token = args.get('token')
-            limit = args.get('test_limit', 5)
+            
+            # If build_ids provided, use 3x buffer to ensure we get all of them
+            # (need larger buffer because there may be many tests between current and old ones)
+            # Otherwise use test_limit with default of 5
+            if build_ids:
+                limit = len(build_ids) * 3
+            else:
+                limit = args.get('test_limit', 5)
             
             if not all([galloper_url, project_id, token, test_name]):
                 return {}
             
-            _, rows, _, _ = self.fetch_api_reports(galloper_url, project_id, test_name, limit, token)
+            total, rows, _, _ = self.fetch_api_reports(galloper_url, project_id, test_name, limit, token)
             
             # Create a mapping of build_id to report data
             reports_map = {}
+            
             for idx, row in enumerate(rows):
                 build_id = row.get('build_id')
                 if build_id:
@@ -161,6 +176,7 @@ class ReportBuilder:
                     if idx == 0:
                         report_data['end_time'] = row.get('end_time')
                     reports_map[build_id] = report_data
+            
             return reports_map
         except Exception as e:
             print(f"Warning: Could not fetch API reports for comparison: {e}")
@@ -314,8 +330,16 @@ class ReportBuilder:
             if bl_tp_dev > 0 or bl_er_dev > 0 or bl_rt_dev > 0:
                 test_description['baseline_deviation_warning'] = True
         
+        # Extract build_ids from tests_data to fetch specific API reports
+        build_ids_to_fetch = []
+        for test in tests_data:
+            if test and len(test) > 0:
+                build_id = test[0].get('build_id')
+                if build_id:
+                    build_ids_to_fetch.append(build_id)
+        
         # Fetch API reports to get start_time for historical tests
-        api_reports = self.fetch_api_reports_for_comparison(args)
+        api_reports = self.fetch_api_reports_for_comparison(args, build_ids=build_ids_to_fetch)
         builds_comparison = self.create_builds_comparison(tests_data, args, api_reports, comparison_metric)
         general_metrics = self.get_general_metrics(args, builds_comparison[0], baseline, thresholds, comparison_metric)
         charts = self.create_charts(builds_comparison, last_test_data, baseline, comparison_metric)
@@ -593,6 +617,7 @@ class ReportBuilder:
                 if api_data and api_data.get('report_id'):
                     test_info['report_url'] = f"{args['galloper_url']}/-/performance/backend/results?result_id={api_data['report_id']}"
                 builds_comparison.append(test_info)
+        
         builds_comparison = self.calculate_diffs(builds_comparison)
 
         return builds_comparison
@@ -1638,6 +1663,7 @@ class ReportBuilder:
         else:
             test_params["missed_threshold_rate"] = f'-'
             test_params["threshold_status"] = "N/A"
+        
         html = template.render(t_params=test_params, summary=last_test_data, baseline=baseline,
                                comparison=builds_comparison,
                                baseline_and_thresholds=baseline_and_thresholds, general_metrics=general_metrics,
