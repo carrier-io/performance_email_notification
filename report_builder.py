@@ -1268,8 +1268,11 @@ class ReportBuilder:
         # Check if SLA is actually enabled and has required settings
         sla_enabled = args.get("quality_gate_config", {}).get("SLA", {}).get("checked")
         sla_operational = sla_enabled and (per_request_rt_check or summary_rt_check)
+        # Check if at least one SLA threshold exists (response_time SLA)
+        # Use show_threshold_column which is True when at least one request has a configured SLA
+        sla_has_thresholds = baseline_and_thresholds.get('show_threshold_column', False)
         
-        if args.get("missed_thresholds_qg", None) and sla_operational:
+        if args.get("missed_thresholds_qg", None) and sla_operational and sla_has_thresholds:
             if test_params["missed_threshold_rate"] > args["missed_thresholds_qg"]:
                 test_params["missed_threshold_rate"] = f'{test_params["missed_threshold_rate"]}%'
                 test_params["threshold_status"] = "failed"
