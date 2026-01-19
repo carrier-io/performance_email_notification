@@ -1296,9 +1296,10 @@ class ReportBuilder:
                 return value
         
         def format_failed_reason(reason):
-            """Replace incorrect % units with proper units based on metric type"""
+            """Replace incorrect % units with proper units based on metric type and improve wording"""
             import re
-            # Pattern: "metric_name ... value - NUMBER%"
+            
+            # First, fix the units
             # Check if it's throughput
             if 'throughput' in reason.lower():
                 # Replace "- X%" or "- X %" with "- X req/sec"
@@ -1308,6 +1309,11 @@ class ReportBuilder:
                 # Replace "- X%" or "- X %" with "- X sec"
                 reason = re.sub(r'(\s*-\s*[\d.]+)\s*%', r'\1 sec', reason)
             # error_rate keeps % (don't change)
+            
+            # Second, fix "exceeded" wording - make it more generic
+            # "exceeded SLA value" -> "violated SLA threshold"
+            reason = reason.replace('exceeded SLA value', 'violated SLA threshold')
+            
             return reason
         
         env = Environment(loader=FileSystemLoader('./templates/'))
