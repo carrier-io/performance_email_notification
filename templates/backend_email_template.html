@@ -228,7 +228,7 @@
         <tr>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: left;">Metric</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Current value</th>
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">SLA value</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">SLA value (SLA with deviation)</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">SLA diff</th>
         </tr>
         </thead>
@@ -237,7 +237,7 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Throughput, req/sec</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_tp|format_number }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_tp_value|format_number }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_tp_original|format_number }} ({{ general_metrics.threshold_tp_value|format_number }})</td>
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_tp_color }}; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_tp|format_number }}</td>
         </tr>
         {% endif %}
@@ -245,7 +245,7 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Error rate, %</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_er|format_number }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_er_value|format_number }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_er_original|format_number }} ({{ general_metrics.threshold_er_value|format_number }})</td>
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_er_color }}; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_er|format_number }}</td>
         </tr>
         {% endif %}
@@ -253,7 +253,7 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">Response time ({{ general_metrics.comparison_metric }}), sec</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.current_rt|format_number }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_rt_value|format_number }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #757F99; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_rt_original|format_number }} ({{ general_metrics.threshold_rt_value|format_number }})</td>
             <td style="padding: 8px 12px; font-size: 14px; color: {{ general_metrics.threshold_rt_color }}; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ general_metrics.threshold_rt|format_number }}</td>
         </tr>
         {% endif %}
@@ -293,7 +293,7 @@
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Baseline diff, sec</th>
             {% endif %}
             {% if baseline_and_thresholds.show_threshold_column %}
-            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Threshold value, sec{% if baseline_and_thresholds.has_missing_sla %} <span style="color: #FFA400; font-size: 11px;">⚠️</span><br><span style="font-size: 10px; font-weight: 400; color: #8492A6;">(Configure for {{ general_metrics.comparison_metric }})</span>{% endif %}</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Threshold value (Threshold with deviation), sec{% if baseline_and_thresholds.has_missing_sla %} <span style="color: #FFA400; font-size: 11px;">⚠️</span><br><span style="font-size: 10px; font-weight: 400; color: #8492A6;">(Configure for {{ general_metrics.comparison_metric }})</span>{% endif %}</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: right;">Threshold diff, sec{% if baseline_and_thresholds.has_missing_sla %} <span style="color: #FFA400; font-size: 11px;">⚠️</span><br><span style="font-size: 10px; font-weight: 400; color: #8492A6;">(Configure for {{ general_metrics.comparison_metric }})</span>{% endif %}</th>
             {% endif %}
             {% if baseline_and_thresholds.show_representation_column %}
@@ -324,7 +324,7 @@
             <td style="padding: 8px 12px; font-size: 14px; {% if baseline_result.baseline == '-' %}color: #8492A6;{% else %}color: {{ baseline_result.baseline_color }};{% endif %} text-align: right; border-bottom: solid 1px #EAEDEF;">{% if baseline_result.baseline == '-' %}{{ baseline_result.baseline }}{% else %}{{ baseline_result.baseline|format_number }}{% endif %}</td>
             {% endif %}
             {% if baseline_and_thresholds.show_threshold_column %}
-            <td style="padding: 8px 12px; {% if baseline_result.threshold_value in ['Set SLA', 'SLA disabled'] %}font-size: 12px; color: #8492A6; font-style: italic;{% else %}font-size: 14px; color: #757F99;{% endif %} text-align: right; border-bottom: solid 1px #EAEDEF;">{% if baseline_result.threshold_value in ['Set SLA', 'SLA disabled'] %}{{ baseline_result.threshold_value }}{% else %}{{ baseline_result.threshold_value|format_number }}{% endif %}</td>
+            <td style="padding: 8px 12px; {% if baseline_result.threshold_value in ['Set SLA', 'SLA disabled'] %}font-size: 12px; color: #8492A6; font-style: italic;{% else %}font-size: 14px; color: #757F99;{% endif %} text-align: right; border-bottom: solid 1px #EAEDEF;">{% if baseline_result.threshold_value in ['Set SLA', 'SLA disabled'] %}{{ baseline_result.threshold_value }}{% else %}{{ baseline_result.threshold_original_value|format_number }} ({{ baseline_result.threshold_value|format_number }}){% endif %}</td>
             <td style="padding: 8px 12px; font-size: 14px; {% if baseline_result.threshold == '-' %}color: #8492A6;{% else %}color: {{ baseline_result.threshold_color }};{% endif %} text-align: right; border-bottom: solid 1px #EAEDEF;">{% if baseline_result.threshold in ['-', 'Set SLA', 'SLA disabled'] %}{{ baseline_result.threshold }}{% else %}{{ baseline_result.threshold|format_number }}{% endif %}</td>
             {% endif %}
             {% if baseline_and_thresholds.show_representation_column %}

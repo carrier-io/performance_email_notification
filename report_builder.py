@@ -794,6 +794,9 @@ class ReportBuilder:
         threshold_tp_value = "N/A"
         threshold_er_value = "N/A"
         threshold_rt_value = "N/A"
+        threshold_tp_original = "N/A"
+        threshold_er_original = "N/A"
+        threshold_rt_original = "N/A"
         thresholds_tp_color = GRAY
         thresholds_er_color = GRAY
         thresholds_rt_color = GRAY
@@ -833,6 +836,7 @@ class ReportBuilder:
                     if th['target'] == 'error_rate':
                         # Apply deviation for error_rate
                         threshold_original = th['value']
+                        threshold_er_original = round(threshold_original, 2)  # Store original without deviation
                         deviation = th.get('deviation', 0)
                         
                         if th.get('comparison') in ['gt', 'gte']:
@@ -850,6 +854,7 @@ class ReportBuilder:
                     if th['target'] == 'throughput':
                         # Apply deviation for throughput
                         threshold_original = th['value']
+                        threshold_tp_original = round(threshold_original, 2)  # Store original without deviation
                         deviation = th.get('deviation', 0)
                         
                         if th.get('comparison') in ['gt', 'gte']:
@@ -870,6 +875,7 @@ class ReportBuilder:
                         if th_aggregation == comparison_metric:
                             # Calculate threshold WITH deviation for display
                             threshold_original = th['value'] / 1000
+                            threshold_rt_original = round(threshold_original, 2)  # Store original without deviation
                             deviation = th.get('deviation', 0) / 1000
                             
                             # Apply deviation based on comparison type
@@ -891,6 +897,7 @@ class ReportBuilder:
             "baseline_tp_color": baseline_tp_color,
             "threshold_tp": thresholds_tp_rate,
             "threshold_tp_value": threshold_tp_value,
+            "threshold_tp_original": threshold_tp_original,
             "threshold_tp_color": thresholds_tp_color,
             "current_er": current_error_rate,
             "baseline_er": baseline_error_rate,
@@ -898,6 +905,7 @@ class ReportBuilder:
             "baseline_er_color": baseline_er_color,
             "threshold_er": thresholds_error_rate,
             "threshold_er_value": threshold_er_value,
+            "threshold_er_original": threshold_er_original,
             "threshold_er_color": thresholds_er_color,
             "current_rt": current_rt,
             "baseline_rt": baseline_rt,
@@ -905,6 +913,7 @@ class ReportBuilder:
             "baseline_rt_color": baseline_rt_color,
             "threshold_rt": thresholds_rt,
             "threshold_rt_value": threshold_rt_value,
+            "threshold_rt_original": threshold_rt_original,
             "threshold_rt_color": thresholds_rt_color,
             "show_baseline_column": baseline_throughput != "N/A" or baseline_error_rate != "N/A" or baseline_rt != "N/A",
             "show_threshold_column": thresholds_tp_rate != "N/A" or thresholds_error_rate != "N/A" or thresholds_rt != "N/A",
@@ -1086,6 +1095,7 @@ class ReportBuilder:
                 
                 # Calculate threshold WITH deviation for display
                 threshold_original = float(threshold_for_request['value']) / 1000
+                threshold_original_value = round(threshold_original, 2)  # Store original without deviation
                 deviation = threshold_for_request.get('deviation', 0) / 1000  # Convert to seconds
                 
                 # Apply deviation based on comparison type
@@ -1098,6 +1108,7 @@ class ReportBuilder:
                 
                 req['threshold'] = round(current_value - threshold_value, 2)
                 req['threshold_value'] = threshold_value
+                req['threshold_original_value'] = threshold_original_value
                 if threshold_for_request['threshold'] == 'red':
                     req['line_color'] = RED
                     req['threshold_color'] = RED
