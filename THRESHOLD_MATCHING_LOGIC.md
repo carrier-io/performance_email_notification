@@ -152,6 +152,18 @@ Fallback Chain (in order):
 
 ## Comparison Metric Selection
 
+### Scenario 0: SLA Disabled
+**Condition:** SLA checkbox unchecked in Quality Gate, but thresholds exist in system
+
+```
+Action:  All SLA columns hidden (General metrics + Request metrics)
+         Thresholds exist but not displayed
+Warning: "SLA is disabled in Quality Gate configuration. Enable SLA to see 
+          threshold values and validation results."
+```
+
+**Note:** This is the highest priority warning. When SLA is disabled, no other SLA warnings are shown.
+
 ### Scenario 1: Settings Disabled
 **Condition:** SLA enabled but both Summary and Per request results disabled
 
@@ -279,6 +291,18 @@ Metric: Uses comparison_metric (default pct95 or user-selected)
 
 ### Baseline Configuration Cases
 
+#### Scenario 0: Baseline Disabled
+**Condition:** Baseline checkbox unchecked in Quality Gate, but baseline data exists
+
+```
+Action:  All Baseline columns hidden (General metrics + Request metrics)
+         Baseline data exists but not displayed
+Warning: "Baseline comparison is disabled in Quality Gate configuration. 
+          Enable Baseline to see comparison with previous test results."
+```
+
+**Note:** This is the highest priority warning. When Baseline is disabled, no other Baseline warnings are shown.
+
 | Summary Results | Per Request Results | Result                               |
 |-----------------|---------------------|--------------------------------------|
 | OFF             | OFF                 | All baseline hidden + Warning        |
@@ -333,16 +357,22 @@ Note:    "All" row in Request metrics shows "Baseline disabled" because it requi
 
 ### 2. Warning Priority
 **SLA Warnings (priority order):**
+0. **SLA disabled** (SLA checkbox unchecked, but thresholds exist)
 1. Settings disabled (both Summary and Per request OFF)
 2. No response_time thresholds configured
 3. Summary OFF, Per request ON (General metrics SLA disabled)
 4. SLA metric mismatch (no "all" SLA or wrong metric)
 5. Multiple SLA metrics exist (when Per request OFF)
 
+**Note:** All warnings (1-5) require SLA to be **enabled**. Priority 0 is shown only when SLA is **disabled** but thresholds exist in the system.
+
 **Baseline Warnings (priority order):**
+0. **Baseline disabled** (Baseline checkbox unchecked, but baseline data exists)
 1. Settings disabled (both Summary and Per request OFF)
 2. Summary ON, Per request OFF (uses default pct95)
 3. Summary OFF, Per request ON (General metrics baseline disabled)
+
+**Note:** All warnings (1-3) require Baseline to be **enabled**. Priority 0 is shown only when Baseline is **disabled** but data exists.
 
 **Important:** Only ONE warning per feature shown (highest priority wins), but SLA and Baseline warnings can appear together.
 

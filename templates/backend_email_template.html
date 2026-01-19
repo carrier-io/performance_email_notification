@@ -32,101 +32,6 @@
     </tr>
 </table>
 
-<!-- DEBUG INFO -->
-<div style="margin: 16px; padding: 12px; background-color: #F5F5F5; border: 1px solid #CCCCCC; border-radius: 4px;">
-    <h3 style="margin: 0 0 8px 0; color: #666666; font-size: 12px;">🔧 DEBUG INFO</h3>
-    <div style="font-family: 'Courier New', monospace; font-size: 10px; color: #333333;">
-        <p style="margin: 2px 0;"><strong>Throughput Deviation (req/sec):</strong> {{ baseline_and_thresholds.debug_info.throughput_deviation }}</p>
-        <p style="margin: 2px 0;"><strong>Error Rate Deviation (%):</strong> {{ baseline_and_thresholds.debug_info.error_rate_deviation }}</p>
-        <p style="margin: 2px 0;"><strong>Response Time Deviation for 'all' (ms):</strong> {{ baseline_and_thresholds.debug_info.response_time_deviation_all }}</p>
-        <p style="margin: 2px 0;"><strong>Response Time Deviation for 'every' (ms):</strong> {{ baseline_and_thresholds.debug_info.response_time_deviation_every }}</p>
-        <p style="margin: 2px 0;"><strong>has_baseline_deviation Flag:</strong> {{ baseline_and_thresholds.debug_info.has_baseline_deviation_flag }}</p>
-        <hr style="margin: 8px 0; border: none; border-top: 1px solid #CCCCCC;">
-        <p style="margin: 2px 0;"><strong>General metrics baseline_rt_original:</strong> {{ general_metrics.baseline_rt_original }}</p>
-        <p style="margin: 2px 0;"><strong>General metrics baseline_rt_value:</strong> {{ general_metrics.baseline_rt_value }}</p>
-        {% if baseline_and_thresholds.requests and baseline_and_thresholds.requests|length > 0 %}
-        <p style="margin: 2px 0;"><strong>First request baseline_original:</strong> {{ baseline_and_thresholds.requests[0].baseline_original_value }}</p>
-        <p style="margin: 2px 0;"><strong>First request baseline_value:</strong> {{ baseline_and_thresholds.requests[0].baseline_value }}</p>
-        {% endif %}
-        <hr style="margin: 8px 0; border: none; border-top: 1px solid #CCCCCC;">
-        {% if t_params.baseline_failed_rate_debug %}
-        <p style="margin: 2px 0; font-weight: bold; color: #FF0000;">📊 BASELINE FAILED RATE CALCULATION:</p>
-        {% if t_params.baseline_deviations_used %}
-        <p style="margin: 2px 0; background-color: #FFFFCC;"><strong>⚙️ Deviations used in calculation:</strong></p>
-        <p style="margin: 2px 0; padding-left: 16px;">Thresholds fetched: {{ t_params.baseline_deviations_used.thresholds_count }}</p>
-        {% if t_params.baseline_deviations_used.all_thresholds_received %}
-        <p style="margin: 2px 0; padding-left: 16px; background-color: #FFE6E6;"><strong>ALL thresholds received from API:</strong></p>
-        {% for th_info in t_params.baseline_deviations_used.all_thresholds_received %}
-        <p style="margin: 2px 0; padding-left: 32px; font-size: 9px;">{{ th_info }}</p>
-        {% endfor %}
-        {% endif %}
-        {% if t_params.baseline_deviations_used.thresholds_found %}
-        <p style="margin: 2px 0; padding-left: 16px;"><strong>Thresholds matched for baseline:</strong></p>
-        {% for th_info in t_params.baseline_deviations_used.thresholds_found %}
-        <p style="margin: 2px 0; padding-left: 32px;">• {{ th_info }}</p>
-        {% endfor %}
-        {% endif %}
-        <p style="margin: 2px 0; padding-left: 16px;">All throughput deviation: {{ t_params.baseline_deviations_used.all_tp }} req/sec</p>
-        <p style="margin: 2px 0; padding-left: 16px;">All error_rate deviation: {{ t_params.baseline_deviations_used.all_er }} %</p>
-        <p style="margin: 2px 0; padding-left: 16px;">All response_time deviation: {{ t_params.baseline_deviations_used.all_rt }} ms</p>
-        <p style="margin: 2px 0; padding-left: 16px;">Every response_time deviation: {{ t_params.baseline_deviations_used.every_rt }} ms</p>
-        {% endif %}
-        <p style="margin: 2px 0;"><strong>All metrics (3 checks):</strong> {{ t_params.baseline_failed_rate_debug.all_passed }} passed, {{ t_params.baseline_failed_rate_debug.all_failed }} failed</p>
-        <p style="margin: 2px 0;"><strong>Individual requests:</strong> {{ t_params.baseline_failed_rate_debug.individual_passed }} passed, {{ t_params.baseline_failed_rate_debug.individual_failed }} failed</p>
-        <p style="margin: 2px 0;"><strong>Total checks:</strong> {{ t_params.baseline_failed_rate_debug.all_passed + t_params.baseline_failed_rate_debug.all_failed + t_params.baseline_failed_rate_debug.individual_passed + t_params.baseline_failed_rate_debug.individual_failed }}</p>
-        <p style="margin: 2px 0;"><strong>Total failed:</strong> {{ t_params.baseline_failed_rate_debug.all_failed + t_params.baseline_failed_rate_debug.individual_failed }}</p>
-        {% if t_params.baseline_failed_rate_debug.all_details %}
-        <p style="margin: 8px 0 2px 0; font-weight: bold;">All metrics details:</p>
-        <table style="margin: 0; padding: 0; font-size: 9px; border-collapse: collapse;">
-            <tr style="background-color: #EEEEEE;">
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Metric</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Current</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Baseline</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Baseline+Dev</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Deviation</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Check</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Result</th>
-            </tr>
-            {% for detail in t_params.baseline_failed_rate_debug.all_details %}
-            <tr>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.metric }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.current }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.baseline }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.baseline_with_dev }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.deviation }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.comparison }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC; font-weight: bold; color: {% if detail.result == 'FAIL' %}#FF0000{% else %}#00AA00{% endif %};">{{ detail.result }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-        {% endif %}
-        {% if t_params.baseline_failed_rate_debug.individual_details %}
-        <p style="margin: 8px 0 2px 0; font-weight: bold;">Individual requests details (first 15):</p>
-        <table style="margin: 0; padding: 0; font-size: 9px; border-collapse: collapse;">
-            <tr style="background-color: #EEEEEE;">
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Request</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Current</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Baseline</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Baseline+Dev</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Deviation</th>
-                <th style="padding: 2px 4px; border: 1px solid #CCCCCC;">Result</th>
-            </tr>
-            {% for detail in t_params.baseline_failed_rate_debug.individual_details %}
-            <tr>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.name }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.current }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.baseline }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.baseline_with_dev }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC;">{{ detail.deviation }}</td>
-                <td style="padding: 2px 4px; border: 1px solid #CCCCCC; font-weight: bold; color: {% if detail.result == 'FAIL' %}#FF0000{% else %}#00AA00{% endif %};">{{ detail.result }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-        {% endif %}
-        {% endif %}
-    </div>
-</div>
-
 <div style="margin: 0; padding: 0;">
     <p style="margin: 24px 0 20px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Execution Summary</p>
     <table style="border-spacing: 10px;">
@@ -192,18 +97,28 @@
     </div>
     {% endif %}
 
-    {% if t_params.baseline_metric_warning %}
-    <div style="margin: 24px 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_metric_warning }}
+    <!-- YELLOW WARNINGS (Deviation) - display first -->
+    {% if t_params.baseline_deviation_warning %}
+    <div style="margin: 24px 12px 12px; padding: 12px; background-color: #FFF9E6; border-left: 4px solid #FFC107; border-radius: 4px;">
+        <p style="margin: 0; color: #8B6F00; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> Baseline has configured acceptable deviation. Validation results take into account the allowed deviation range when comparing actual values against baseline.
         </p>
     </div>
     {% endif %}
 
-    {% if t_params.baseline_deviation_warning %}
+    {% if t_params.sla_deviation_warning %}
     <div style="margin: 12px 12px; padding: 12px; background-color: #FFF9E6; border-left: 4px solid #FFC107; border-radius: 4px;">
         <p style="margin: 0; color: #8B6F00; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> Baseline has configured acceptable deviation. Validation results take into account the allowed deviation range when comparing actual values against baseline.
+            <span style="font-weight: 700;">ℹ️ Note:</span> SLA has configured acceptable deviation. Validation results take into account the allowed deviation range when comparing actual values against SLA thresholds.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- BLUE WARNINGS (Configuration) - display second -->
+    {% if t_params.baseline_metric_warning %}
+    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_metric_warning }}
         </p>
     </div>
     {% endif %}
@@ -232,14 +147,6 @@
     </div>
     {% endif %}
 
-    {% if t_params.sla_deviation_warning %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #FFF9E6; border-left: 4px solid #FFC107; border-radius: 4px;">
-        <p style="margin: 0; color: #8B6F00; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> SLA has configured acceptable deviation. Validation results take into account the allowed deviation range when comparing actual values against SLA thresholds.
-        </p>
-    </div>
-    {% endif %}
-
     {% if baseline_and_thresholds.has_disabled_sla %}
     <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
         <p style="margin: 0; color: #0D47A1; font-size: 12px;">
@@ -248,10 +155,10 @@
     </div>
     {% endif %}
 
-    {% if baseline_and_thresholds.has_missing_sla and not baseline_and_thresholds.show_threshold_column %}
+    {% if baseline_and_thresholds.has_missing_sla and not baseline_and_thresholds.show_threshold_column and not t_params.sla_metric_warning %}
     <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
         <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> SLA thresholds are not configured for {{ general_metrics.comparison_metric }} metric. Configure SLA thresholds in Quality Gate settings to see threshold values and differences in Request metrics and General metrics tables.
+            <span style="font-weight: 700;">ℹ️ Note:</span> SLA thresholds are not configured for {{ general_metrics.comparison_metric }} metric. Configure SLA thresholds in Thresholds section to see threshold values and differences in Request metrics and General metrics tables.
         </p>
     </div>
     {% endif %}
