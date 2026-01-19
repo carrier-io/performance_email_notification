@@ -844,8 +844,10 @@ class ReportBuilder:
                         # Only use threshold if aggregation matches comparison_metric
                         th_aggregation = th.get('aggregation', 'pct95')
                         if th_aggregation == comparison_metric:
+                            # Round values first, then calculate difference
                             threshold_rt_value = round(th['value'] / 1000, 2)
-                            thresholds_rt = round((th["metric"] - th['value']) / 1000, 2)
+                            current_metric_value = round(th["metric"] / 1000, 2)
+                            thresholds_rt = round(current_metric_value - threshold_rt_value, 2)
                             thresholds_rt_color = RED if th['threshold'] == "red" else GREEN
         return {
             "current_tp": current_tp,
@@ -969,9 +971,11 @@ class ReportBuilder:
                     show_baseline_for_request = per_request_rt_check
             
             if show_baseline_for_request:
-                req['baseline'] = round(
-                    float(int(request[comparison_metric]) - baseline_all_data[request['request_name']]) / 1000, 2)
-                req['baseline_value'] = round(baseline_all_data[request['request_name']] / 1000, 2)
+                # Round values first, then calculate difference
+                current_value = round(float(request[comparison_metric]) / 1000, 2)
+                baseline_value = round(baseline_all_data[request['request_name']] / 1000, 2)
+                req['baseline'] = round(current_value - baseline_value, 2)
+                req['baseline_value'] = baseline_value
                 if req['baseline'] < 0:
                     req['baseline_color'] = GREEN
                 else:
@@ -1034,10 +1038,11 @@ class ReportBuilder:
             
             # Process threshold value or show appropriate message
             if thresholds_metrics and threshold_for_request:
-                req['threshold'] = round(
-                    float(int(request[comparison_metric]) -
-                          int(threshold_for_request['value'])) / 1000, 2)
-                req['threshold_value'] = round(float(threshold_for_request['value']) / 1000, 2)
+                # Round values first, then calculate difference
+                current_value = round(float(request[comparison_metric]) / 1000, 2)
+                threshold_value = round(float(threshold_for_request['value']) / 1000, 2)
+                req['threshold'] = round(current_value - threshold_value, 2)
+                req['threshold_value'] = threshold_value
                 if threshold_for_request['threshold'] == 'red':
                     req['line_color'] = RED
                     req['threshold_color'] = RED
