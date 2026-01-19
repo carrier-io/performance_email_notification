@@ -1329,7 +1329,15 @@ class ReportBuilder:
         baseline_has_data = baseline and len(baseline) > 0
         baseline_operational = baseline_enabled and (per_request_rt_check or summary_rt_check) and baseline_has_data
         
-        if args.get("performance_degradation_rate_qg", None) and baseline_operational:
+        # Check if Baseline is enabled but no baseline data exists
+        baseline_enabled_but_missing = baseline_enabled and (per_request_rt_check or summary_rt_check) and not baseline_has_data
+        
+        if baseline_enabled_but_missing:
+            # Baseline is enabled in Quality Gate but no baseline test is defined
+            test_params["performance_degradation_rate"] = f'-'
+            test_params["baseline_status"] = "missing"
+            test_params["baseline_note"] = "⚠ Baseline check is enabled but no baseline is set. Please set a baseline test first."
+        elif args.get("performance_degradation_rate_qg", None) and baseline_operational:
             if test_params["performance_degradation_rate"] > args["performance_degradation_rate_qg"]:
                 test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
                 test_params["baseline_status"] = "failed"
