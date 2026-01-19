@@ -89,7 +89,7 @@
         <ul style="padding-left: 25px;">
         {% for reason in t_params.reasons_to_fail_report %}
             <li style="list-style: none">
-                <span style="color: #F32626; font-size: 14px; font-weight: bold; margin-right: 5px;">✗</span>{{ reason }}
+                <span style="color: #F32626; font-size: 14px; font-weight: bold; margin-right: 5px;">✗</span>{{ reason|format_failed_reason }}
             </li>
         {% endfor %}
         </ul>

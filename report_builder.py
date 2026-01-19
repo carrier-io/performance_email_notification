@@ -1295,8 +1295,24 @@ class ReportBuilder:
             except (ValueError, TypeError):
                 return value
         
+        def format_failed_reason(reason):
+            """Replace incorrect % units with proper units based on metric type"""
+            import re
+            # Pattern: "metric_name ... value - NUMBER%"
+            # Check if it's throughput
+            if 'throughput' in reason.lower():
+                # Replace "- X%" or "- X %" with "- X req/sec"
+                reason = re.sub(r'(\s*-\s*[\d.]+)\s*%', r'\1 req/sec', reason)
+            # Check if it's response_time
+            elif 'response_time' in reason.lower() or 'response time' in reason.lower():
+                # Replace "- X%" or "- X %" with "- X sec"
+                reason = re.sub(r'(\s*-\s*[\d.]+)\s*%', r'\1 sec', reason)
+            # error_rate keeps % (don't change)
+            return reason
+        
         env = Environment(loader=FileSystemLoader('./templates/'))
         env.filters['format_number'] = format_number
+        env.filters['format_failed_reason'] = format_failed_reason
         template = env.get_template("backend_email_template.html")
         last_test_data = self.reprocess_test_data(last_test_data, ['total', 'throughput'])
         
