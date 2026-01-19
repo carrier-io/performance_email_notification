@@ -57,6 +57,24 @@
                 </div>
             </td>
             {% endif %}
+            {% if t_params.threshold_status != 'N/A' and t_params.sla_total_checked %}
+            <td colspan="2" style="background: #FFF3CD; padding: 8px 12px; border: 1px solid #FFC107;">
+                <div style="color: #856404; font-size: 11px; font-family: monospace;">
+                    <strong>[DEBUG SLA CALCULATION]</strong><br>
+                    Per-request: {{ t_params.sla_per_request_violated }} violated / {{ t_params.sla_per_request_checked }} checks<br>
+                    Global (all): {{ t_params.sla_global_violated }} violated / {{ t_params.sla_global_checked }} checks<br>
+                    <strong>Total: {{ t_params.sla_total_violated }} / {{ t_params.sla_total_checked }} = {{ t_params.missed_threshold_rate }}%</strong><br>
+                    <span style="color: #856404;">Formula: ({{ t_params.sla_total_violated }} / {{ t_params.sla_total_checked }}) × 100 = {{ t_params.missed_threshold_rate }}%</span><br>
+                    <br>
+                    <strong>[DEBUG COMPARISONS - First 10]</strong><br>
+                    {% for cmp in t_params.sla_debug_comparisons %}
+                    <span style="font-size: 10px;">
+                    {{ cmp.request }}: {{ cmp.metric }} {{ cmp.comparison }} {{ cmp.threshold_value }} → {{ cmp.result }} ({{ cmp.color }})<br>
+                    </span>
+                    {% endfor %}
+                </div>
+            </td>
+            {% endif %}
             {% if t_params.baseline_status != 'N/A' %}
             <td style="background: #F6F9FC; padding: 4px 12px; border-radius: 4px;">
                 <div style="color: #32325D; font-size: 16px; font-weight: 400;">

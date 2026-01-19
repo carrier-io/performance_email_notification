@@ -302,6 +302,15 @@ class ReportBuilder:
                        "missed_threshold_rate": args["missed_threshold_rate"],
                        "reasons_to_fail_report": args["reasons_to_fail_report"], "status": args["status"],
                        "color": STATUS_COLOR[args["status"].lower()]}
+        # Add SLA debug info if available
+        if 'sla_total_checked' in args:
+            test_params["sla_total_checked"] = args["sla_total_checked"]
+            test_params["sla_total_violated"] = args["sla_total_violated"]
+            test_params["sla_per_request_checked"] = args.get("sla_per_request_checked", 0)
+            test_params["sla_per_request_violated"] = args.get("sla_per_request_violated", 0)
+            test_params["sla_global_checked"] = args.get("sla_global_checked", 0)
+            test_params["sla_global_violated"] = args.get("sla_global_violated", 0)
+            test_params["sla_debug_comparisons"] = args.get("sla_debug_comparisons", [])
         # Add baseline report URL if baseline exists and has build_id
         if baseline and len(baseline) > 0 and baseline[0].get("build_id"):
             baseline_build_id = baseline[0]["build_id"]
