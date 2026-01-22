@@ -198,16 +198,23 @@ baseline_color = RED if current_rt > baseline_value else GREEN
 ## Deviation Warnings
 
 ### When to Show
-Warnings are displayed when **any** deviation > 0 in Quality Gate config.
+Warnings are displayed when **any** deviation > 0 in Quality Gate config **AND at least one section (Summary or Per request results) is enabled** (data is visible).
+
+**Conditions:**
+- Deviation warnings are NOT shown when both Summary and Per request results are disabled (Priority 1)
+- Deviation warnings are NOT shown when SLA/Baseline is disabled (Priority 0)
+- Deviation warnings are shown only when user can see data affected by deviation
 
 ### Warning Conditions
 ```python
-# Check if any deviation is configured
+# Check if any deviation is configured AND data is visible
 sla_enabled = quality_gate_config.get('sla', {}).get('checked')
 baseline_enabled = quality_gate_config.get('baseline', {}).get('checked')
+summary_enabled = summary_rt_check or summary_er_check or summary_tp_check
+per_request_enabled = per_request_rt_check or per_request_er_check or per_request_tp_check
 
-# For SLA
-if sla_enabled:
+# For SLA (only if at least one section is enabled)
+if sla_enabled and (summary_enabled or per_request_enabled):
     summary_config = settings.get('summary_results', {})
     per_request_config = settings.get('per_request_results', {})
     
@@ -218,8 +225,8 @@ if sla_enabled:
     if tp_dev > 0 or er_dev > 0 or rt_dev > 0:
         show_sla_deviation_warning = True
 
-# For Baseline
-if baseline_enabled and baseline:
+# For Baseline (only if at least one section is enabled)
+if baseline_enabled and baseline and (summary_enabled or per_request_enabled):
     # Same logic as SLA
     if tp_dev > 0 or er_dev > 0 or rt_dev > 0:
         show_baseline_deviation_warning = True
