@@ -49,7 +49,10 @@ Discussion Comments:
 changes = ""
 for file in files:
     if file.patch:
-        changes += f"File: {file.filename}\n{file.patch}\n"
+        if "email_notifications.zip" in file.filename:
+            changes += f"File: {file.filename}\nZip file updated. Do not check the content\n"
+        else:
+            changes += f"File: {file.filename}\n{file.patch}\n"
 
 rules = """
 - Consider the PR description and all PR comments for additional context, and ensure that any questions or concerns raised there are addressed in the code or in your review.
