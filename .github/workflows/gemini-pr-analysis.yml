@@ -4,6 +4,12 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull Request number to analyze'
+        required: true
+        type: number
 
 jobs:
   analyze_pr:
@@ -23,4 +29,6 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Pass PR number from either event or manual input
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         run: python .github/scripts/analyze_pr_gemini.py

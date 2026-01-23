@@ -7,16 +7,24 @@ GEMINI_API_KEY = os.environ['GEMINI_API_KEY']
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 REPO_NAME = os.environ['GITHUB_REPOSITORY']
 
-# Get PR number from event payload
-with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
-    event = json.load(f)
-PR_NUMBER = event['number']
+# Try to get PR number from environment variable (set by workflow_dispatch)
+pr_number = os.environ.get("PR_NUMBER")
+
+if not pr_number:
+    # Fallback: get PR number from event payload (for pull_request trigger)
+    with open(os.environ['GITHUB_EVENT_PATH'], 'r') as f:
+        event = json.load(f)
+    pr_number = event.get('number')
+
+if not pr_number:
+    raise Exception("PR number not provided!")
+
 
 # Use new Auth method for PyGithub
 auth = Auth.Token(GITHUB_TOKEN)
 g = Github(auth=auth)
 repo = g.get_repo(REPO_NAME)
-pr = repo.get_pull(int(PR_NUMBER))
+pr = repo.get_pull(int(pr_number))
 files = pr.get_files()
 
 # Fetch PR description
