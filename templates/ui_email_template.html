@@ -40,7 +40,11 @@
     <table>
         <tr>
             <td style="padding: 4px 12px;">
+                {% if t_params.color %}
                 <div style="color: #fff; font-size: 16px; font-weight: 600; background: {{ t_params.color }}; border-radius: 4px">
+                {% else %}
+                <div style="color: #32325D; font-size: 16px; font-weight: 600; border-radius: 4px">
+                {% endif %}
                     <span>Status:</span>
                     <span>{{ t_params.status }}</span>
                 </div>
