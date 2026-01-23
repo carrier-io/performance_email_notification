@@ -60,6 +60,12 @@ rules = """
 - Check for unused imports.
 - Use default python recommendations to improve code
 - Check potential security issues
+**Output Format:**
+- Summary of changes.
+- List of Critical Issues (Blocking).
+- List of Warnings/Suggestions.
+- Security Concerns (if any).
+- Quality Score (X/10).
 """
 
 gemini_url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent"
@@ -75,7 +81,7 @@ PR context (description and comments):
 PR changes:
 {changes}
 
-If you find any issues, write a GitHub comment. If not, reply 'No issues found.'
+If you find any issues, write a GitHub comment. If not, reply 'No issues found'. At the end, provide a score for this MR (0-10) and a brief justification.
 """
 
 data = {
