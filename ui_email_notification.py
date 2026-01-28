@@ -153,6 +153,13 @@ class UIEmailNotification:
         
         baseline_comparison_pages, baseline_comparison_actions = [], []
         count, failed = 0, 0
+        degradation_rate_setting = self.args.get("performance_degradation_rate")
+        try:
+            degradation_rate_setting = float(degradation_rate_setting)
+        except (TypeError, ValueError):
+            degradation_rate_setting = 0.0
+        if degradation_rate_setting < 0:
+            degradation_rate_setting = 0.0
 
         for current in aggregated_current:
             baseline = next((b for b in aggregated_baseline if b["identifier"] == current["identifier"]), None)
@@ -171,7 +178,10 @@ class UIEmailNotification:
                     comparison[f"{metric}_diff_color"] = ""
                 else:
                     count += 1
-                    diff = round(float(current[metric]) - float(baseline[metric]), 2)
+                    baseline_with_deviation = float(baseline[metric]) * (1 + (degradation_rate_setting / 100))
+                    baseline_with_deviation = round(baseline_with_deviation, 2)
+                    comparison[f"{metric}_baseline"] = baseline_with_deviation
+                    diff = round(float(current[metric]) - baseline_with_deviation, 2)
                     if diff > 0:
                         failed += 1
                         comparison[f"{metric}_diff"] = f'+{diff}'
@@ -504,4 +514,3 @@ class UIEmailNotification:
         cet_dt = utc_dt.astimezone(cet_tz)
         
         return cet_dt.strftime(output_format)
-
