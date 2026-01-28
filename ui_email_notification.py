@@ -353,8 +353,18 @@ class UIEmailNotification:
             "total_thresholds": thresholds_total
         }
 
+        status_str = t_params["status"].lower()
+        if status_str == "failed":
+            emoji = "❌"
+            status_word = "Failed"
+        else:
+            emoji = "✅"
+            status_word = "Success"
+        start_time = t_params["start_time"]
+        if len(start_time) > 16:
+            start_time = start_time[:16]
+        subject = f"{status_word}{emoji}: {info['name']} ({start_time})"
         date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-        subject = f"[UI] Test results for {info['name']}. From {date}."
         email_body = self._get_email_body(
             t_params, results_info, page_comparison, action_comparison,
             baseline_comparison_pages, baseline_comparison_actions, degradation_rate,
