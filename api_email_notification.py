@@ -97,8 +97,17 @@ class ApiEmailNotification:
             report_data
         )
 
+        test_description = self.report_builder.create_test_description(
+            self.args,
+            last_test_data,
+            baseline,
+            self.args['comparison_metric'],
+            violation,
+            report_data
+        )
+
         # Create email subject
-        subject = self._create_email_subject(date)
+        subject = self._create_email_subject(test_description, report_data, date)
 
         # Return Email object
         return Email(
@@ -110,21 +119,35 @@ class ApiEmailNotification:
             date
         )
 
-    def _create_email_subject(self, date):
+    def _create_email_subject(self, test_description, report_data, date):
         """
         Create formatted email subject line.
         
         Args:
+            test_description (dict): Test description with status and start time
+            report_data (dict): Report info containing name
             date (str): Test execution date
             
         Returns:
             str: Formatted subject line
         """
-        subject = f"[{self.args['notification_type']}] "
-        subject += f"Test results for \"{self.args['test']}\". "
-        subject += f"Users count: {self.args['users']}. "
-        subject += f"From {date}."
-        return subject
+        status = test_description.get('status') or self.args.get('status') or ''
+        if status.lower() == "failed":
+            emoji = "❌"
+        else:
+            emoji = "✅"
+
+        name = self.args.get('test')
+        if report_data and report_data.get("name"):
+            name = report_data.get("name")
+
+        start_time = test_description.get('start')
+        if start_time and len(start_time) > 16:
+            start_time = start_time[:16]
+        if not start_time:
+            start_time = date
+
+        return f"{emoji}: {name} ({start_time})"
 
     def _get_report_data(self):
         """
