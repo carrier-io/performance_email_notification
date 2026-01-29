@@ -60,7 +60,7 @@ This document describes all warning messages that can appear in performance test
 
 ---
 
-### Priority 3j: Summary ON, Per Request OFF (All Metrics Enabled)
+### Priority 3j: Summary ON (All Metrics Enabled), Per Request OFF 
 **Conditions:** SLA is enabled, Summary results is ON with all metrics enabled, Per request results is completely OFF (all 3 checkboxes unchecked).
 
 **Warning:** "Per request SLA is disabled. Enable 'Per request results' in Quality Gate configuration to see SLA for individual requests."
@@ -74,8 +74,8 @@ This document describes all warning messages that can appear in performance test
 
 ---
 
-### Priority 4: SLA Metric Mismatch (No "All" Scope)
-**Conditions:** SLA is enabled, SLA is configured for the comparison metric (response time only), but there are issues with scope configuration.
+### Priority 4: SLA Metric Mismatch (Response Time only)
+**Conditions:** SLA is enabled, SLA is configured for the comparison metric, but there are issues with scope configuration.
 
 **Warning (Case 4a1 - has "every", no "all"):** "SLA for [METRIC] uses 'Every' scope (applies to all requests by default). No general 'All' SLA is configured. Configure 'All' SLA to see aggregated metrics in General metrics table."
 
@@ -85,18 +85,18 @@ This document describes all warning messages that can appear in performance test
 
 **Warning (Case 4a3 - has "all", no "every", has specific but not all covered):** "Some requests show 'Set SLA' for [METRIC] metric. Configure SLA thresholds for individual requests in Thresholds section or use 'Every' scope to apply SLA to all requests automatically."
 
-**Note:** This priority handles ONLY cases where SLA exists for selected metric but scope configuration is incomplete. Case 4b (wrong metric) is handled by Informational Warning below. Case 4a2 is split into two variants: 4a2a (all requests have specific SLA, message focuses only on missing 'All' for aggregated metrics) and 4a2b (some requests missing SLA, message mentions 'Set SLA' and suggests 'Every' scope).
+**Note:** This priority handles ONLY cases where SLA exists for selected metric but scope configuration is incomplete. Case 4b (wrong metric) is handled by Informational Warning below.
 
 ---
 
 ### Priority 5: SLA Metric Selection Info
-**Conditions:** SLA is enabled, at least one SLA Response Time metric is configured, and Per request results is completely disabled (all 3 checkboxes OFF).
+**Conditions:** SLA is enabled, at least one SLA Response Time metric is configured, and Per request results is completely disabled.
 
 **Warning (Single metric):** "SLA comparison uses default metric ([COMPARISON_METRIC]). To select a different comparison metric, enable 'Per request results' in Quality Gate configuration."
 
 **Warning (Multiple metrics):** "Multiple SLA metrics configured ([METRICS]). Report uses [SELECTED_METRIC] (default). To select a different metric, enable 'Per request results' in Quality Gate configuration."
 
-**Note:** This warning replaces the previous "SLA comparison uses default metric" informational warning. It now handles both single and multiple metric cases with the same priority level. Shown only when Per request section is completely disabled (user has no metric selection available).
+**Note:** This warning now handles both single and multiple metric cases with the same priority level. Shown only when Per request section is completely disabled (user has no metric selection available).
 
 ---
 
@@ -130,7 +130,7 @@ This document describes all warning messages that can appear in performance test
 ## Baseline Warnings
 
 ### Priority 0a: Baseline Disabled
-**Conditions:** Baseline checkbox is unchecked in Quality Gate configuration, but baseline data exists in the system.
+**Conditions:** Baseline checkbox is unchecked in Quality Gate configuration, but baseline data EXIST in the system.
 
 **Warning:** "Baseline comparison is disabled in Quality Gate configuration. Enable Baseline to see comparison with previous test results."
 
@@ -139,7 +139,8 @@ This document describes all warning messages that can appear in performance test
 ---
 
 ### Priority 0b: No Baseline Test Set
-**Conditions:** Baseline is enabled in Quality Gate, but no baseline test is defined in the system.
+**Conditions:** Baseline is enabled in Quality Gate, at least one section (Summary or Per request) is enabled, but no baseline test is defined in the system.
+Or Baseline is enabled in Quality Gate, but no baseline test is defined in the system.
 
 **Warning:** "Baseline check is enabled but no baseline is set. Please set a baseline test first."
 
@@ -148,7 +149,7 @@ This document describes all warning messages that can appear in performance test
 ---
 
 ### Priority 1: Both Settings Disabled
-**Conditions:** Baseline is enabled, baseline data EXISTS, but both "Summary results" AND "Per request results" are disabled (all 6 checkboxes are unchecked).
+**Conditions:** Baseline is enabled, baseline data EXISTS, but both "Summary results" AND "Per request results" are disabled.
 
 **Warning:** "Baseline comparison is enabled, but both 'Summary results' and 'Per request results' options are disabled in Quality Gate configuration. Enable at least one option to see baseline data."
 
@@ -222,7 +223,7 @@ This document describes all warning messages that can appear in performance test
 ---
 
 ### Informational Warning: Baseline Comparison Metric Info
-**Conditions:** Baseline is enabled, Per request results is completely OFF (all 3 checkboxes unchecked), and baseline data exists.
+**Conditions:** Baseline is enabled, Per request results is completely OFF, and baseline data exists.
 
 **Warning:** "Baseline comparison uses default metric ([COMPARISON_METRIC]). To select a different comparison metric, enable 'Per request results' in Quality Gate configuration."
 
@@ -277,5 +278,3 @@ This document describes all warning messages that can appear in performance test
 - **Additional warnings** notify about completely disabled sections.
 - **Disabled metrics warnings** list specific metrics that are turned off.
 - **Deviation warnings** are informational and only shown when comparison data is visible.
-
-
