@@ -449,11 +449,13 @@ class ReportBuilder:
         
         # Baseline warnings (independent from SLA, priority order - only one Baseline warning shown)
         if not baseline_enabled and baseline and len(baseline) > 0:
-            # Priority 0: Baseline is disabled but baseline data exists
+            # Priority 0a: Baseline is disabled but baseline data exists
             test_description['baseline_metric_warning'] = "Baseline comparison is disabled in Quality Gate configuration. Enable Baseline to see comparison with previous test results."
         
         elif baseline_enabled and not per_request_enabled and not summary_enabled and baseline and len(baseline) > 0:
             # Priority 1: Baseline enabled but both Summary and Per request results are disabled (all 6 checkboxes OFF)
+            # This is a configuration issue - user enabled Baseline but disabled all sections where it would be displayed
+            # Only shown when baseline data EXISTS (if no baseline test, Priority 0b takes precedence)
             test_description['baseline_metric_warning'] = "Baseline comparison is enabled, but both \"Summary results\" and \"Per request results\" options are disabled in Quality Gate configuration. Enable at least one option to see baseline data."
         
         elif baseline_enabled and summary_enabled and not per_request_enabled and not summary_rt_check and baseline and len(baseline) > 0:
@@ -505,8 +507,8 @@ class ReportBuilder:
         # Informational warnings (shown independently, in addition to Priority warnings)
         
         # Baseline: Show "uses default PCT95" when Per request is completely OFF and Summary RT is enabled
-        # Check per_request_enabled (any metric) because percentile selection requires Per request to be ON
-        if baseline_enabled and not per_request_enabled and summary_rt_check and baseline and len(baseline) > 0:
+        # Baseline: Show "uses default PCT95" when Per request is completely OFF
+        if baseline_enabled and not per_request_enabled and baseline and len(baseline) > 0:
             test_description['baseline_info_warning'] = f"Baseline comparison uses default metric ({comparison_metric.upper()}). To select a different comparison metric, enable \"Per request results\" in Quality Gate configuration."
         
         # SLA: Show info about comparison metric usage and check if selected metric has SLA configured
@@ -1992,7 +1994,8 @@ class ReportBuilder:
         baseline_operational = baseline_enabled and (per_request_enabled or summary_enabled) and baseline_has_data
         
         # Check if Baseline is enabled but no baseline data exists
-        baseline_enabled_but_missing = baseline_enabled and (per_request_enabled or summary_enabled) and not baseline_has_data
+        # Priority 0b: Show this warning regardless of section settings - if Baseline is enabled, user needs to set a baseline test
+        baseline_enabled_but_missing = baseline_enabled and not baseline_has_data
         
         if baseline_enabled_but_missing:
             # Baseline is enabled in Quality Gate but no baseline test is defined
