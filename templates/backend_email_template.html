@@ -33,10 +33,68 @@
 </table>
 
 <div style="margin: 0; padding: 0;">
+    {% if t_params.debug_quality_gate_config %}
+    <!-- DEBUG SECTION - Quality Gate Config -->
+    <div style="margin: 24px 12px 20px 12px; padding: 12px; background: #E3F2FD; border: 1px solid #2196F3; border-radius: 4px;">
+        <p style="margin: 0 0 8px 0; font-weight: 700; color: #0D47A1; font-size: 14px;">🔍 DEBUG: Quality Gate Configuration</p>
+        <p style="margin: 0; font-size: 12px; color: #0D47A1; line-height: 18px;">
+            <strong>RAW quality_gate_config structure:</strong><br>
+            <pre style="background: #FFFFFF; padding: 8px; border-radius: 4px; overflow: auto; max-height: 300px; font-size: 10px;">{{ t_params.debug_quality_gate_config.raw_quality_gate_config }}</pre>
+            <br>
+            <strong>SLA.checked:</strong> {{ t_params.debug_quality_gate_config.SLA_checked }}<br>
+            <strong>baseline.checked:</strong> {{ t_params.debug_quality_gate_config.baseline_checked }}<br>
+            
+            <strong>Per Request Results:</strong><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• check_response_time: {{ t_params.debug_quality_gate_config.per_request_results.check_response_time }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• check_error_rate: {{ t_params.debug_quality_gate_config.per_request_results.check_error_rate }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• check_throughput: {{ t_params.debug_quality_gate_config.per_request_results.check_throughput }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• response_time_deviation: {{ t_params.debug_quality_gate_config.per_request_results.response_time_deviation }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• error_rate_deviation: {{ t_params.debug_quality_gate_config.per_request_results.error_rate_deviation }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• throughput_deviation: {{ t_params.debug_quality_gate_config.per_request_results.throughput_deviation }}<br>
+            
+            <strong>Summary Results:</strong><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• check_response_time: {{ t_params.debug_quality_gate_config.summary_results.check_response_time }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• check_error_rate: {{ t_params.debug_quality_gate_config.summary_results.check_error_rate }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• check_throughput: {{ t_params.debug_quality_gate_config.summary_results.check_throughput }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• response_time_deviation: {{ t_params.debug_quality_gate_config.summary_results.response_time_deviation }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• error_rate_deviation: {{ t_params.debug_quality_gate_config.summary_results.error_rate_deviation }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• throughput_deviation: {{ t_params.debug_quality_gate_config.summary_results.throughput_deviation }}<br>
+            
+            <strong>Calculated Flags:</strong><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_enabled: {{ t_params.debug_quality_gate_config.calculated_flags.per_request_enabled }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_rt_check: {{ t_params.debug_quality_gate_config.calculated_flags.per_request_rt_check }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_er_check: {{ t_params.debug_quality_gate_config.calculated_flags.per_request_er_check }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_tp_check: {{ t_params.debug_quality_gate_config.calculated_flags.per_request_tp_check }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• summary_enabled: {{ t_params.debug_quality_gate_config.calculated_flags.summary_enabled }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• summary_rt_check: {{ t_params.debug_quality_gate_config.calculated_flags.summary_rt_check }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• summary_er_check: {{ t_params.debug_quality_gate_config.calculated_flags.summary_er_check }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• summary_tp_check: {{ t_params.debug_quality_gate_config.calculated_flags.summary_tp_check }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• sla_enabled: {{ t_params.debug_quality_gate_config.calculated_flags.sla_enabled }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• baseline_enabled: {{ t_params.debug_quality_gate_config.calculated_flags.baseline_enabled }}<br>
+        </p>
+    </div>
+    {% endif %}
+    
+    {% if t_params.sla_info_block_debug %}
+    <div style="margin: 12px; padding: 12px; background-color: #FFE4E1; border-left: 4px solid #FF6347; border-radius: 4px;">
+        <p style="margin: 0 0 8px 0; color: #8B0000; font-size: 12px; font-weight: 700;">
+            🔍 DEBUG: SLA Info Block Execution
+        </p>
+        <p style="margin: 0; color: #8B0000; font-size: 11px; font-family: monospace; white-space: pre-wrap;">
+<strong>SLA Info Warning Block Analysis:</strong>
+            • sla_info_block_entered: {{ t_params.sla_info_block_debug.sla_info_block_entered }}<br>
+            • sla_enabled (from create_api_email_body line 195): {{ t_params.sla_info_block_debug.sla_enabled }}<br>
+            • summary_rt_check: {{ t_params.sla_info_block_debug.summary_rt_check }}<br>
+            • per_request_rt_check: {{ t_params.sla_info_block_debug.per_request_rt_check }}<br>
+            • Condition result (sla_enabled AND (summary_rt_check OR per_request_rt_check)): {{ t_params.sla_info_block_debug.condition_result }}<br>
+            • sla_info_warning value: {{ t_params.sla_info_warning if t_params.sla_info_warning else 'None' }}<br>
+        </p>
+    </div>
+    {% endif %}
     {% if t_params.debug_info %}
-    <!-- DEBUG SECTION - Show at the top -->
+    <!-- DEBUG SECTION - Threshold Info -->
     <div style="margin: 24px 12px 20px 12px; padding: 12px; background: #FFF3CD; border: 1px solid #FFC107; border-radius: 4px;">
-        <p style="margin: 0 0 8px 0; font-weight: 700; color: #856404; font-size: 14px;">🔍 DEBUG INFO</p>
+        <p style="margin: 0 0 8px 0; font-weight: 700; color: #856404; font-size: 14px;">🔍 DEBUG: Threshold Processing</p>
         <p style="margin: 0; font-size: 12px; color: #856404; line-height: 18px;">
             <strong>sla_has_every:</strong> {{ t_params.debug_info.sla_has_every }}<br>
             <strong>comparison_metric:</strong> {{ t_params.debug_info.comparison_metric }}<br>
@@ -185,22 +243,6 @@
     </div>
     {% endif %}
 
-    {% if baseline_and_thresholds.has_disabled_summary_baseline and not t_params.baseline_metric_warning %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> Summary results baseline comparison is disabled. Enable "Summary results" in Quality Gate configuration to see baseline for general metrics.
-        </p>
-    </div>
-    {% endif %}
-
-    {% if baseline_and_thresholds.has_disabled_baseline and not t_params.baseline_metric_warning %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> Per request baseline comparison is disabled. Enable "Per request results" in Quality Gate configuration to see baseline for individual requests.
-        </p>
-    </div>
-    {% endif %}
-
     {% if t_params.baseline_info_warning %}
     <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
         <p style="margin: 0; color: #0D47A1; font-size: 12px;">
@@ -249,13 +291,6 @@
     </div>
     {% endif %}
 
-    {% if baseline_and_thresholds.has_missing_sla and not baseline_and_thresholds.show_threshold_column and not t_params.sla_metric_warning and not t_params.sla_info_warning and t_params.summary_rt_check %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> SLA thresholds are not configured for {{ general_metrics.comparison_metric }} metric. Configure SLA thresholds in Thresholds section to see threshold values and differences in Request metrics and General metrics tables.
-        </p>
-    </div>
-    {% endif %}
     <div style="margin-top: 24px;">
         <table style="width: 100%;">
             <tbody>

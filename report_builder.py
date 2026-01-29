@@ -238,6 +238,8 @@ class ReportBuilder:
         test_description['summary_rt_check'] = summary_rt_check
         test_description['summary_er_check'] = summary_er_check
         test_description['summary_tp_check'] = summary_tp_check
+        test_description['sla_enabled'] = sla_enabled
+        test_description['baseline_enabled'] = baseline_enabled
         
         # Initialize warning fields in test_description
         if 'sla_metric_warning' not in test_description:
@@ -280,7 +282,55 @@ class ReportBuilder:
         # DEBUG: Store debug info for threshold analysis if debug mode is enabled
         # Control via args['debug_mode'] or environment variable DEBUG_MODE=true
         import os
-        debug_mode_enabled = args.get('debug_mode', False) or os.getenv('DEBUG_MODE', '').lower() == 'true'
+        # debug_mode_enabled = args.get('debug_mode', False) or os.getenv('DEBUG_MODE', '').lower() == 'true'
+        debug_mode_enabled = True
+        
+        if debug_mode_enabled:
+            # DEBUG: Extract complete quality_gate_config structure
+            quality_gate_config = args.get('quality_gate_config', {})
+            
+            # FULL RAW DUMP of quality_gate_config
+            import json
+            try:
+                debug_qg_raw = json.dumps(quality_gate_config, indent=2, default=str)
+            except:
+                debug_qg_raw = str(quality_gate_config)
+            
+            debug_qg = {
+                'raw_quality_gate_config': debug_qg_raw,  # Full structure as JSON string
+                'SLA_checked': quality_gate_config.get('SLA', {}).get('checked', None),
+                'baseline_checked': quality_gate_config.get('baseline', {}).get('checked', None),
+                'per_request_results': {
+                    'check_response_time': per_request_results_config.get('check_response_time', None),
+                    'check_error_rate': per_request_results_config.get('check_error_rate', None),
+                    'check_throughput': per_request_results_config.get('check_throughput', None),
+                    'response_time_deviation': per_request_results_config.get('response_time_deviation', None),
+                    'error_rate_deviation': per_request_results_config.get('error_rate_deviation', None),
+                    'throughput_deviation': per_request_results_config.get('throughput_deviation', None),
+                },
+                'summary_results': {
+                    'check_response_time': summary_results_config.get('check_response_time', None),
+                    'check_error_rate': summary_results_config.get('check_error_rate', None),
+                    'check_throughput': summary_results_config.get('check_throughput', None),
+                    'response_time_deviation': summary_results_config.get('response_time_deviation', None),
+                    'error_rate_deviation': summary_results_config.get('error_rate_deviation', None),
+                    'throughput_deviation': summary_results_config.get('throughput_deviation', None),
+                },
+                'calculated_flags': {
+                    'per_request_enabled': per_request_enabled,
+                    'per_request_rt_check': per_request_rt_check,
+                    'per_request_er_check': per_request_er_check,
+                    'per_request_tp_check': per_request_tp_check,
+                    'summary_enabled': summary_enabled,
+                    'summary_rt_check': summary_rt_check,
+                    'summary_er_check': summary_er_check,
+                    'summary_tp_check': summary_tp_check,
+                    'sla_enabled': sla_enabled,
+                    'baseline_enabled': baseline_enabled,
+                }
+            }
+            
+            test_description['debug_quality_gate_config'] = debug_qg
         
         if sla_enabled and debug_mode_enabled:
             debug_all = baseline_and_thresholds_temp.get('debug_all_thresholds', [])
@@ -462,7 +512,10 @@ class ReportBuilder:
         # SLA: Show info about comparison metric usage and check if selected metric has SLA configured
         # Show when RT data is displayed (Summary RT OR Per Request RT enabled)
         # Comparison metric selection is controlled by per_request_enabled, but this warning validates the chosen metric
+        # DEBUG: Log if this block is entered
+        sla_info_block_entered = False
         if sla_enabled and (summary_rt_check or per_request_rt_check):
+            sla_info_block_entered = True
             # First check if specific comparison_metric has SLA configured (more specific check)
             has_comparison_metric_sla = False
             if thresholds:
@@ -479,15 +532,10 @@ class ReportBuilder:
                 if has_any_rt_sla:
                     # RT SLA exists but not for comparison_metric - show missing metric warning
                     if per_request_enabled and not test_description.get('sla_metric_warning'):
-                        # Collect all configured RT SLA metrics to show in the message
-                        configured_rt_metrics = []
-                        if thresholds:
-                            for th in thresholds:
-                                if th.get('target') == 'response_time':
-                                    metric = th.get('aggregation', 'pct95')
-                                    if metric not in configured_rt_metrics:
-                                        configured_rt_metrics.append(metric)
-                        configured_rt_metrics = sorted(configured_rt_metrics, reverse=True)
+                        # Use all_sla_rt_metrics from API (already collected in baseline_and_thresholds_temp)
+                        # This ensures we show ALL configured RT metrics, not just those in filtered thresholds
+                        all_sla_rt_metrics = baseline_and_thresholds_temp.get('all_sla_rt_metrics', [])
+                        configured_rt_metrics = sorted(list(all_sla_rt_metrics), reverse=True)
                         
                         # Show detailed message with available metrics
                         if configured_rt_metrics and len(configured_rt_metrics) > 1:
@@ -496,7 +544,7 @@ class ReportBuilder:
                         elif configured_rt_metrics:
                             test_description['sla_info_warning'] = f"SLA thresholds are not configured for {comparison_metric.upper()} metric. SLA is available only for {configured_rt_metrics[0].upper()}. Configure SLA thresholds in Thresholds section to see threshold values and differences in Request metrics and General metrics tables or select a different metric to see data."
                         else:
-                            # Fallback if we can't determine configured metrics
+                            # Fallback if we can't determine configured metrics (should not happen if has_any_rt_sla is True)
                             test_description['sla_info_warning'] = f"SLA comparison uses {comparison_metric.upper()}, but {comparison_metric.upper()} is not configured in Thresholds. SLA values will be hidden. Configure {comparison_metric.upper()} SLA or select a different metric to see data."
                     else:
                         test_description['sla_info_warning'] = f"SLA uses default {comparison_metric.upper()}, but {comparison_metric.upper()} is not configured in Thresholds. SLA values will be hidden. Configure {comparison_metric.upper()} SLA or enable \"Per request results\" to select a different metric."
@@ -506,6 +554,16 @@ class ReportBuilder:
                         test_description['sla_info_warning'] = f"SLA comparison uses {comparison_metric.upper()}, but Response Time is not configured in Thresholds. SLA values will be hidden. Configure Response Time SLA to see data."
                     else:
                         test_description['sla_info_warning'] = f"SLA uses default {comparison_metric.upper()}, but Response Time is not configured in Thresholds. SLA values will be hidden. Configure Response Time SLA or enable \"Per request results\" to select a different metric."
+        
+        # DEBUG: Store whether SLA info block was entered
+        if debug_mode_enabled:
+            test_description['sla_info_block_debug'] = {
+                'sla_info_block_entered': sla_info_block_entered,
+                'sla_enabled': sla_enabled,
+                'summary_rt_check': summary_rt_check,
+                'per_request_rt_check': per_request_rt_check,
+                'condition_result': sla_enabled and (summary_rt_check or per_request_rt_check)
+            }
         
         # Deviation warnings (informational - show when deviation is enabled AND data is visible AND thresholds exist)
         quality_gate_config = args.get('quality_gate_config', {})
@@ -1940,7 +1998,7 @@ class ReportBuilder:
             # Baseline is enabled in Quality Gate but no baseline test is defined
             test_params["performance_degradation_rate"] = f'-'
             test_params["baseline_status"] = "missing"
-            test_params["baseline_note"] = "⚠ Baseline check is enabled but no baseline is set. Please set a baseline test first."
+            test_params["baseline_note"] = "Baseline check is enabled but no baseline is set. Please set a baseline test first."
         elif args.get("performance_degradation_rate_qg", None) and baseline_operational:
             if test_params["performance_degradation_rate"] > args["performance_degradation_rate_qg"]:
                 test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
