@@ -232,88 +232,6 @@
     </div>
     {% endif %}
 
-    <!-- YELLOW WARNINGS (Deviation) - display first -->
-    {% if t_params.baseline_deviation_warning %}
-    <div style="margin: 24px 12px 12px; padding: 12px; background-color: #FFF9E6; border-left: 4px solid #FFC107; border-radius: 4px;">
-        <p style="margin: 0; color: #8B6F00; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> Baseline has configured acceptable deviation. Validation results take into account the allowed deviation range when comparing actual values against baseline.
-        </p>
-    </div>
-    {% endif %}
-
-    {% if t_params.sla_deviation_warning %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #FFF9E6; border-left: 4px solid #FFC107; border-radius: 4px;">
-        <p style="margin: 0; color: #8B6F00; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> SLA has configured acceptable deviation. Validation results take into account the allowed deviation range when comparing actual values against SLA thresholds.
-        </p>
-    </div>
-    {% endif %}
-
-    <!-- BLUE WARNINGS (Configuration) - display second -->
-    {% if t_params.baseline_metric_warning %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_metric_warning }}
-        </p>
-    </div>
-    {% endif %}
-
-    {% if t_params.baseline_status == 'missing' %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_note }}
-        </p>
-    </div>
-    {% endif %}
-
-    {% if t_params.baseline_info_warning %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_info_warning }}
-        </p>
-    </div>
-    {% endif %}
-
-    {% if t_params.baseline_disabled_metrics_info %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_disabled_metrics_info }}
-        </p>
-    </div>
-    {% endif %}
-
-    {% if t_params.sla_metric_warning %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.sla_metric_warning }}
-        </p>
-    </div>
-    {% endif %}
-
-    {% if t_params.sla_disabled_metrics_info %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.sla_disabled_metrics_info }}
-        </p>
-    </div>
-    {% endif %}
-
-    {% if t_params.sla_info_warning %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.sla_info_warning }}
-        </p>
-    </div>
-    {% endif %}
-
-    {% if t_params.sla_multiple_metrics_info %}
-    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
-        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
-            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.sla_multiple_metrics_info }}
-        </p>
-    </div>
-    {% endif %}
-
     <div style="margin-top: 24px;">
         <table style="width: 100%;">
             <tbody>
@@ -583,6 +501,88 @@
         {% endfor %}
         </tbody>
     </table>
+
+    <!-- YELLOW WARNINGS (Deviation) - display first -->
+    {% if t_params.baseline_deviation_warning %}
+    <div style="margin: 24px 12px 12px; padding: 12px; background-color: #FFF9E6; border-left: 4px solid #FFC107; border-radius: 4px;">
+        <p style="margin: 0; color: #8B6F00; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> Baseline has configured acceptable deviation. Validation results take into account the allowed deviation range when comparing actual values against baseline.
+        </p>
+    </div>
+    {% endif %}
+
+    {% if t_params.sla_deviation_warning %}
+    <div style="margin: 12px 12px; padding: 12px; background-color: #FFF9E6; border-left: 4px solid #FFC107; border-radius: 4px;">
+        <p style="margin: 0; color: #8B6F00; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> SLA has configured acceptable deviation. Validation results take into account the allowed deviation range when comparing actual values against SLA thresholds.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- BLUE WARNINGS (Configuration) - display second -->
+    {% if t_params.baseline_metric_warning %}
+    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_metric_warning }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if t_params.baseline_status == 'missing' %}
+    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_note }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if t_params.baseline_info_warning %}
+    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_info_warning }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if t_params.baseline_disabled_metrics_info %}
+    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.baseline_disabled_metrics_info }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if t_params.sla_metric_warning %}
+    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.sla_metric_warning }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if t_params.sla_disabled_metrics_info %}
+    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.sla_disabled_metrics_info }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if t_params.sla_info_warning %}
+    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.sla_info_warning }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if t_params.sla_multiple_metrics_info %}
+    <div style="margin: 12px 12px; padding: 12px; background-color: #E3F2FD; border-left: 4px solid #42A5F5; border-radius: 4px;">
+        <p style="margin: 0; color: #0D47A1; font-size: 12px;">
+            <span style="font-weight: 700;">ℹ️ Note:</span> {{ t_params.sla_multiple_metrics_info }}
+        </p>
+    </div>
+    {% endif %}
 
 </div>
 
