@@ -43,7 +43,7 @@
         </p>
     </div>
     {% endif %}
-    
+
     {% if t_params.sla_info_block_debug %}
     <div style="margin: 12px; padding: 12px; background-color: #FFE4E1; border-left: 4px solid #FF6347; border-radius: 4px;">
         <p style="margin: 0 0 8px 0; color: #8B0000; font-size: 12px; font-weight: 700;">
@@ -67,7 +67,7 @@
         <p style="margin: 0; font-size: 12px; color: #856404; line-height: 18px;">
             <strong>sla_has_every:</strong> {{ t_params.debug_info.sla_has_every }}<br>
             <strong>comparison_metric:</strong> {{ t_params.debug_info.comparison_metric }}<br>
-            
+
             <strong>INPUT thresholds (parameter passed to method):</strong><br>
             {% if t_params.debug_info.input_thresholds %}
                 {% for th in t_params.debug_info.input_thresholds %}
@@ -76,7 +76,7 @@
             {% else %}
                 &nbsp;&nbsp;&nbsp;&nbsp;none<br>
             {% endif %}
-            
+
             <strong>API thresholds (fetched from Galloper for baseline):</strong><br>
             {% if t_params.debug_info.api_thresholds %}
                 {% for th in t_params.debug_info.api_thresholds %}
@@ -85,7 +85,7 @@
             {% else %}
                 &nbsp;&nbsp;&nbsp;&nbsp;none<br>
             {% endif %}
-            
+
             <strong>ALL thresholds (before target filter in main loop):</strong><br>
             {% if t_params.debug_info.all_thresholds %}
                 {% for th in t_params.debug_info.all_thresholds %}
@@ -94,7 +94,7 @@
             {% else %}
                 &nbsp;&nbsp;&nbsp;&nbsp;none<br>
             {% endif %}
-            
+
             <strong>RT thresholds only (after target filter):</strong><br>
             {% if t_params.debug_info.rt_thresholds %}
                 {% for th in t_params.debug_info.rt_thresholds %}
@@ -103,7 +103,7 @@
             {% else %}
                 &nbsp;&nbsp;&nbsp;&nbsp;none<br>
             {% endif %}
-            
+
             {% if t_params.debug_info.threshold_lookups %}
             <strong>Threshold lookup samples (first 3 requests):</strong><br>
                 {% for lookup in t_params.debug_info.threshold_lookups %}
@@ -113,7 +113,7 @@
         </p>
     </div>
     {% endif %}
-    
+
     {% if t_params.debug_baseline_calculation %}
     <!-- DEBUG SECTION - Baseline Calculation -->
     <div style="margin: 24px 12px 20px 12px; padding: 12px; background: #E8F5E8; border: 1px solid #4CAF50; border-radius: 4px;">
@@ -123,17 +123,17 @@
             &nbsp;&nbsp;&nbsp;&nbsp;• summary_rt_check: {{ t_params.debug_baseline_calculation.summary_rt_check if t_params.debug_baseline_calculation.summary_rt_check is defined else 'N/A' }}<br>
             &nbsp;&nbsp;&nbsp;&nbsp;• summary_er_check: {{ t_params.debug_baseline_calculation.summary_er_check if t_params.debug_baseline_calculation.summary_er_check is defined else 'N/A' }}<br>
             &nbsp;&nbsp;&nbsp;&nbsp;• summary_tp_check: {{ t_params.debug_baseline_calculation.summary_tp_check if t_params.debug_baseline_calculation.summary_tp_check is defined else 'N/A' }}<br>
-            
+
             <strong>Per Request Metrics Checks:</strong><br>
             &nbsp;&nbsp;&nbsp;&nbsp;• per_request_rt_check: {{ t_params.debug_baseline_calculation.per_request_rt_check if t_params.debug_baseline_calculation.per_request_rt_check is defined else 'N/A' }}<br>
             &nbsp;&nbsp;&nbsp;&nbsp;• per_request_er_check: {{ t_params.debug_baseline_calculation.per_request_er_check if t_params.debug_baseline_calculation.per_request_er_check is defined else 'N/A' }}<br>
             &nbsp;&nbsp;&nbsp;&nbsp;• per_request_tp_check: {{ t_params.debug_baseline_calculation.per_request_tp_check if t_params.debug_baseline_calculation.per_request_tp_check is defined else 'N/A' }}<br>
-            
+
             <strong>Calculation Summary:</strong><br>
             &nbsp;&nbsp;&nbsp;&nbsp;• Total comparisons (metrics checked): {{ t_params.debug_baseline_calculation.total_comparisons if t_params.debug_baseline_calculation.total_comparisons is defined else 'N/A' }}<br>
             &nbsp;&nbsp;&nbsp;&nbsp;• Total violated (metrics failed): {{ t_params.debug_baseline_calculation.total_violated if t_params.debug_baseline_calculation.total_violated is defined else 'N/A' }}<br>
             &nbsp;&nbsp;&nbsp;&nbsp;• Failed rate (%): {{ "%.2f"|format(t_params.debug_baseline_calculation.performance_degradation_rate) if t_params.debug_baseline_calculation.performance_degradation_rate is defined else 'N/A' }}%<br>
-            
+
             <strong>"All" Row Metrics Details:</strong><br>
             {% if t_params.debug_baseline_calculation.all_details %}
                 {% for detail in t_params.debug_baseline_calculation.all_details %}
@@ -142,7 +142,7 @@
             {% else %}
                 &nbsp;&nbsp;&nbsp;&nbsp;none<br>
             {% endif %}
-            
+
             <strong>Individual Requests Details (first 15):</strong><br>
             {% if t_params.debug_baseline_calculation.individual_details %}
                 {% for detail in t_params.debug_baseline_calculation.individual_details %}
@@ -151,7 +151,7 @@
             {% else %}
                 &nbsp;&nbsp;&nbsp;&nbsp;none<br>
             {% endif %}
-            
+
             <strong>Counts:</strong><br>
             &nbsp;&nbsp;&nbsp;&nbsp;• All passed: {{ t_params.debug_baseline_calculation.all_passed if t_params.debug_baseline_calculation.all_passed is defined else 'N/A' }}<br>
             &nbsp;&nbsp;&nbsp;&nbsp;• All failed: {{ t_params.debug_baseline_calculation.all_failed if t_params.debug_baseline_calculation.all_failed is defined else 'N/A' }}<br>
@@ -160,7 +160,7 @@
         </p>
     </div>
     {% endif %}
-    
+
     <p style="margin: 24px 0 20px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Execution Summary</p>
     <table style="border-spacing: 10px;">
         <tr>
@@ -204,6 +204,13 @@
             </td>
             {% endif %}
         </tr>
+        {% if t_params.current_report_url %}
+        <tr>
+            <td colspan="3" style="padding: 8px 12px;">
+                <a href="{{ t_params.current_report_url }}" style="color: #875FFC; text-decoration: none; font-size: 14px;">View current test report →</a>
+            </td>
+        </tr>
+        {% endif %}
         {% if t_params.baseline_status != 'N/A' and t_params.baseline_status != 'missing' and t_params.baseline_report_url %}
         <tr>
             <td colspan="3" style="padding: 8px 12px;">
