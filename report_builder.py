@@ -1281,10 +1281,15 @@ class ReportBuilder:
                 # Case-insensitive match for 'all'
                 if th.get('request_name', '').lower() == 'all':
                     if th['target'] == 'error_rate':
-                        # Apply deviation for error_rate
+                        # Apply deviation for error_rate from Quality Gate
                         threshold_original = th['value']
                         threshold_er_original = round(threshold_original, 2)  # Store original without deviation
-                        deviation = th.get('deviation', 0)
+                        
+                        # Get deviation from Quality Gate summary_results
+                        quality_gate_config = args.get('quality_gate_config', {})
+                        settings = quality_gate_config.get('settings', {})
+                        config_section = settings.get('summary_results', {})
+                        deviation = config_section.get('error_rate_deviation', 0)
                         
                         if th.get('comparison') in ['gt', 'gte']:
                             threshold_er_value = round(threshold_original + deviation, 2)
@@ -1302,7 +1307,12 @@ class ReportBuilder:
                         # Apply deviation for throughput
                         threshold_original = th['value']
                         threshold_tp_original = round(threshold_original, 2)  # Store original without deviation
-                        deviation = th.get('deviation', 0)
+                        
+                        # Get deviation from Quality Gate summary_results
+                        quality_gate_config = args.get('quality_gate_config', {})
+                        settings = quality_gate_config.get('settings', {})
+                        config_section = settings.get('summary_results', {})
+                        deviation = config_section.get('throughput_deviation', 0)
                         
                         if th.get('comparison') in ['gt', 'gte']:
                             threshold_tp_value = round(threshold_original + deviation, 2)
@@ -1323,8 +1333,12 @@ class ReportBuilder:
                             # Calculate threshold WITH deviation for display
                             threshold_original = th['value'] / 1000
                             threshold_rt_original = round(threshold_original, 2)  # Store original without deviation
-                            # Use deviation from THIS threshold (not from another one)
-                            deviation = th.get('deviation', 0) / 1000
+                            
+                            # Get deviation from Quality Gate summary_results
+                            quality_gate_config = args.get('quality_gate_config', {})
+                            settings = quality_gate_config.get('settings', {})
+                            config_section = settings.get('summary_results', {})
+                            deviation = config_section.get('response_time_deviation', 0) / 1000
                             
                             # Apply deviation based on comparison type
                             if th.get('comparison') in ['gt', 'gte']:
@@ -1658,8 +1672,17 @@ class ReportBuilder:
                 # Calculate threshold WITH deviation for display
                 threshold_original = float(threshold_for_request['value']) / 1000
                 threshold_original_value = round(threshold_original, 2)  # Store original without deviation
-                # Use deviation from THIS threshold (not from another one)
-                deviation = threshold_for_request.get('deviation', 0) / 1000  # Convert to seconds
+                
+                # Get response_time deviation from Quality Gate config (unified for SLA, ignore threshold deviation)
+                quality_gate_config = args.get('quality_gate_config', {})
+                settings = quality_gate_config.get('settings', {})
+                
+                if request['request_name'].lower() == 'all':
+                    config_section = settings.get('summary_results', {})
+                else:
+                    config_section = settings.get('per_request_results', {})
+                
+                deviation = config_section.get('response_time_deviation', 0) / 1000  # Convert to seconds
                 
                 # Apply deviation based on comparison type
                 if threshold_for_request.get('comparison') in ['gt', 'gte']:
