@@ -40,37 +40,6 @@
         <p style="margin: 0; font-size: 12px; color: #0D47A1; line-height: 18px;">
             <strong>RAW quality_gate_config structure:</strong><br>
             <pre style="background: #FFFFFF; padding: 8px; border-radius: 4px; overflow: auto; max-height: 300px; font-size: 10px;">{{ t_params.debug_quality_gate_config.raw_quality_gate_config }}</pre>
-            <br>
-            <strong>SLA.checked:</strong> {{ t_params.debug_quality_gate_config.SLA_checked }}<br>
-            <strong>baseline.checked:</strong> {{ t_params.debug_quality_gate_config.baseline_checked }}<br>
-            
-            <strong>Per Request Results:</strong><br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• check_response_time: {{ t_params.debug_quality_gate_config.per_request_results.check_response_time }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• check_error_rate: {{ t_params.debug_quality_gate_config.per_request_results.check_error_rate }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• check_throughput: {{ t_params.debug_quality_gate_config.per_request_results.check_throughput }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• response_time_deviation: {{ t_params.debug_quality_gate_config.per_request_results.response_time_deviation }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• error_rate_deviation: {{ t_params.debug_quality_gate_config.per_request_results.error_rate_deviation }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• throughput_deviation: {{ t_params.debug_quality_gate_config.per_request_results.throughput_deviation }}<br>
-            
-            <strong>Summary Results:</strong><br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• check_response_time: {{ t_params.debug_quality_gate_config.summary_results.check_response_time }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• check_error_rate: {{ t_params.debug_quality_gate_config.summary_results.check_error_rate }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• check_throughput: {{ t_params.debug_quality_gate_config.summary_results.check_throughput }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• response_time_deviation: {{ t_params.debug_quality_gate_config.summary_results.response_time_deviation }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• error_rate_deviation: {{ t_params.debug_quality_gate_config.summary_results.error_rate_deviation }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• throughput_deviation: {{ t_params.debug_quality_gate_config.summary_results.throughput_deviation }}<br>
-            
-            <strong>Calculated Flags:</strong><br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_enabled: {{ t_params.debug_quality_gate_config.calculated_flags.per_request_enabled }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_rt_check: {{ t_params.debug_quality_gate_config.calculated_flags.per_request_rt_check }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_er_check: {{ t_params.debug_quality_gate_config.calculated_flags.per_request_er_check }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_tp_check: {{ t_params.debug_quality_gate_config.calculated_flags.per_request_tp_check }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• summary_enabled: {{ t_params.debug_quality_gate_config.calculated_flags.summary_enabled }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• summary_rt_check: {{ t_params.debug_quality_gate_config.calculated_flags.summary_rt_check }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• summary_er_check: {{ t_params.debug_quality_gate_config.calculated_flags.summary_er_check }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• summary_tp_check: {{ t_params.debug_quality_gate_config.calculated_flags.summary_tp_check }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• sla_enabled: {{ t_params.debug_quality_gate_config.calculated_flags.sla_enabled }}<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;• baseline_enabled: {{ t_params.debug_quality_gate_config.calculated_flags.baseline_enabled }}<br>
         </p>
     </div>
     {% endif %}
@@ -141,6 +110,53 @@
                     &nbsp;&nbsp;&nbsp;&nbsp;• {{ lookup }}<br>
                 {% endfor %}
             {% endif %}
+        </p>
+    </div>
+    {% endif %}
+    
+    {% if t_params.debug_baseline_calculation %}
+    <!-- DEBUG SECTION - Baseline Calculation -->
+    <div style="margin: 24px 12px 20px 12px; padding: 12px; background: #E8F5E8; border: 1px solid #4CAF50; border-radius: 4px;">
+        <p style="margin: 0 0 8px 0; font-weight: 700; color: #2E7D32; font-size: 14px;">🔍 DEBUG: Baseline Error Rate Calculation</p>
+        <p style="margin: 0; font-size: 12px; color: #2E7D32; line-height: 18px;">
+            <strong>Summary Metrics Checks:</strong><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• summary_rt_check: {{ t_params.debug_baseline_calculation.summary_rt_check if t_params.debug_baseline_calculation.summary_rt_check is defined else 'N/A' }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• summary_er_check: {{ t_params.debug_baseline_calculation.summary_er_check if t_params.debug_baseline_calculation.summary_er_check is defined else 'N/A' }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• summary_tp_check: {{ t_params.debug_baseline_calculation.summary_tp_check if t_params.debug_baseline_calculation.summary_tp_check is defined else 'N/A' }}<br>
+            
+            <strong>Per Request Metrics Checks:</strong><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_rt_check: {{ t_params.debug_baseline_calculation.per_request_rt_check if t_params.debug_baseline_calculation.per_request_rt_check is defined else 'N/A' }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_er_check: {{ t_params.debug_baseline_calculation.per_request_er_check if t_params.debug_baseline_calculation.per_request_er_check is defined else 'N/A' }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• per_request_tp_check: {{ t_params.debug_baseline_calculation.per_request_tp_check if t_params.debug_baseline_calculation.per_request_tp_check is defined else 'N/A' }}<br>
+            
+            <strong>Calculation Summary:</strong><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• Total comparisons (metrics checked): {{ t_params.debug_baseline_calculation.total_comparisons if t_params.debug_baseline_calculation.total_comparisons is defined else 'N/A' }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• Total violated (metrics failed): {{ t_params.debug_baseline_calculation.total_violated if t_params.debug_baseline_calculation.total_violated is defined else 'N/A' }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• Failed rate (%): {{ "%.2f"|format(t_params.debug_baseline_calculation.performance_degradation_rate) if t_params.debug_baseline_calculation.performance_degradation_rate is defined else 'N/A' }}%<br>
+            
+            <strong>"All" Row Metrics Details:</strong><br>
+            {% if t_params.debug_baseline_calculation.all_details %}
+                {% for detail in t_params.debug_baseline_calculation.all_details %}
+                    &nbsp;&nbsp;&nbsp;&nbsp;• {{ detail.metric }}: current={{ detail.current }}, baseline={{ detail.baseline }}, baseline_with_dev={{ detail.baseline_with_dev }}, deviation={{ detail.deviation }}, comparison={{ detail.comparison }}, result={{ detail.result }}<br>
+                {% endfor %}
+            {% else %}
+                &nbsp;&nbsp;&nbsp;&nbsp;none<br>
+            {% endif %}
+            
+            <strong>Individual Requests Details (first 15):</strong><br>
+            {% if t_params.debug_baseline_calculation.individual_details %}
+                {% for detail in t_params.debug_baseline_calculation.individual_details %}
+                    &nbsp;&nbsp;&nbsp;&nbsp;• {{ detail.name }}: current={{ detail.current }}, baseline={{ detail.baseline }}, baseline_with_dev={{ detail.baseline_with_dev }}, deviation={{ detail.deviation }}, result={{ detail.result }}<br>
+                {% endfor %}
+            {% else %}
+                &nbsp;&nbsp;&nbsp;&nbsp;none<br>
+            {% endif %}
+            
+            <strong>Counts:</strong><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• All passed: {{ t_params.debug_baseline_calculation.all_passed if t_params.debug_baseline_calculation.all_passed is defined else 'N/A' }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• All failed: {{ t_params.debug_baseline_calculation.all_failed if t_params.debug_baseline_calculation.all_failed is defined else 'N/A' }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• Individual passed: {{ t_params.debug_baseline_calculation.individual_passed if t_params.debug_baseline_calculation.individual_passed is defined else 'N/A' }}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;• Individual failed: {{ t_params.debug_baseline_calculation.individual_failed if t_params.debug_baseline_calculation.individual_failed is defined else 'N/A' }}<br>
         </p>
     </div>
     {% endif %}
@@ -465,7 +481,7 @@
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.request_name }}</td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ baseline_result.response_time|format_number }}</td>
             {% if baseline_and_thresholds.show_baseline_column %}
-            <td style="padding: 8px 12px; {% if baseline_result.baseline_value in ['Baseline disabled', 'N/A'] %}font-size: 12px; color: #8492A6; font-style: italic;{% else %}font-size: 14px; color: #757F99;{% endif %} text-align: right; border-bottom: solid 1px #EAEDEF;">{% if baseline_result.baseline_value in ['Baseline disabled', 'N/A'] %}{{ baseline_result.baseline_value }}{% else %}{{ baseline_result.baseline_original_value|format_number }} ({{ baseline_result.baseline_value|format_number }}){% endif %}</td>
+            <td style="padding: 8px 12px; {% if baseline_result.baseline_value in ['Baseline disabled', 'N/A', 'Enable Response Time'] %}font-size: 12px; color: #8492A6; font-style: italic;{% else %}font-size: 14px; color: #757F99;{% endif %} text-align: right; border-bottom: solid 1px #EAEDEF;">{% if baseline_result.baseline_value in ['Baseline disabled', 'N/A', 'Enable Response Time'] %}{{ baseline_result.baseline_value }}{% else %}{{ baseline_result.baseline_original_value|format_number }} ({{ baseline_result.baseline_value|format_number }}){% endif %}</td>
             <td style="padding: 8px 12px; font-size: 14px; {% if baseline_result.baseline == '-' %}color: #8492A6;{% else %}color: {{ baseline_result.baseline_color }};{% endif %} text-align: right; border-bottom: solid 1px #EAEDEF;">{% if baseline_result.baseline == '-' %}{{ baseline_result.baseline }}{% else %}{{ baseline_result.baseline|format_number }}{% endif %}</td>
             {% endif %}
             {% if baseline_and_thresholds.show_threshold_column %}

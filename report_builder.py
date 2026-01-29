@@ -283,7 +283,7 @@ class ReportBuilder:
         # Control via args['debug_mode'] or environment variable DEBUG_MODE=true
         import os
         # debug_mode_enabled = args.get('debug_mode', False) or os.getenv('DEBUG_MODE', '').lower() == 'true'
-        debug_mode_enabled = True
+        debug_mode_enabled = False
         
         if debug_mode_enabled:
             # DEBUG: Extract complete quality_gate_config structure
@@ -331,6 +331,10 @@ class ReportBuilder:
             }
             
             test_description['debug_quality_gate_config'] = debug_qg
+        
+        # DEBUG: Add baseline calculation debug info
+        if debug_mode_enabled and args.get('baseline_debug'):
+            test_description['debug_baseline_calculation'] = args['baseline_debug']
         
         if sla_enabled and debug_mode_enabled:
             debug_all = baseline_and_thresholds_temp.get('debug_all_thresholds', [])
@@ -1578,13 +1582,17 @@ class ReportBuilder:
             else:
                 req['baseline'] = "-"
                 # Show different message based on whether section is completely disabled
-                # For "All" row: disabled if Summary results is OFF (all 3 checkboxes OFF)
+                # For "All" row: disabled if Summary results Response Time is OFF
                 # For individual requests: disabled if Per request results is OFF (all 3 checkboxes OFF)
                 if baseline_data_exists:
                     if request['request_name'].lower() == 'all' and not summary_enabled:
                         req['baseline_value'] = "Baseline disabled"
+                    elif request['request_name'].lower() == 'all' and not summary_rt_check:
+                        req['baseline_value'] = "Enable Response Time"
                     elif request['request_name'].lower() != 'all' and not per_request_enabled:
                         req['baseline_value'] = "Baseline disabled"
+                    elif request['request_name'].lower() != 'all' and per_request_enabled and not per_request_rt_check:
+                        req['baseline_value'] = "Enable Response Time"
                     else:
                         req['baseline_value'] = "N/A"
                 else:
