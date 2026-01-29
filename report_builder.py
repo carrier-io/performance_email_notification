@@ -375,8 +375,11 @@ class ReportBuilder:
                 has_every = baseline_and_thresholds_temp.get('sla_has_every', False)
                 has_missing = baseline_and_thresholds_temp.get('has_missing_sla', False)
                 
-                if has_every:
-                    # Case 4a1: Has "every" fallback, but no "all"
+                if has_every and not has_missing:
+                    # Case 4a1b: Has "every", no "all", some requests covered by specific SLA
+                    test_description['sla_metric_warning'] = f"SLA for {comparison_metric.upper()} uses 'Every' scope and some are configured for individual requests. No general 'All' SLA is configured. Configure 'All' SLA to see aggregated metrics in General metrics table."
+                elif has_every:
+                    # Case 4a1a: Has "every", no "all"
                     test_description['sla_metric_warning'] = f"SLA for {comparison_metric.upper()} uses 'Every' scope (applies to all requests by default). No general 'All' SLA is configured. Configure 'All' SLA to see aggregated metrics in General metrics table."
                 elif has_missing:
                     # Case 4a2b: No "every", no "all", and some requests are missing SLA

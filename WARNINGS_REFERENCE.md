@@ -77,7 +77,9 @@ This document describes all warning messages that can appear in performance test
 ### Priority 4: SLA Metric Mismatch (Response Time only)
 **Conditions:** SLA is enabled, SLA is configured for the comparison metric, but there are issues with scope configuration.
 
-**Warning (Case 4a1 - has "every", no "all"):** "SLA for [METRIC] uses 'Every' scope (applies to all requests by default). No general 'All' SLA is configured. Configure 'All' SLA to see aggregated metrics in General metrics table."
+**Warning (Case 4a1a - has "every", no "all"):** "SLA for [METRIC] uses 'Every' scope (applies to all requests by default). No general 'All' SLA is configured. Configure 'All' SLA to see aggregated metrics in General metrics table."
+
+**Warning (Case 4a1b - has "every", no "all", some requests covered by specific SLA):** "SLA for [METRIC] uses 'Every' scope and some are configured for individual requests. No general 'All' SLA is configured. Configure 'All' SLA to see aggregated metrics in General metrics table."
 
 **Warning (Case 4a2a - no "every", no "all", all requests covered by specific SLA):** "SLA for [METRIC] is configured for individual requests. No general 'All' SLA is configured. Configure 'All' SLA to see aggregated metrics in General metrics table."
 
