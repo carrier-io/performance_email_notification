@@ -172,6 +172,7 @@ class UIEmailNotification:
 
             comparison = {"name": current["name"]}
             metrics = ["lcp", "tbt", "ttfb"] if current["type"] == "page" else ["tbt", "cls", "inp"]
+            impact_metric = "lcp" if current["type"] == "page" else "inp"
             any_failed = False
             any_checked = False
 
@@ -184,13 +185,16 @@ class UIEmailNotification:
                     comparison[f"{metric}_diff"] = "No data"
                     comparison[f"{metric}_diff_color"] = ""
                 else:
-                    any_checked = True
+                    if metric == impact_metric:
+                        any_checked = True
                     baseline_with_deviation = float(baseline[metric]) * (1 + (degradation_rate_setting / 100))
                     baseline_with_deviation = round(baseline_with_deviation, 2)
                     comparison[f"{metric}_baseline"] = baseline_with_deviation
                     diff = round(float(current[metric]) - baseline_with_deviation, 2)
                     if diff > 0:
-                        any_failed = True
+                        if metric == impact_metric:
+                            # Only the impact metric affects status for page/action comparison.
+                            any_failed = True
                         comparison[f"{metric}_diff"] = f'+{diff}'
                         comparison[f"{metric}_diff_color"] = "color:red;"
                     else:
@@ -386,7 +390,7 @@ class UIEmailNotification:
         start_time = t_params["start_time"]
         if len(start_time) > 16:
             start_time = start_time[:16]
-        subject = f"{status_word}{emoji}: {info['name']} ({start_time})"
+        subject = f"{emoji}: {info['name']} ({start_time})"
         date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         email_body = self._get_email_body(
             t_params, results_info, page_comparison, action_comparison,

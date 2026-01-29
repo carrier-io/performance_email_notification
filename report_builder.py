@@ -650,6 +650,10 @@ class ReportBuilder:
             baseline_report_id = self._get_baseline_api_report_id(args, baseline_build_id)
             if baseline_report_id:
                 test_params["baseline_report_url"] = f"{args['galloper_url']}/-/performance/backend/results?result_id={baseline_report_id}"
+        if report_data:
+            report_id = report_data.get("id") or report_data.get("report_id")
+            if report_id:
+                test_params["current_report_url"] = f"{args['galloper_url']}/-/performance/backend/results?result_id={report_id}"
         for param in params:
             test_params[param] = test[0][param]
         
