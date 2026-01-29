@@ -238,6 +238,8 @@ class ReportBuilder:
         test_description['summary_rt_check'] = summary_rt_check
         test_description['summary_er_check'] = summary_er_check
         test_description['summary_tp_check'] = summary_tp_check
+        test_description['sla_enabled'] = sla_enabled
+        test_description['baseline_enabled'] = baseline_enabled
         
         # Initialize warning fields in test_description
         if 'sla_metric_warning' not in test_description:
@@ -280,7 +282,59 @@ class ReportBuilder:
         # DEBUG: Store debug info for threshold analysis if debug mode is enabled
         # Control via args['debug_mode'] or environment variable DEBUG_MODE=true
         import os
-        debug_mode_enabled = args.get('debug_mode', False) or os.getenv('DEBUG_MODE', '').lower() == 'true'
+        # debug_mode_enabled = args.get('debug_mode', False) or os.getenv('DEBUG_MODE', '').lower() == 'true'
+        debug_mode_enabled = False
+        
+        if debug_mode_enabled:
+            # DEBUG: Extract complete quality_gate_config structure
+            quality_gate_config = args.get('quality_gate_config', {})
+            
+            # FULL RAW DUMP of quality_gate_config
+            import json
+            try:
+                debug_qg_raw = json.dumps(quality_gate_config, indent=2, default=str)
+            except:
+                debug_qg_raw = str(quality_gate_config)
+            
+            debug_qg = {
+                'raw_quality_gate_config': debug_qg_raw,  # Full structure as JSON string
+                'SLA_checked': quality_gate_config.get('SLA', {}).get('checked', None),
+                'baseline_checked': quality_gate_config.get('baseline', {}).get('checked', None),
+                'per_request_results': {
+                    'check_response_time': per_request_results_config.get('check_response_time', None),
+                    'check_error_rate': per_request_results_config.get('check_error_rate', None),
+                    'check_throughput': per_request_results_config.get('check_throughput', None),
+                    'response_time_deviation': per_request_results_config.get('response_time_deviation', None),
+                    'error_rate_deviation': per_request_results_config.get('error_rate_deviation', None),
+                    'throughput_deviation': per_request_results_config.get('throughput_deviation', None),
+                },
+                'summary_results': {
+                    'check_response_time': summary_results_config.get('check_response_time', None),
+                    'check_error_rate': summary_results_config.get('check_error_rate', None),
+                    'check_throughput': summary_results_config.get('check_throughput', None),
+                    'response_time_deviation': summary_results_config.get('response_time_deviation', None),
+                    'error_rate_deviation': summary_results_config.get('error_rate_deviation', None),
+                    'throughput_deviation': summary_results_config.get('throughput_deviation', None),
+                },
+                'calculated_flags': {
+                    'per_request_enabled': per_request_enabled,
+                    'per_request_rt_check': per_request_rt_check,
+                    'per_request_er_check': per_request_er_check,
+                    'per_request_tp_check': per_request_tp_check,
+                    'summary_enabled': summary_enabled,
+                    'summary_rt_check': summary_rt_check,
+                    'summary_er_check': summary_er_check,
+                    'summary_tp_check': summary_tp_check,
+                    'sla_enabled': sla_enabled,
+                    'baseline_enabled': baseline_enabled,
+                }
+            }
+            
+            test_description['debug_quality_gate_config'] = debug_qg
+        
+        # DEBUG: Add baseline calculation debug info
+        if debug_mode_enabled and args.get('baseline_debug'):
+            test_description['debug_baseline_calculation'] = args['baseline_debug']
         
         if sla_enabled and debug_mode_enabled:
             debug_all = baseline_and_thresholds_temp.get('debug_all_thresholds', [])
@@ -321,8 +375,11 @@ class ReportBuilder:
                 has_every = baseline_and_thresholds_temp.get('sla_has_every', False)
                 has_missing = baseline_and_thresholds_temp.get('has_missing_sla', False)
                 
-                if has_every:
-                    # Case 4a1: Has "every" fallback, but no "all"
+                if has_every and not has_missing:
+                    # Case 4a1b: Has "every", no "all", some requests covered by specific SLA
+                    test_description['sla_metric_warning'] = f"SLA for {comparison_metric.upper()} uses 'Every' scope and some are configured for individual requests. No general 'All' SLA is configured. Configure 'All' SLA to see aggregated metrics in General metrics table."
+                elif has_every:
+                    # Case 4a1a: Has "every", no "all"
                     test_description['sla_metric_warning'] = f"SLA for {comparison_metric.upper()} uses 'Every' scope (applies to all requests by default). No general 'All' SLA is configured. Configure 'All' SLA to see aggregated metrics in General metrics table."
                 elif has_missing:
                     # Case 4a2b: No "every", no "all", and some requests are missing SLA
@@ -399,11 +456,13 @@ class ReportBuilder:
         
         # Baseline warnings (independent from SLA, priority order - only one Baseline warning shown)
         if not baseline_enabled and baseline and len(baseline) > 0:
-            # Priority 0: Baseline is disabled but baseline data exists
+            # Priority 0a: Baseline is disabled but baseline data exists
             test_description['baseline_metric_warning'] = "Baseline comparison is disabled in Quality Gate configuration. Enable Baseline to see comparison with previous test results."
         
         elif baseline_enabled and not per_request_enabled and not summary_enabled and baseline and len(baseline) > 0:
             # Priority 1: Baseline enabled but both Summary and Per request results are disabled (all 6 checkboxes OFF)
+            # This is a configuration issue - user enabled Baseline but disabled all sections where it would be displayed
+            # Only shown when baseline data EXISTS (if no baseline test, Priority 0b takes precedence)
             test_description['baseline_metric_warning'] = "Baseline comparison is enabled, but both \"Summary results\" and \"Per request results\" options are disabled in Quality Gate configuration. Enable at least one option to see baseline data."
         
         elif baseline_enabled and summary_enabled and not per_request_enabled and not summary_rt_check and baseline and len(baseline) > 0:
@@ -455,14 +514,17 @@ class ReportBuilder:
         # Informational warnings (shown independently, in addition to Priority warnings)
         
         # Baseline: Show "uses default PCT95" when Per request is completely OFF and Summary RT is enabled
-        # Check per_request_enabled (any metric) because percentile selection requires Per request to be ON
-        if baseline_enabled and not per_request_enabled and summary_rt_check and baseline and len(baseline) > 0:
+        # Baseline: Show "uses default PCT95" when Per request is completely OFF
+        if baseline_enabled and not per_request_enabled and baseline and len(baseline) > 0:
             test_description['baseline_info_warning'] = f"Baseline comparison uses default metric ({comparison_metric.upper()}). To select a different comparison metric, enable \"Per request results\" in Quality Gate configuration."
         
         # SLA: Show info about comparison metric usage and check if selected metric has SLA configured
         # Show when RT data is displayed (Summary RT OR Per Request RT enabled)
         # Comparison metric selection is controlled by per_request_enabled, but this warning validates the chosen metric
+        # DEBUG: Log if this block is entered
+        sla_info_block_entered = False
         if sla_enabled and (summary_rt_check or per_request_rt_check):
+            sla_info_block_entered = True
             # First check if specific comparison_metric has SLA configured (more specific check)
             has_comparison_metric_sla = False
             if thresholds:
@@ -479,15 +541,10 @@ class ReportBuilder:
                 if has_any_rt_sla:
                     # RT SLA exists but not for comparison_metric - show missing metric warning
                     if per_request_enabled and not test_description.get('sla_metric_warning'):
-                        # Collect all configured RT SLA metrics to show in the message
-                        configured_rt_metrics = []
-                        if thresholds:
-                            for th in thresholds:
-                                if th.get('target') == 'response_time':
-                                    metric = th.get('aggregation', 'pct95')
-                                    if metric not in configured_rt_metrics:
-                                        configured_rt_metrics.append(metric)
-                        configured_rt_metrics = sorted(configured_rt_metrics, reverse=True)
+                        # Use all_sla_rt_metrics from API (already collected in baseline_and_thresholds_temp)
+                        # This ensures we show ALL configured RT metrics, not just those in filtered thresholds
+                        all_sla_rt_metrics = baseline_and_thresholds_temp.get('all_sla_rt_metrics', [])
+                        configured_rt_metrics = sorted(list(all_sla_rt_metrics), reverse=True)
                         
                         # Show detailed message with available metrics
                         if configured_rt_metrics and len(configured_rt_metrics) > 1:
@@ -496,7 +553,7 @@ class ReportBuilder:
                         elif configured_rt_metrics:
                             test_description['sla_info_warning'] = f"SLA thresholds are not configured for {comparison_metric.upper()} metric. SLA is available only for {configured_rt_metrics[0].upper()}. Configure SLA thresholds in Thresholds section to see threshold values and differences in Request metrics and General metrics tables or select a different metric to see data."
                         else:
-                            # Fallback if we can't determine configured metrics
+                            # Fallback if we can't determine configured metrics (should not happen if has_any_rt_sla is True)
                             test_description['sla_info_warning'] = f"SLA comparison uses {comparison_metric.upper()}, but {comparison_metric.upper()} is not configured in Thresholds. SLA values will be hidden. Configure {comparison_metric.upper()} SLA or select a different metric to see data."
                     else:
                         test_description['sla_info_warning'] = f"SLA uses default {comparison_metric.upper()}, but {comparison_metric.upper()} is not configured in Thresholds. SLA values will be hidden. Configure {comparison_metric.upper()} SLA or enable \"Per request results\" to select a different metric."
@@ -506,6 +563,16 @@ class ReportBuilder:
                         test_description['sla_info_warning'] = f"SLA comparison uses {comparison_metric.upper()}, but Response Time is not configured in Thresholds. SLA values will be hidden. Configure Response Time SLA to see data."
                     else:
                         test_description['sla_info_warning'] = f"SLA uses default {comparison_metric.upper()}, but Response Time is not configured in Thresholds. SLA values will be hidden. Configure Response Time SLA or enable \"Per request results\" to select a different metric."
+        
+        # DEBUG: Store whether SLA info block was entered
+        if debug_mode_enabled:
+            test_description['sla_info_block_debug'] = {
+                'sla_info_block_entered': sla_info_block_entered,
+                'sla_enabled': sla_enabled,
+                'summary_rt_check': summary_rt_check,
+                'per_request_rt_check': per_request_rt_check,
+                'condition_result': sla_enabled and (summary_rt_check or per_request_rt_check)
+            }
         
         # Deviation warnings (informational - show when deviation is enabled AND data is visible AND thresholds exist)
         quality_gate_config = args.get('quality_gate_config', {})
@@ -704,25 +771,17 @@ class ReportBuilder:
         if degradation_rate == -1:
             return 'SUCCESS', ''
         if baseline:
-            # Get deviations from SLA thresholds (correct approach, matching table display)
-            # Unlike data_manager.compare_with_baseline which uses single global deviation (bug)
-            all_tp_deviation = 0
-            all_er_deviation = 0
-            all_rt_deviation = 0
-            every_rt_deviation = 0
+            # Get deviations from Quality Gate config (unified for baseline, ignore threshold deviation)
+            # Matching data_manager.compare_with_baseline logic
+            quality_gate_config = args.get('quality_gate_config', {}) if args else {}
+            settings = quality_gate_config.get('settings', {})
+            summary_config = settings.get('summary_results', {})
+            per_request_config = settings.get('per_request_results', {})
             
-            if args and args.get("thresholds"):
-                for th in args["thresholds"]:
-                    if th.get('request_name', '').lower() == 'all':
-                        if th.get('target') == 'throughput':
-                            all_tp_deviation = th.get('deviation', 0)
-                        elif th.get('target') == 'error_rate':
-                            all_er_deviation = th.get('deviation', 0)
-                        elif th.get('target') == 'response_time':
-                            all_rt_deviation = th.get('deviation', 0)
-                    elif th.get('request_name', '').lower() == 'every':
-                        if th.get('target') == 'response_time':
-                            every_rt_deviation = th.get('deviation', 0)
+            all_tp_deviation = summary_config.get('throughput_deviation', 0)
+            all_er_deviation = summary_config.get('error_rate_deviation', 0)
+            all_rt_deviation = summary_config.get('response_time_deviation', 0)
+            every_rt_deviation = per_request_config.get('response_time_deviation', 0)
             
             # Total checks: 3 for "All" (tp, er, rt) + number of individual requests (rt only)
             total_checks = 0
@@ -743,13 +802,13 @@ class ReportBuilder:
                                     failed_checks += 1
                             
                             # Error rate: current must be <= baseline + deviation
-                            if 'error_rate' in request and 'error_rate' in baseline_request:
-                                total_checks += 1
-                                current_er = float(request['error_rate'])
-                                baseline_er = float(baseline_request['error_rate'])
-                                baseline_er_with_deviation = baseline_er + all_er_deviation
-                                if current_er > baseline_er_with_deviation:
-                                    failed_checks += 1
+                            # Calculate error_rate if not present (baseline data may only have ko/total)
+                            current_er = float(request.get('error_rate', round(float(request['ko'] / request['total']) * 100, 2)))
+                            baseline_er = float(baseline_request.get('error_rate', round(float(baseline_request['ko'] / baseline_request['total']) * 100, 2)))
+                            total_checks += 1
+                            baseline_er_with_deviation = baseline_er + all_er_deviation
+                            if current_er > baseline_er_with_deviation:
+                                failed_checks += 1
                             
                             # Response time: current must be <= baseline + deviation
                             total_checks += 1
@@ -1225,10 +1284,15 @@ class ReportBuilder:
                 # Case-insensitive match for 'all'
                 if th.get('request_name', '').lower() == 'all':
                     if th['target'] == 'error_rate':
-                        # Apply deviation for error_rate
+                        # Apply deviation for error_rate from Quality Gate
                         threshold_original = th['value']
                         threshold_er_original = round(threshold_original, 2)  # Store original without deviation
-                        deviation = th.get('deviation', 0)
+                        
+                        # Get deviation from Quality Gate summary_results
+                        quality_gate_config = args.get('quality_gate_config', {})
+                        settings = quality_gate_config.get('settings', {})
+                        config_section = settings.get('summary_results', {})
+                        deviation = config_section.get('error_rate_deviation', 0)
                         
                         if th.get('comparison') in ['gt', 'gte']:
                             threshold_er_value = round(threshold_original + deviation, 2)
@@ -1246,7 +1310,12 @@ class ReportBuilder:
                         # Apply deviation for throughput
                         threshold_original = th['value']
                         threshold_tp_original = round(threshold_original, 2)  # Store original without deviation
-                        deviation = th.get('deviation', 0)
+                        
+                        # Get deviation from Quality Gate summary_results
+                        quality_gate_config = args.get('quality_gate_config', {})
+                        settings = quality_gate_config.get('settings', {})
+                        config_section = settings.get('summary_results', {})
+                        deviation = config_section.get('throughput_deviation', 0)
                         
                         if th.get('comparison') in ['gt', 'gte']:
                             threshold_tp_value = round(threshold_original + deviation, 2)
@@ -1267,8 +1336,12 @@ class ReportBuilder:
                             # Calculate threshold WITH deviation for display
                             threshold_original = th['value'] / 1000
                             threshold_rt_original = round(threshold_original, 2)  # Store original without deviation
-                            # Use deviation from THIS threshold (not from another one)
-                            deviation = th.get('deviation', 0) / 1000
+                            
+                            # Get deviation from Quality Gate summary_results
+                            quality_gate_config = args.get('quality_gate_config', {})
+                            settings = quality_gate_config.get('settings', {})
+                            config_section = settings.get('summary_results', {})
+                            deviation = config_section.get('response_time_deviation', 0) / 1000
                             
                             # Apply deviation based on comparison type
                             if th.get('comparison') in ['gt', 'gte']:
@@ -1502,55 +1575,16 @@ class ReportBuilder:
                 baseline_original = round(baseline_all_data[request['request_name']] / 1000, 2)
                 
                 # Get response_time deviation based on request type
-                # Use SAME logic as compare_with_baseline in data_manager.py
-                request_deviation = 0
-                thresholds_to_check = all_thresholds_for_baseline if all_thresholds_for_baseline else thresholds
+                # Use Quality Gate config deviation (unified for baseline, ignore threshold deviation)
+                quality_gate_config = args.get('quality_gate_config', {})
+                settings = quality_gate_config.get('settings', {})
                 
                 if request['request_name'].lower() == 'all':
-                    # For All row: find 'all' threshold
-                    for th in thresholds_to_check:
-                        req_name = th.get('request_name', '').lower()
-                        scope_name = th.get('scope', '').lower()
-                        
-                        if (req_name == 'all' or scope_name == 'all') and th.get('target') == 'response_time':
-                            request_deviation = th.get('deviation', 0)
-                            if request_deviation == 0:
-                                quality_gate_config = args.get('quality_gate_config', {})
-                                settings = quality_gate_config.get('settings', {})
-                                config_section = settings.get('summary_results', {})
-                                request_deviation = config_section.get('response_time_deviation', 0)
-                            break
+                    config_section = settings.get('summary_results', {})
                 else:
-                    # For individual requests: find 'every' threshold, fallback to 'all'
-                    every_found = False
-                    for th in thresholds_to_check:
-                        req_name = th.get('request_name', '').lower()
-                        scope_name = th.get('scope', '').lower()
-                        
-                        if (req_name == 'every' or scope_name == 'every') and th.get('target') == 'response_time':
-                            request_deviation = th.get('deviation', 0)
-                            if request_deviation == 0:
-                                quality_gate_config = args.get('quality_gate_config', {})
-                                settings = quality_gate_config.get('settings', {})
-                                config_section = settings.get('per_request_results', {})
-                                request_deviation = config_section.get('response_time_deviation', 0)
-                            every_found = True
-                            break
-                    
-                    # Fallback to 'all' if 'every' not found
-                    if not every_found:
-                        for th in thresholds_to_check:
-                            req_name = th.get('request_name', '').lower()
-                            scope_name = th.get('scope', '').lower()
-                            
-                            if (req_name == 'all' or scope_name == 'all') and th.get('target') == 'response_time':
-                                request_deviation = th.get('deviation', 0)
-                                if request_deviation == 0:
-                                    quality_gate_config = args.get('quality_gate_config', {})
-                                    settings = quality_gate_config.get('settings', {})
-                                    config_section = settings.get('summary_results', {})
-                                    request_deviation = config_section.get('response_time_deviation', 0)
-                                break
+                    config_section = settings.get('per_request_results', {})
+                
+                request_deviation = config_section.get('response_time_deviation', 0)
                 
                 # For baseline: ALWAYS ADD deviation (response_time: lower is better, so baseline + deviation = max acceptable)
                 # This creates tolerance range allowing current to be slightly worse than baseline
@@ -1558,20 +1592,24 @@ class ReportBuilder:
                 req['baseline'] = round(current_value - baseline_value, 2)
                 req['baseline_value'] = baseline_value
                 req['baseline_original_value'] = baseline_original
-                if req['baseline'] < 0:
+                if req['baseline'] <= 0:
                     req['baseline_color'] = GREEN
                 else:
                     req['baseline_color'] = YELLOW
             else:
                 req['baseline'] = "-"
                 # Show different message based on whether section is completely disabled
-                # For "All" row: disabled if Summary results is OFF (all 3 checkboxes OFF)
+                # For "All" row: disabled if Summary results Response Time is OFF
                 # For individual requests: disabled if Per request results is OFF (all 3 checkboxes OFF)
                 if baseline_data_exists:
                     if request['request_name'].lower() == 'all' and not summary_enabled:
                         req['baseline_value'] = "Baseline disabled"
+                    elif request['request_name'].lower() == 'all' and not summary_rt_check:
+                        req['baseline_value'] = "Enable Response Time"
                     elif request['request_name'].lower() != 'all' and not per_request_enabled:
                         req['baseline_value'] = "Baseline disabled"
+                    elif request['request_name'].lower() != 'all' and per_request_enabled and not per_request_rt_check:
+                        req['baseline_value'] = "Enable Response Time"
                     else:
                         req['baseline_value'] = "N/A"
                 else:
@@ -1637,8 +1675,17 @@ class ReportBuilder:
                 # Calculate threshold WITH deviation for display
                 threshold_original = float(threshold_for_request['value']) / 1000
                 threshold_original_value = round(threshold_original, 2)  # Store original without deviation
-                # Use deviation from THIS threshold (not from another one)
-                deviation = threshold_for_request.get('deviation', 0) / 1000  # Convert to seconds
+                
+                # Get response_time deviation from Quality Gate config (unified for SLA, ignore threshold deviation)
+                quality_gate_config = args.get('quality_gate_config', {})
+                settings = quality_gate_config.get('settings', {})
+                
+                if request['request_name'].lower() == 'all':
+                    config_section = settings.get('summary_results', {})
+                else:
+                    config_section = settings.get('per_request_results', {})
+                
+                deviation = config_section.get('response_time_deviation', 0) / 1000  # Convert to seconds
                 
                 # Apply deviation based on comparison type
                 if threshold_for_request.get('comparison') in ['gt', 'gte']:
@@ -1744,12 +1791,18 @@ class ReportBuilder:
                     if th['target'] == 'response_time' and rt_dev_every == 0:
                         rt_dev_every = th.get('deviation', 0)  # Take first found, ignore duplicates
         
+        # Control visibility of visual warnings (⚠️ and hint) in Request metrics table headers
+        # When True: shows ⚠️ and "(Configure for X)" in headers when has_missing_sla is True
+        # When False: hides visual warnings in headers (warnings still appear in Warning section and table cells)
+        show_missing_sla_warnings = False  # Set to True to enable visual warnings in table headers
+        
         return {
             "requests": exceeded_thresholds,
             "show_baseline_column": show_baseline,
             "show_threshold_column": show_threshold,
             "show_representation_column": show_representation,
             "has_missing_sla": has_missing_sla,
+            "show_missing_sla_warnings": show_missing_sla_warnings,  # Feature toggle for visual warnings in headers
             "has_disabled_sla": has_disabled_sla,
             "has_disabled_baseline": has_disabled_baseline,
             "has_disabled_summary_sla": has_disabled_summary_sla,
@@ -1928,13 +1981,14 @@ class ReportBuilder:
         baseline_operational = baseline_enabled and (per_request_enabled or summary_enabled) and baseline_has_data
         
         # Check if Baseline is enabled but no baseline data exists
-        baseline_enabled_but_missing = baseline_enabled and (per_request_enabled or summary_enabled) and not baseline_has_data
+        # Priority 0b: Show this warning regardless of section settings - if Baseline is enabled, user needs to set a baseline test
+        baseline_enabled_but_missing = baseline_enabled and not baseline_has_data
         
         if baseline_enabled_but_missing:
             # Baseline is enabled in Quality Gate but no baseline test is defined
             test_params["performance_degradation_rate"] = f'-'
             test_params["baseline_status"] = "missing"
-            test_params["baseline_note"] = "⚠ Baseline check is enabled but no baseline is set. Please set a baseline test first."
+            test_params["baseline_note"] = "Baseline check is enabled but no baseline is set. Please set a baseline test first."
         elif args.get("performance_degradation_rate_qg", None) and baseline_operational:
             if test_params["performance_degradation_rate"] > args["performance_degradation_rate_qg"]:
                 test_params["performance_degradation_rate"] = f'{test_params["performance_degradation_rate"]}%'
