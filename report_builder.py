@@ -1744,12 +1744,18 @@ class ReportBuilder:
                     if th['target'] == 'response_time' and rt_dev_every == 0:
                         rt_dev_every = th.get('deviation', 0)  # Take first found, ignore duplicates
         
+        # Control visibility of visual warnings (⚠️ and hint) in Request metrics table headers
+        # When True: shows ⚠️ and "(Configure for X)" in headers when has_missing_sla is True
+        # When False: hides visual warnings in headers (warnings still appear in Warning section and table cells)
+        show_missing_sla_warnings = False  # Set to True to enable visual warnings in table headers
+        
         return {
             "requests": exceeded_thresholds,
             "show_baseline_column": show_baseline,
             "show_threshold_column": show_threshold,
             "show_representation_column": show_representation,
             "has_missing_sla": has_missing_sla,
+            "show_missing_sla_warnings": show_missing_sla_warnings,  # Feature toggle for visual warnings in headers
             "has_disabled_sla": has_disabled_sla,
             "has_disabled_baseline": has_disabled_baseline,
             "has_disabled_summary_sla": has_disabled_summary_sla,
