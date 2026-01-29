@@ -764,25 +764,17 @@ class ReportBuilder:
         if degradation_rate == -1:
             return 'SUCCESS', ''
         if baseline:
-            # Get deviations from SLA thresholds (correct approach, matching table display)
-            # Unlike data_manager.compare_with_baseline which uses single global deviation (bug)
-            all_tp_deviation = 0
-            all_er_deviation = 0
-            all_rt_deviation = 0
-            every_rt_deviation = 0
+            # Get deviations from Quality Gate config (unified for baseline, ignore threshold deviation)
+            # Matching data_manager.compare_with_baseline logic
+            quality_gate_config = args.get('quality_gate_config', {}) if args else {}
+            settings = quality_gate_config.get('settings', {})
+            summary_config = settings.get('summary_results', {})
+            per_request_config = settings.get('per_request_results', {})
             
-            if args and args.get("thresholds"):
-                for th in args["thresholds"]:
-                    if th.get('request_name', '').lower() == 'all':
-                        if th.get('target') == 'throughput':
-                            all_tp_deviation = th.get('deviation', 0)
-                        elif th.get('target') == 'error_rate':
-                            all_er_deviation = th.get('deviation', 0)
-                        elif th.get('target') == 'response_time':
-                            all_rt_deviation = th.get('deviation', 0)
-                    elif th.get('request_name', '').lower() == 'every':
-                        if th.get('target') == 'response_time':
-                            every_rt_deviation = th.get('deviation', 0)
+            all_tp_deviation = summary_config.get('throughput_deviation', 0)
+            all_er_deviation = summary_config.get('error_rate_deviation', 0)
+            all_rt_deviation = summary_config.get('response_time_deviation', 0)
+            every_rt_deviation = per_request_config.get('response_time_deviation', 0)
             
             # Total checks: 3 for "All" (tp, er, rt) + number of individual requests (rt only)
             total_checks = 0
@@ -803,13 +795,13 @@ class ReportBuilder:
                                     failed_checks += 1
                             
                             # Error rate: current must be <= baseline + deviation
-                            if 'error_rate' in request and 'error_rate' in baseline_request:
-                                total_checks += 1
-                                current_er = float(request['error_rate'])
-                                baseline_er = float(baseline_request['error_rate'])
-                                baseline_er_with_deviation = baseline_er + all_er_deviation
-                                if current_er > baseline_er_with_deviation:
-                                    failed_checks += 1
+                            # Calculate error_rate if not present (baseline data may only have ko/total)
+                            current_er = float(request.get('error_rate', round(float(request['ko'] / request['total']) * 100, 2)))
+                            baseline_er = float(baseline_request.get('error_rate', round(float(baseline_request['ko'] / baseline_request['total']) * 100, 2)))
+                            total_checks += 1
+                            baseline_er_with_deviation = baseline_er + all_er_deviation
+                            if current_er > baseline_er_with_deviation:
+                                failed_checks += 1
                             
                             # Response time: current must be <= baseline + deviation
                             total_checks += 1
@@ -1562,55 +1554,16 @@ class ReportBuilder:
                 baseline_original = round(baseline_all_data[request['request_name']] / 1000, 2)
                 
                 # Get response_time deviation based on request type
-                # Use SAME logic as compare_with_baseline in data_manager.py
-                request_deviation = 0
-                thresholds_to_check = all_thresholds_for_baseline if all_thresholds_for_baseline else thresholds
+                # Use Quality Gate config deviation (unified for baseline, ignore threshold deviation)
+                quality_gate_config = args.get('quality_gate_config', {})
+                settings = quality_gate_config.get('settings', {})
                 
                 if request['request_name'].lower() == 'all':
-                    # For All row: find 'all' threshold
-                    for th in thresholds_to_check:
-                        req_name = th.get('request_name', '').lower()
-                        scope_name = th.get('scope', '').lower()
-                        
-                        if (req_name == 'all' or scope_name == 'all') and th.get('target') == 'response_time':
-                            request_deviation = th.get('deviation', 0)
-                            if request_deviation == 0:
-                                quality_gate_config = args.get('quality_gate_config', {})
-                                settings = quality_gate_config.get('settings', {})
-                                config_section = settings.get('summary_results', {})
-                                request_deviation = config_section.get('response_time_deviation', 0)
-                            break
+                    config_section = settings.get('summary_results', {})
                 else:
-                    # For individual requests: find 'every' threshold, fallback to 'all'
-                    every_found = False
-                    for th in thresholds_to_check:
-                        req_name = th.get('request_name', '').lower()
-                        scope_name = th.get('scope', '').lower()
-                        
-                        if (req_name == 'every' or scope_name == 'every') and th.get('target') == 'response_time':
-                            request_deviation = th.get('deviation', 0)
-                            if request_deviation == 0:
-                                quality_gate_config = args.get('quality_gate_config', {})
-                                settings = quality_gate_config.get('settings', {})
-                                config_section = settings.get('per_request_results', {})
-                                request_deviation = config_section.get('response_time_deviation', 0)
-                            every_found = True
-                            break
-                    
-                    # Fallback to 'all' if 'every' not found
-                    if not every_found:
-                        for th in thresholds_to_check:
-                            req_name = th.get('request_name', '').lower()
-                            scope_name = th.get('scope', '').lower()
-                            
-                            if (req_name == 'all' or scope_name == 'all') and th.get('target') == 'response_time':
-                                request_deviation = th.get('deviation', 0)
-                                if request_deviation == 0:
-                                    quality_gate_config = args.get('quality_gate_config', {})
-                                    settings = quality_gate_config.get('settings', {})
-                                    config_section = settings.get('summary_results', {})
-                                    request_deviation = config_section.get('response_time_deviation', 0)
-                                break
+                    config_section = settings.get('per_request_results', {})
+                
+                request_deviation = config_section.get('response_time_deviation', 0)
                 
                 # For baseline: ALWAYS ADD deviation (response_time: lower is better, so baseline + deviation = max acceptable)
                 # This creates tolerance range allowing current to be slightly worse than baseline
@@ -1618,7 +1571,7 @@ class ReportBuilder:
                 req['baseline'] = round(current_value - baseline_value, 2)
                 req['baseline_value'] = baseline_value
                 req['baseline_original_value'] = baseline_original
-                if req['baseline'] < 0:
+                if req['baseline'] <= 0:
                     req['baseline_color'] = GREEN
                 else:
                     req['baseline_color'] = YELLOW
