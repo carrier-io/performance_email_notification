@@ -14,7 +14,7 @@
 
 from datetime import datetime
 import requests
-from perfreporter.data_manager import DataManager
+from data_manager import DataManager
 from report_builder import ReportBuilder
 from email_notifications import Email
 
