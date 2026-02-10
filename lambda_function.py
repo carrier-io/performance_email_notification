@@ -165,6 +165,10 @@ def parse_args(event: Union[list, dict]):
     args['missed_threshold_rate'] = event.get('missed_threshold_rate')
     args['reasons_to_fail_report'] = event.get('reasons_to_fail_report')
 
+    # Quality gate thresholds (for UI notifications)
+    args['deviation'] = event.get('deviation', 0)
+    args['baseline_deviation'] = event.get('baseline_deviation', 0)
+
     args['performance_degradation_rate_qg'] = event.get('performance_degradation_rate_qg')
     args['missed_thresholds_qg'] = event.get('missed_thresholds_qg')
     args['status'] = event.get('status')
