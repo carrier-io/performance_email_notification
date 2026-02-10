@@ -70,6 +70,19 @@
         </tr>
     </table>
 
+    {% if t_params.status == 'Failed' and t_params.reasons_to_fail_report %}
+    <div style="margin-top: 24px;">
+        <p style="margin: 24px 0 0px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Failed reasons:</p>
+        <ul style="padding-left: 25px;">
+        {% for reason in t_params.reasons_to_fail_report %}
+            <li style="list-style: none">
+                <span style="color: #F32626; font-size: 14px; font-weight: bold; margin-right: 5px;">✗</span>{{ reason }}
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     <div style="margin-top: 24px;">
         <table style="width: 100%;">
             <tbody>

@@ -157,7 +157,7 @@ class UIEmailNotification:
 
         baseline_comparison_pages, baseline_comparison_actions = [], []
         count, failed = 0, 0
-        degradation_rate_setting = self.args.get("performance_degradation_rate")
+        degradation_rate_setting = self.args.get("deviation")
         try:
             degradation_rate_setting = float(degradation_rate_setting)
         except (TypeError, ValueError):
@@ -358,6 +358,40 @@ class UIEmailNotification:
             baseline_comparison_pages, baseline_comparison_actions, degradation_rate, aggregated_baseline = \
                 self._process_baseline_comparison(baseline_info, results_info, baseline_report_info)
 
+        # Quality gate enforcement logic
+        missed_threshold_rate = self.args.get('missed_threshold_rate', 0)
+        baseline_deviation = self.args.get('baseline_deviation', 0)
+        reasons_to_fail_report = []
+
+        # Check threshold quality gate (skip if missed_threshold_rate is 0)
+        if missed_threshold_rate > 0:
+            if missed_thresholds > missed_threshold_rate:
+                status = "Failed"
+                color = RED
+                reasons_to_fail_report.append("Failed by thresholds comparison to quality gate")
+                print(f"[QUALITY GATE] Threshold gate FAILED: {missed_thresholds}% > {missed_threshold_rate}%")
+            else:
+                print(f"[QUALITY GATE] Threshold gate PASSED: {missed_thresholds}% <= {missed_threshold_rate}%")
+        else:
+            print(f"[QUALITY GATE] Threshold gate check SKIPPED (missed_threshold_rate=0)")
+
+        # Check baseline quality gate (skip if baseline_deviation is 0 or no baseline)
+        if baseline_deviation > 0 and base_id is not None:
+            if degradation_rate > baseline_deviation:
+                status = "Failed"
+                color = RED
+                reasons_to_fail_report.append("Failed by baseline comparison to quality gate")
+                print(f"[QUALITY GATE] Baseline gate FAILED: {degradation_rate}% > {baseline_deviation}%")
+            else:
+                print(f"[QUALITY GATE] Baseline gate PASSED: {degradation_rate}% <= {baseline_deviation}%")
+        else:
+            if baseline_deviation == 0:
+                print(f"[QUALITY GATE] Baseline gate check SKIPPED (baseline_deviation=0)")
+            elif base_id is None:
+                print(f"[QUALITY GATE] Baseline gate check SKIPPED (no baseline configured)")
+
+        print(f"[QUALITY GATE] Final status: {status}, Reasons: {reasons_to_fail_report}")
+
         browser_version = report_info.get('browser_version')
         if not browser_version or browser_version == 'undefined':
             browser_version = results_info[0].get('browser_version', 'Unknown') if results_info else 'Unknown'
@@ -377,7 +411,8 @@ class UIEmailNotification:
             "version": browser_version,
             "loops": report_info["loops"],
             "pages": len(results_info),
-            "total_thresholds": thresholds_total
+            "total_thresholds": thresholds_total,
+            "reasons_to_fail_report": reasons_to_fail_report
         }
 
         status_str = t_params["status"].lower()
