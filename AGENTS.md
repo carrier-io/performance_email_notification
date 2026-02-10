@@ -4,6 +4,16 @@ This repo provides an AWS Lambda-style entrypoint that generates and sends
 HTML performance test email notifications for API (backend) and UI tests using
 data from a Galloper instance.
 
+**Development Principles**: See `.specify/memory/constitution.md` (v2.0.0) for core principles:
+1. Results Post-Processing Accuracy (threshold matching, baseline comparison, quality gates)
+2. Code Quality & Maintainability (DRY, method size, complexity limits)
+3. Chart Generation & Visual Consistency (centralized colors, data integrity)
+4. Email Template Development & Cross-Client Compatibility (Jinja2, HTML tables, debug sections)
+5. API vs UI Notification Feature Parity (maintain consistency or document divergence)
+6. Results Presentation Clarity (human-readable, actionable warnings)
+7. Backward Compatibility for Event Contracts (no breaking changes without migration)
+8. Error Handling & Debugging Support (actionable errors, structured logging)
+
 ## Quick map
 - Entrypoint: `lambda_function.py` (`lambda_handler`)
 - API notifications: `api_email_notification.py` -> `report_builder.py`
