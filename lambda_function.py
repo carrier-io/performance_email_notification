@@ -21,7 +21,6 @@ from time import sleep
 from typing import Union
 
 
-
 def lambda_handler(event: Union[list, dict], context):
     try:
         args = parse_args(event)
@@ -119,10 +118,10 @@ def parse_args(event: Union[list, dict]):
     # Notification Config
     args['user_list'] = event.get('user_list')
     args['test_limit'] = event.get("test_limit", 5)
-    #args['comparison_metric'] = event.get("comparison_metric", 'pct95')
+    # args['comparison_metric'] = event.get("comparison_metric", 'pct95')
     # Try to extract comparison_metric from multiple sources (in priority order)
     comparison_metric_from_event = None
-    
+
     # 1. Check quality_gate_config for comparison_metric (try multiple locations)
     quality_gate_config = event.get('quality_gate_config', {})
     if isinstance(quality_gate_config, dict):
@@ -130,21 +129,21 @@ def parse_args(event: Union[list, dict]):
         baseline_config = quality_gate_config.get('baseline', {})
         if isinstance(baseline_config, dict):
             comparison_metric_from_event = baseline_config.get('rt_baseline_comparison_metric')
-        
+
         # Try settings.comparison_metric
         if not comparison_metric_from_event:
             settings = quality_gate_config.get('settings', {})
             if isinstance(settings, dict):
                 comparison_metric_from_event = settings.get('comparison_metric')
-        
+
         # Try direct quality_gate_config.comparison_metric
         if not comparison_metric_from_event:
             comparison_metric_from_event = quality_gate_config.get('comparison_metric')
-    
+
     # 2. Check direct comparison_metric field in event
     if not comparison_metric_from_event:
         comparison_metric_from_event = event.get("comparison_metric")
-    
+
     # 3. Parse from reasons_to_fail_report as fallback
     if not comparison_metric_from_event and event.get('reasons_to_fail_report'):
         import re
@@ -153,7 +152,7 @@ def parse_args(event: Union[list, dict]):
             if match:
                 comparison_metric_from_event = match.group(1)
                 break
-    
+
     args['comparison_metric'] = comparison_metric_from_event or 'pct95'
 
     # ui data
@@ -166,8 +165,10 @@ def parse_args(event: Union[list, dict]):
     args['reasons_to_fail_report'] = event.get('reasons_to_fail_report')
 
     # Quality gate thresholds (for UI notifications)
-    args['deviation'] = event.get('deviation', 0)
-    args['baseline_deviation'] = event.get('baseline_deviation', 0)
+    if args['notification_type'] == "ui":
+        args['deviation'] = event.get('deviation', 0)
+        args['baseline_deviation'] = event.get('baseline_deviation', 0)
+        args['missed_threshold_rate'] = event.get('missed_thresholds', 0)
 
     args['performance_degradation_rate_qg'] = event.get('performance_degradation_rate_qg')
     args['missed_thresholds_qg'] = event.get('missed_thresholds_qg')
