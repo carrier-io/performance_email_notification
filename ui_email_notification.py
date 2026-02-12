@@ -7,6 +7,7 @@ from email.mime.image import MIMEImage
 from chart_generator import ui_metrics_chart_pages, ui_metrics_chart_actions
 from email_notifications import Email
 from thresholds_comparison import ThresholdsComparison
+from performance_report_generator import PerformanceReportGenerator
 
 GREEN = '#18B64D'
 YELLOW = '#FFA400'
@@ -36,7 +37,7 @@ class UIEmailNotification:
             return "No data"
 
     def _aggregate_metrics(self, test_data, metric_names, is_cls_metric=False):
-        """Aggregate metrics from test data with safe averaging."""
+        """Aggregate metrics from test data using 75th percentile (p75)."""
         aggregated = {}
         for metric in metric_names:
             try:
@@ -46,10 +47,17 @@ class UIEmailNotification:
                     _arr = [int(item[metric]) for item in test_data if metric in item]
                 
                 if len(_arr) > 0:
+                    # Calculate 75th percentile instead of mean
+                    sorted_arr = sorted(_arr)
+                    p75_index = int(len(sorted_arr) * 0.75)
+                    if p75_index >= len(sorted_arr):
+                        p75_index = len(sorted_arr) - 1
+                    p75_value = sorted_arr[p75_index]
+                    
                     if metric == "cls":
-                        aggregated[metric] = round(sum(_arr) / len(_arr), 2)
+                        aggregated[metric] = round(p75_value, 2)
                     else:
-                        aggregated[metric] = round((sum(_arr) / len(_arr)) / 1000, 2)
+                        aggregated[metric] = round(p75_value / 1000, 2)
                 else:
                     aggregated[metric] = "No data"
             except (KeyError, ValueError, TypeError) as e:
@@ -58,7 +66,7 @@ class UIEmailNotification:
         return aggregated
 
     def _build_comparison_data(self, last_reports, tests_data):
-        """Build page and action comparison data from test results."""
+        """Build page and action comparison data from test results using p75."""
         page_comparison, action_comparison = [], []
 
         for index, test in enumerate(tests_data):
@@ -79,6 +87,8 @@ class UIEmailNotification:
     def _apply_threshold_colors(self, results_info, thresholds_grouped, thresholds_processor, report_info):
         """Apply threshold-based color coding to results."""
         total_checked = failed_count = 0
+        failed_pages_lcp = []
+        failed_actions_inp = []
 
         for result in results_info:
             identifier = result.get('identifier', result.get('name'))
@@ -120,6 +130,23 @@ class UIEmailNotification:
                         failed_count += 1
                         print(
                             f"[THRESHOLD VIOLATION] {result.get('name')} - {metric_short}: {actual_value} violates {comparison} {threshold_value}")
+                        
+                        # Track failed LCP pages and INP actions (convert back to seconds for display)
+                        if metric_short == "lcp" and result_type == "page":
+                            failed_pages_lcp.append({
+                                "name": result.get('name'),
+                                "value": round(actual_value / 1000, 2),  # Convert to seconds
+                                "threshold": threshold_value,
+                                "report": result.get('report', '')
+                            })
+                        elif metric_short == "inp" and result_type == "action":
+                            failed_actions_inp.append({
+                                "name": result.get('name'),
+                                "value": round(actual_value / 1000, 2),  # Convert to seconds
+                                "threshold": threshold_value,
+                                "report": result.get('report', '')
+                            })
+                        
                         break
                     else:
                         print(
@@ -129,7 +156,12 @@ class UIEmailNotification:
 
         missed_pct = round(float(failed_count / total_checked) * 100, 2) if total_checked > 0 else 0
         print(f"[THRESHOLDS SUMMARY] Total: {total_checked}, Failed: {failed_count}, Missed: {missed_pct}%")
-        return missed_pct
+        
+        # Sort and get top 3
+        failed_pages_lcp.sort(key=lambda x: x['value'], reverse=True)
+        failed_actions_inp.sort(key=lambda x: x['value'], reverse=True)
+        
+        return missed_pct, failed_pages_lcp[:3], failed_actions_inp[:3]
 
     def _convert_result_units(self, results_info):
         """Convert result units from milliseconds to seconds."""
@@ -255,7 +287,7 @@ class UIEmailNotification:
         target_dict[metric].append(value)
 
     def _finalize_aggregated_results(self, aggregated_dict):
-        """Convert aggregated metric lists to averages."""
+        """Convert aggregated metric lists to 75th percentile."""
         finalized = []
 
         for identifier, data in aggregated_dict.items():
@@ -270,11 +302,63 @@ class UIEmailNotification:
                 if "No data" in values:
                     result[metric] = "No data"
                 else:
-                    result[metric] = round(sum(values) / len(values), 2)
+                    # Calculate 75th percentile instead of average
+                    sorted_values = sorted(values)
+                    p75_index = int(len(sorted_values) * 0.75)
+                    if p75_index >= len(sorted_values):
+                        p75_index = len(sorted_values) - 1
+                    result[metric] = round(sorted_values[p75_index], 2)
 
             finalized.append(result)
 
         return finalized
+
+    def _calculate_p75_metrics(self, results_info):
+        """
+        Calculate 75th percentile for LCP and INP from results.
+        
+        Args:
+            results_info (list): List of result dictionaries
+            
+        Returns:
+            dict: {"lcp_p75": float, "inp_p75": float}
+        """
+        lcp_values = []
+        inp_values = []
+        
+        for result in results_info:
+            # Collect LCP from pages
+            if result.get('type') == 'page' and 'lcp' in result:
+                value = result['lcp']
+                if value != "No data":
+                    try:
+                        lcp_values.append(float(value))
+                    except (ValueError, TypeError):
+                        pass
+            
+            # Collect INP from actions
+            if result.get('type') == 'action' and 'inp' in result:
+                value = result['inp']
+                if value != "No data":
+                    try:
+                        inp_values.append(float(value))
+                    except (ValueError, TypeError):
+                        pass
+        
+        # Calculate p75 (75th percentile)
+        def calculate_percentile(values, percentile=75):
+            if not values:
+                return 0.0
+            sorted_values = sorted(values)
+            index = int(len(sorted_values) * (percentile / 100.0))
+            if index >= len(sorted_values):
+                index = len(sorted_values) - 1
+            return round(sorted_values[index], 2)
+        
+        return {
+            "lcp_p75": calculate_percentile(lcp_values),
+            "inp_p75": calculate_percentile(inp_values)
+        }
 
     def ui_email_notification(self):
         info = self._get_test_info()
@@ -332,8 +416,9 @@ class UIEmailNotification:
             print(f"[WARNING] Could not load thresholds: {e}")
             thresholds_grouped = {}
 
-        local_missed_thresholds = self._apply_threshold_colors(results_info, thresholds_grouped, thresholds_processor,
-                                                               report_info)
+        local_missed_thresholds, failed_pages_lcp, failed_actions_inp = self._apply_threshold_colors(
+            results_info, thresholds_grouped, thresholds_processor, report_info
+        )
         self._convert_result_units(results_info)
 
         try:
@@ -396,10 +481,83 @@ class UIEmailNotification:
         if not browser_version or browser_version == 'undefined':
             browser_version = results_info[0].get('browser_version', 'Unknown') if results_info else 'Unknown'
 
+        # Generate Performance Summary based on Google CWV standards
+        try:
+            # Get degradation rate setting
+            degradation_rate_setting = self.args.get("deviation")
+            try:
+                degradation_rate_setting = float(degradation_rate_setting)
+            except (TypeError, ValueError):
+                degradation_rate_setting = 10.0  # Default to 10%
+            if degradation_rate_setting < 0:
+                degradation_rate_setting = 10.0
+            
+            # Calculate current p75 metrics
+            current_metrics = self._calculate_p75_metrics(results_info)
+            
+            # Calculate previous p75 metrics from baseline or last report
+            prev_lcp_p75 = 0.0
+            prev_inp_p75 = 0.0
+            
+            if aggregated_baseline:
+                # Use baseline data if available - need to convert units first
+                # Create a copy to avoid modifying the original baseline_info
+                baseline_info_copy = [dict(item) for item in baseline_info]
+                self._convert_result_units(baseline_info_copy)
+                baseline_metrics = self._calculate_p75_metrics(baseline_info_copy)
+                prev_lcp_p75 = baseline_metrics.get("lcp_p75", 0.0)
+                prev_inp_p75 = baseline_metrics.get("inp_p75", 0.0)
+            elif len(tests_data) > 1:
+                # Use previous test run data - need to convert units first
+                prev_test_results = tests_data[1]["pages"] + tests_data[1]["actions"]
+                # Create a copy to avoid modifying the original data
+                prev_test_results_copy = [dict(item) for item in prev_test_results]
+                self._convert_result_units(prev_test_results_copy)
+                prev_metrics = self._calculate_p75_metrics(prev_test_results_copy)
+                prev_lcp_p75 = prev_metrics.get("lcp_p75", 0.0)
+                prev_inp_p75 = prev_metrics.get("inp_p75", 0.0)
+            
+            # Determine threshold status for summary generator
+            if status == "Failed":
+                threshold_status = "Failed"
+            elif status == "Finished":
+                threshold_status = "Finished"
+            else:
+                threshold_status = "Success"
+            
+            # Generate the executive summary
+            perf_generator = PerformanceReportGenerator()
+            performance_summary = perf_generator.generate_summary(
+                threshold_status=threshold_status,
+                lcp_p75=current_metrics["lcp_p75"],
+                inp_p75=current_metrics["inp_p75"],
+                prev_lcp_p75=prev_lcp_p75,
+                prev_inp_p75=prev_inp_p75,
+                degradation_rate=degradation_rate_setting
+            )
+            
+            print(f"[PERFORMANCE SUMMARY] Status: {performance_summary['status']}, "
+                  f"LCP p75: {current_metrics['lcp_p75']}s, INP p75: {current_metrics['inp_p75']}s, "
+                  f"Degradation Rate: {degradation_rate_setting}%")
+            
+        except Exception as e:
+            print(f"[WARNING] Could not generate performance summary: {e}")
+            # Fallback to basic summary
+            performance_summary = {
+                "status": "UNKNOWN",
+                "status_color": "grey",
+                "verdict": "Performance summary unavailable due to insufficient data.",
+                "metrics": {
+                    "lcp": {"value": "N/A", "label": "Unknown", "color": "grey", "trend": "Unknown"},
+                    "inp": {"value": "N/A", "label": "Unknown", "color": "grey", "trend": "Unknown"}
+                }
+            }
+
         t_params = {
             "scenario": report_info['name'],
             "baseline_test_url": baseline_test_url,
             "baseline_test_date": baseline_test_date,
+            "current_test_url": f"{self.gelloper_url}/-/performance/ui/results?result_id={report_info['id']}",
             "start_time": self.convert_short_date_to_cet(report_info["start_time"]),
             "status": status,
             "color": color,
@@ -412,6 +570,7 @@ class UIEmailNotification:
             "loops": report_info["loops"],
             "pages": len(results_info),
             "total_thresholds": thresholds_total,
+            "performance_summary": performance_summary,
             "reasons_to_fail_report": reasons_to_fail_report
         }
 
@@ -422,15 +581,15 @@ class UIEmailNotification:
         else:
             emoji = "✅"
             status_word = "Success"
-        start_time = t_params["start_time"]
-        if len(start_time) > 16:
-            start_time = start_time[:16]
-        subject = f"{emoji}: {info['name']} ({start_time})"
+        # Format subject line with date as DD-MM HH:MM CET
+        subject_time = self.convert_short_date_to_cet(report_info["start_time"], '%d-%m %H:%M')
+        subject = f"{emoji} {info['name']} {subject_time} CET"
         date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         email_body = self._get_email_body(
             t_params, results_info, page_comparison, action_comparison,
             baseline_comparison_pages, baseline_comparison_actions, degradation_rate,
-            missed_thresholds, baseline_info, aggregated_baseline
+            missed_thresholds, baseline_info, aggregated_baseline, 
+            failed_pages_lcp, failed_actions_inp
         )
 
         charts = [
@@ -457,7 +616,8 @@ class UIEmailNotification:
 
     def _get_email_body(self, t_params, results_info, page_comparison, action_comparison,
                         baseline_comparison_pages, baseline_comparison_actions, degradation_rate,
-                        missed_thresholds, baseline_info, aggregated_baseline):
+                        missed_thresholds, baseline_info, aggregated_baseline,
+                        failed_pages_lcp, failed_actions_inp):
         env = Environment(loader=FileSystemLoader('./templates'))
         template = env.get_template("ui_email_template.html")
         return template.render(
@@ -465,7 +625,8 @@ class UIEmailNotification:
             action_comparison=action_comparison, baseline_comparison_pages=baseline_comparison_pages,
             baseline_comparison_actions=baseline_comparison_actions,
             degradation_rate=degradation_rate, missed_thresholds=missed_thresholds,
-            baseline_info=baseline_info, aggregated_baseline=aggregated_baseline
+            baseline_info=baseline_info, aggregated_baseline=aggregated_baseline,
+            failed_pages_lcp=failed_pages_lcp, failed_actions_inp=failed_actions_inp
         )
 
     def _get_url(self, url):
@@ -502,8 +663,8 @@ class UIEmailNotification:
         lcp_has_data = any(isinstance(v, (int, float)) for v in lcp_original)
 
         datapoints = {
-            'title': 'UI metrics',
-            'label': 'UI metrics',
+            'title': 'UI metrics (p75)',
+            'label': 'UI metrics (p75)',
             'x_axis': 'Test Runs',
             'y_axis': 'Time, sec',
             'width': 14,
@@ -547,8 +708,8 @@ class UIEmailNotification:
         inp_has_data = any(isinstance(v, (int, float)) for v in inp_original)
 
         datapoints = {
-            'title': 'UI metrics Actions',
-            'label': 'UI metrics Actions',
+            'title': 'UI metrics Actions (p75)',
+            'label': 'UI metrics Actions (p75)',
             'x_axis': 'Test Runs',
             'y_axis': 'Time, sec',
             'width': 14,

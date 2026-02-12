@@ -24,50 +24,83 @@
     {% macro display_value(value) -%}
         {% if "No data" in value|string %}<span class="outdated">{{ value|replace("\n", "<br>")|safe }}</span>{% else %}{{ value }}{% endif %}
     {%- endmacro %}<body>
-<table style="color: #fff; background: #875FFC; padding: 31px; font-size: 16px; font-weight: 600;">
+<table style="color: #fff; background: #875FFC; font-size: 16px; font-weight: 600; width: 100%; border-collapse: collapse;" cellpadding="0" cellspacing="0">
     <tr>
-        <td>
-            <img style="color: #ff0000; padding-right: 15px; display: inline-block;"
-                    alt="Logo"
-                    width="20"
-                    height="24"
-                    src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAYCAYAAAD6S912AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAFdSURBVHgBrVQLccMwDHV2AxAGG4OGQVsE2xAEQiEEQiH0iqBj4A5Bx8BjEAia1JOvyoucpp93p4scy0+WLCmEmSCiOjwDTPTOElkSSxseBZNslCxD9I9bCORGW3sb/bejIWT9NkVUs3QsvTm0dZxFIO5GxHIbIOqn8qX2CdLQ5s0IRB2+qOTMc+BElMJUTni9BIfRsZE0HLKBJVxBPndAFEvO1bFPyN+FCSOBo5YuuRObBglfxykPtcqxqqp1Dks+vN6z/sP6ydgN8BLK+FMyKeIka8mV6sU2nCLMaIz+ec14DuGe5ZvlyPKlXw+/LGvvUZbmQUY9q/u9PYMGSIglcy4RGrfdgbxeRkLzv6Fhe2VE72Z683OnpOL1w6D23P4m6CY7mlZqIIXdwSFJA/a3O9JCwSNRYUKTP+ZiKUIvd6IvTPg97PlEM8I5GV1IN+FWOMTuvLyHWAasX3eAf8SBG7h4AQZrAAAAAElFTkSuQmCC">
+        <td style="padding: 31px;">
+            <table style="width: 100%; border-collapse: collapse;" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="width: 36px; vertical-align: middle;">
+                        <img alt="Logo" width="20" height="24" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAYCAYAAAD6S912AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAFdSURBVHgBrVQLccMwDHV2AxAGG4OGQVsE2xAEQiEEQiH0iqBj4A5Bx8BjEAia1JOvyoucpp93p4scy0+WLCmEmSCiOjwDTPTOElkSSxseBZNslCxD9I9bCORGW3sb/bejIWT9NkVUs3QsvTm0dZxFIO5GxHIbIOqn8qX2CdLQ5s0IRB2+qOTMc+BElMJUTni9BIfRsZE0HLKBJVxBPndAFEvO1bFPyN+FCSOBo5YuuRObBglfxykPtcqxqqp1Dks+vN6z/sP6ydgN8BLK+FMyKeIka8mV6sU2nCLMaIz+ec14DuGe5ZvlyPKlXw+/LGvvUZbmQUY9q/u9PYMGSIglcy4RGrfdgbxeRkLzv6Fhe2VE72Z683OnpOL1w6D23P4m6CY7mlZqIIXdwSFJA/a3O9JCwSNRYUKTP+ZiKUIvd6IvTPg97PlEM8I5GV1IN+FWOMTuvLyHWAasX3eAf8SBG7h4AQZrAAAAAElFTkSuQmCC" style="display: block; border: 0;">
+                    </td>
+                    <td style="font-size: 14px; font-weight: 700; vertical-align: middle;">
+                        UI Performance Report
+                    </td>
+                    <td style="text-align: right; vertical-align: middle; font-size: 16px; font-weight: 600;">
+                        CARRIER
+                    </td>
+                </tr>
+            </table>
         </td>
-        <td style="margin-left: 8px; font-size: 14px; font-weight: 700; width: 100%">
-            UI Performance Report
-        </td>
-        <td>CARRIER</td>
     </tr>
 </table>
 <div>
     <p style="margin: 24px 0 20px 0; padding: 0 12px; font-weight: 700; color: #525F7F; font-size: 14px;">Execution Summary</p>
     <table>
         <tr>
-            <td style="padding: 4px 12px;">
-                {% if t_params.color %}
-                <div style="color: #fff; font-size: 16px; font-weight: 600; background: {{ t_params.color }}; border-radius: 4px">
-                {% else %}
-                <div style="color: #32325D; font-size: 16px; font-weight: 600; border-radius: 4px">
-                {% endif %}
-                    <span>Status:</span>
-                    <span>{{ t_params.status }}</span>
+            {% if t_params.color %}
+            <td style="background: {{ t_params.color }}; padding: 4px 12px;">
+                <div style="font-size: 16px; font-weight: 600;">
+                    <span style="color: #fff;">Status: {{ t_params.status }}</span>
                 </div>
             </td>
+            {% else %}
+            <td style="background: #F6F9FC; padding: 4px 12px;">
+                <div style="font-size: 16px; font-weight: 400;">
+                    <span style="color: #32325D; font-weight: 600;">Status: {{ t_params.status }}</span>
+                </div>
+            </td>
+            {% endif %}
             {% if t_params.total_thresholds > 0 %}
             <td style="background: #F6F9FC; padding: 4px 12px;">
                 <div style="color: #32325D; font-size: 16px; font-weight: 400;">
-                    <span style="margin-right: 30px">Threshold: {{ t_params.missed_thresholds }}%</span>
+                    <span>SLA failed rate: {{ t_params.missed_thresholds }}%</span>
                 </div>
             </td>
             {% endif %}
             {% if baseline_comparison_actions or baseline_comparison_pages %}
             <td style="background: #F6F9FC; padding: 4px 12px;">
                 <div style="color: #32325D; font-size: 16px; font-weight: 400;">
-                    <span style="margin-right: 30px"><a href={{ t_params.baseline_test_url }}>Baseline</a>: {{ t_params.degradation_rate }}%</span>
+                    <span>Baseline failed rate: {{ t_params.degradation_rate }}%</span>
+                </div>
+            </td>
+            {% endif %}
+            {% if t_params.performance_summary %}
+            <td style="padding: 4px 12px; {% if t_params.performance_summary.metrics.lcp.color == 'green' %}background: #D4EDDA;{% elif t_params.performance_summary.metrics.lcp.color == 'orange' %}background: #FFF3CD;{% else %}background: #F8D7DA;{% endif %}">
+                <div style="color: #32325D; font-size: 16px; font-weight: 400;">
+                    <span>LCP 75th: {{ t_params.performance_summary.metrics.lcp.value }} {% if t_params.performance_summary.metrics.lcp.trend == 'Improving' %}(better){% elif t_params.performance_summary.metrics.lcp.trend == 'Degrading' %}(worse){% else %}(stable){% endif %}</span>
+                </div>
+            </td>
+            <td style="padding: 4px 12px; {% if t_params.performance_summary.metrics.inp.color == 'green' %}background: #D4EDDA;{% elif t_params.performance_summary.metrics.inp.color == 'orange' %}background: #FFF3CD;{% else %}background: #F8D7DA;{% endif %}">
+                <div style="color: #32325D; font-size: 16px; font-weight: 400;">
+                    <span>INP 75th: {{ t_params.performance_summary.metrics.inp.value }} {% if t_params.performance_summary.metrics.inp.trend == 'Improving' %}(better){% elif t_params.performance_summary.metrics.inp.trend == 'Degrading' %}(worse){% else %}(stable){% endif %}</span>
                 </div>
             </td>
             {% endif %}
         </tr>
+        {% if t_params.current_test_url or t_params.baseline_test_url %}
+        <tr>
+            {% if t_params.current_test_url %}
+            <td colspan="2" style="padding: 8px 12px;">
+                <a href="{{ t_params.current_test_url }}" style="color: #875FFC; text-decoration: none; font-size: 14px;">View current test report →</a>
+            </td>
+            {% endif %}
+            {% if t_params.baseline_test_url %}
+            <td colspan="2" style="padding: 8px 12px;">
+                <a href="{{ t_params.baseline_test_url }}" style="color: #875FFC; text-decoration: none; font-size: 14px;">View baseline test report →</a>
+            </td>
+            {% endif %}
+        </tr>
+        {% endif %}
     </table>
 
     {% if t_params.status == 'Failed' and t_params.reasons_to_fail_report %}
@@ -76,10 +109,48 @@
         <ul style="padding-left: 25px;">
         {% for reason in t_params.reasons_to_fail_report %}
             <li style="list-style: none">
-                <span style="color: #F32626; font-size: 14px; font-weight: bold; margin-right: 5px;">✗</span>{{ reason }}
+                <span style="color: #F32626; font-size: 14px; font-weight: bold; margin-right: 5px;">✗</span><span style="color: #32325D;">{{ reason }}</span>
             </li>
         {% endfor %}
         </ul>
+    </div>
+    {% endif %}
+
+    <!-- Performance Summary Section -->
+    {% if t_params.performance_summary %}
+    <div style="margin: 0 0 4px 0; padding: 12px; border-radius: 4px;">
+        <p style="margin: 0; font-size: 14px;">
+            <span style="font-weight: 700; {% if t_params.performance_summary.status_color == 'green' %}color: #2E7D32;{% elif t_params.performance_summary.status_color == 'orange' %}color: #8B6F00;{% elif t_params.performance_summary.status_color == 'red' %}color: #8B0000;{% else %}color: #32325D;{% endif %}">{{ t_params.performance_summary.status }}:</span> <span style="color: #32325D;">{{ t_params.performance_summary.verdict }}</span>
+        </p>
+        <p style="margin: 8px 0 0 0; color: #32325D; font-size: 11px; line-height: 16px;">
+            <span style="font-weight: 700;">Google CWV Standards:</span> LCP: Good (&lt;2.5s), Needs Improvement (2.5-4.0s), Poor (&gt;4.0s) | INP: Good (&lt;0.2s), Needs Improvement (0.2-0.5s), Poor (&gt;0.5s)
+        </p>
+    </div>
+    {% endif %}
+    <!-- End Performance Summary Section -->
+
+    {% if t_params.status == 'Failed' %}
+    <div style="margin: 0 0 8px 0; padding: 0 12px;">
+        {% if failed_pages_lcp and failed_pages_lcp|length > 0 %}
+        <div style="margin-bottom: 8px;">
+            <span style="font-weight: 600; color: #32325D;">Pages with Failed LCP SLA:</span>
+            <ul style="margin: 4px 0 0 16px; padding: 0; font-size: 13px; color: #32325D;">
+                {% for page in failed_pages_lcp %}
+                <li><span style="color: #32325D;">{{ page.name }} (LCP: </span><span style="color: #DC3545; font-weight: 600;">{{ page.value }}s</span><span style="color: #32325D;">, SLA: {{ (page.threshold / 1000)|round(2) }}s)</span></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% if failed_actions_inp and failed_actions_inp|length > 0 %}
+        <div>
+            <span style="font-weight: 600; color: #32325D;">Actions with Failed INP SLA:</span>
+            <ul style="margin: 4px 0 0 16px; padding: 0; font-size: 13px; color: #32325D;">
+                {% for action in failed_actions_inp %}
+                <li><span style="color: #32325D;">{{ action.name }} (INP: </span><span style="color: #DC3545; font-weight: 600;">{{ action.value }}s</span><span style="color: #32325D;">, SLA: {{ (action.threshold / 1000)|round(2) }}s)</span></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 
@@ -113,14 +184,15 @@
             </tbody>
         </table>
     </div>
+
     {% if results|selectattr("type", "equalto", "page")|list|length > 0 %}
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Pages UI Metrics Trend</p>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Pages UI Metrics Trend (75th Percentile)</p>
     <div>
         <div align="center">
             <img src="cid:ui_metrics_pages"/>
         </div>
     </div>
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Pages Comparison Across the Last Five Test Runs</p>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Pages Comparison Across the Last Five Test Runs (75th Percentile)</p>
     <table style="width: 100%;">
         <thead>
         <tr>
@@ -154,13 +226,13 @@
     </table>
     {% endif %}
     {% if results|selectattr("type", "equalto", "action")|list|length > 0 %}
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Actions UI Metrics Trend</p>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Actions UI Metrics Trend (75th Percentile)</p>
     <div>
         <div align="center">
             <img src="cid:ui_metrics_actions"/>
         </div>
     </div>
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Actions Comparison Across the Last Five Test Runs</p>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Actions Comparison Across the Last Five Test Runs (75th Percentile)</p>
     <table style="width: 100%;">
         <thead>
         <tr>
@@ -263,7 +335,7 @@
     {% endif %}
 
         {% if baseline_comparison_pages %}
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Pages Baseline Comparison</p>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Pages Baseline Comparison (75th Percentile)</p>
     <table style="width: 100%;">
         <thead>
         <tr>
@@ -303,7 +375,7 @@
     </table>
         {% endif %}
         {% if baseline_comparison_actions %}
-    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Actions Baseline Comparison</p>
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Actions Baseline Comparison (75th Percentile)</p>
     <table style="width: 100%;">
         <thead>
         <tr>
