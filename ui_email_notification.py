@@ -1,6 +1,7 @@
 from datetime import datetime
 import pytz
 import requests
+import numpy as np
 from jinja2 import Environment, FileSystemLoader
 from email.mime.image import MIMEImage
 
@@ -47,12 +48,8 @@ class UIEmailNotification:
                     _arr = [int(item[metric]) for item in test_data if metric in item]
                 
                 if len(_arr) > 0:
-                    # Calculate 75th percentile instead of mean
-                    sorted_arr = sorted(_arr)
-                    p75_index = int(len(sorted_arr) * 0.75)
-                    if p75_index >= len(sorted_arr):
-                        p75_index = len(sorted_arr) - 1
-                    p75_value = sorted_arr[p75_index]
+                    # Calculate 75th percentile using numpy for statistical accuracy
+                    p75_value = np.percentile(_arr, 75)
                     
                     if metric == "cls":
                         aggregated[metric] = round(p75_value, 2)
@@ -302,12 +299,9 @@ class UIEmailNotification:
                 if "No data" in values:
                     result[metric] = "No data"
                 else:
-                    # Calculate 75th percentile instead of average
-                    sorted_values = sorted(values)
-                    p75_index = int(len(sorted_values) * 0.75)
-                    if p75_index >= len(sorted_values):
-                        p75_index = len(sorted_values) - 1
-                    result[metric] = round(sorted_values[p75_index], 2)
+                    # Calculate 75th percentile using numpy for statistical accuracy
+                    p75_value = np.percentile(values, 75)
+                    result[metric] = round(p75_value, 2)
 
             finalized.append(result)
 
@@ -345,15 +339,11 @@ class UIEmailNotification:
                     except (ValueError, TypeError):
                         pass
         
-        # Calculate p75 (75th percentile)
+        # Calculate p75 (75th percentile) using numpy for statistical accuracy
         def calculate_percentile(values, percentile=75):
             if not values:
                 return 0.0
-            sorted_values = sorted(values)
-            index = int(len(sorted_values) * (percentile / 100.0))
-            if index >= len(sorted_values):
-                index = len(sorted_values) - 1
-            return round(sorted_values[index], 2)
+            return round(np.percentile(values, percentile), 2)
         
         return {
             "lcp_p75": calculate_percentile(lcp_values),
