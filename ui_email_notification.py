@@ -484,7 +484,7 @@ class UIEmailNotification:
         # Generate Performance Summary based on Google CWV standards
         try:
             # Get degradation rate setting
-            degradation_rate_setting = self.args.get("deviation")
+            degradation_rate_setting = self.args.get("baseline_deviation")
             try:
                 degradation_rate_setting = float(degradation_rate_setting)
             except (TypeError, ValueError):
