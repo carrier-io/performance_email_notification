@@ -126,24 +126,24 @@ class PerformanceReportGenerator:
                 # Case 1: No thresholds, CWV Good
                 final_status = "SUCCESS"
                 status_color = "green"
-                verdict_text = "✅ All pages meet Google Core Web Vitals (CWV) standards at the 75th percentile."
+                verdict_text = "✅ Google CWV standards met. The 75th percentile is rated 'Good'."
             else:
                 # Case 2: No thresholds, CWV Poor
                 final_status = "WARNING"
                 status_color = "orange"
-                verdict_text = "⚠️ All pages fall below Google CWV standards. Optimize to ensure the 75th percentile meets 'Good' status."
+                verdict_text = "⚠️ Google CWV standards failed. The 75th percentile does not meet 'Good' criteria."
         
         elif thresholds_set and threshold_passed:
             if is_cwv_good:
                 # Case 3: Thresholds pass, CWV Good
                 final_status = "SUCCESS"
                 status_color = "green"
-                verdict_text = "✅ Custom thresholds passed. All pages meet Google CWV standards at the 75th percentile."
+                verdict_text = "✅ SLA passed. Google CWV standards are also met at the 75th percentile."
             else:
                 # Case 4: Thresholds pass, CWV Poor (The Legacy Trap)
                 final_status = "WARNING"
                 status_color = "orange"
-                verdict_text = "⚠️ Custom thresholds passed, but all pages fall below Google CWV standards at the 75th percentile. Tighten thresholds to align with Google benchmarks."
+                verdict_text = "⚠️ SLA passed, but Google CWV standards failed at the 75th percentile. Tighten your SLA to align with Google benchmarks."
         
         elif thresholds_set and not threshold_passed:
             # Cases 5 & 6 are both Failures
@@ -151,10 +151,10 @@ class PerformanceReportGenerator:
             status_color = "red"
             if is_cwv_good:
                 # Case 5: Thresholds fail, CWV Good (Strict SLA Breach)
-                verdict_text = "❌ Custom thresholds failed, though all pages meet Google CWV standards at the 75th percentile. Your thresholds are stricter than Google benchmarks."
+                verdict_text = "❌ SLA failed, even though Google CWV standards were met at the 75th percentile. Your SLA is stricter than Google benchmarks."
             else:
                 # Case 6: Thresholds fail, CWV Poor (Total Failure)
-                verdict_text = "❌ Custom thresholds failed, and all pages fall below Google CWV standards at the 75th percentile. Immediate optimization is required."
+                verdict_text = "❌ SLA failed, and Google CWV standards failed at the 75th percentile. Immediate optimization is required."
 
         # 4. Construct Output
         return {
