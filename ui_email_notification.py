@@ -526,17 +526,14 @@ class UIEmailNotification:
                 degradation_rate=degradation_rate_setting
             )
             
-            print(f"[PERFORMANCE SUMMARY] Status: {performance_summary['status']}, "
-                  f"LCP p75: {current_metrics['lcp_p75']}s, INP p75: {current_metrics['inp_p75']}s, "
+            print(f"[PERFORMANCE SUMMARY] LCP: {performance_summary['metrics']['lcp']['value']} ({performance_summary['metrics']['lcp']['trend']}), "
+                  f"INP: {performance_summary['metrics']['inp']['value']} ({performance_summary['metrics']['inp']['trend']}), "
                   f"Degradation Rate: {degradation_rate_setting}%")
             
         except Exception as e:
             print(f"[WARNING] Could not generate performance summary: {e}")
             # Fallback to basic summary
             performance_summary = {
-                "status": "UNKNOWN",
-                "status_color": "grey",
-                "verdict": "Performance summary unavailable due to insufficient data.",
                 "metrics": {
                     "lcp": {"value": "N/A", "label": "Unknown", "color": "grey", "trend": "Unknown"},
                     "inp": {"value": "N/A", "label": "Unknown", "color": "grey", "trend": "Unknown"}

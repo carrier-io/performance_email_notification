@@ -1,12 +1,7 @@
 class PerformanceReportGenerator:
     """
-    Generates executive performance summaries based on Google Core Web Vitals standards
-    and custom threshold configurations.
-    
-    The generator uses a 6-case decision matrix that balances:
-    - User-defined threshold compliance (CI/CD gates)
-    - Google CWV standards (User Experience benchmarks)
-    - Historical trend analysis (Performance trajectory)
+    Generates performance metrics evaluation based on Google Core Web Vitals standards
+    and historical trend analysis.
     """
     
     def __init__(self):
@@ -77,19 +72,10 @@ class PerformanceReportGenerator:
                          prev_inp_p75: float,
                          degradation_rate: float = 10.0):
         """
-        Generates the Executive Summary based on the 6-case logic matrix.
-        
-        Decision Matrix:
-        ┌─────────────────┬──────────────┬──────────────┐
-        │                 │ CWV Good     │ CWV Poor     │
-        ├─────────────────┼──────────────┼──────────────┤
-        │ No Thresholds   │ SUCCESS (1)  │ WARNING (2)  │
-        │ Thresholds Pass │ SUCCESS (3)  │ WARNING (4)  │
-        │ Thresholds Fail │ FAILURE (5)  │ FAILURE (6)  │
-        └─────────────────┴──────────────┴──────────────┘
+        Generates performance metrics summary with trend analysis.
         
         Args:
-            threshold_status (str): "Success", "Failed", or "Finished" (No thresholds set)
+            threshold_status (str): Not used in simplified version, kept for compatibility
             lcp_p75 (float): Current 75th percentile LCP in seconds
             inp_p75 (float): Current 75th percentile INP in seconds
             prev_lcp_p75 (float): Previous run's p75 LCP in seconds
@@ -97,70 +83,19 @@ class PerformanceReportGenerator:
             degradation_rate (float): Tolerance percentage for trend analysis (default: 10.0)
             
         Returns:
-            dict: Summary containing status, verdict, and metric details
+            dict: Metrics summary containing LCP and INP data with trends
         """
 
-        # 1. Evaluate Google CWV Standards
+        # Evaluate Google CWV Standards
         lcp_label, lcp_color = self._get_cwv_label(lcp_p75, 'LCP')
         inp_label, inp_color = self._get_cwv_label(inp_p75, 'INP')
-        
-        # Both must be Good to count as "CWV Good"
-        is_cwv_good = (lcp_label == "Good") and (inp_label == "Good")
 
-        # 2. Analyze Trends
+        # Analyze Trends
         lcp_trend = self._analyze_trend(lcp_p75, prev_lcp_p75, degradation_rate)
         inp_trend = self._analyze_trend(inp_p75, prev_inp_p75, degradation_rate)
 
-        # 3. Determine Final Status & Verdict (The 6 Cases)
-        # Map input status to boolean logic
-        thresholds_set = threshold_status != "Finished"
-        threshold_passed = threshold_status == "Success"
-
-        final_status = ""
-        status_color = ""
-        verdict_text = ""
-
-        # Logic Matrix Implementation
-        if not thresholds_set:
-            if is_cwv_good:
-                # Case 1: No thresholds, CWV Good
-                final_status = "SUCCESS"
-                status_color = "green"
-                verdict_text = "✅ Google CWV standards met. The 75th percentile is rated 'Good'."
-            else:
-                # Case 2: No thresholds, CWV Poor
-                final_status = "WARNING"
-                status_color = "orange"
-                verdict_text = "⚠️ Google CWV standards failed. The 75th percentile does not meet 'Good' criteria."
-        
-        elif thresholds_set and threshold_passed:
-            if is_cwv_good:
-                # Case 3: Thresholds pass, CWV Good
-                final_status = "SUCCESS"
-                status_color = "green"
-                verdict_text = "✅ SLA passed. Google CWV standards are also met at the 75th percentile."
-            else:
-                # Case 4: Thresholds pass, CWV Poor (The Legacy Trap)
-                final_status = "WARNING"
-                status_color = "orange"
-                verdict_text = "⚠️ SLA passed, but Google CWV standards failed at the 75th percentile. Tighten your SLA to align with Google benchmarks."
-        
-        elif thresholds_set and not threshold_passed:
-            # Cases 5 & 6 are both Failures
-            final_status = "FAILURE"
-            status_color = "red"
-            if is_cwv_good:
-                # Case 5: Thresholds fail, CWV Good (Strict SLA Breach)
-                verdict_text = "❌ SLA failed, even though Google CWV standards were met at the 75th percentile. Your SLA is stricter than Google benchmarks."
-            else:
-                # Case 6: Thresholds fail, CWV Poor (Total Failure)
-                verdict_text = "❌ SLA failed, and Google CWV standards failed at the 75th percentile. Immediate optimization is required."
-
-        # 4. Construct Output
+        # Return simplified metrics-only summary
         return {
-            "status": final_status,
-            "status_color": status_color,
-            "verdict": verdict_text,
             "metrics": {
                 "lcp": {
                     "value": f"{lcp_p75}s",
