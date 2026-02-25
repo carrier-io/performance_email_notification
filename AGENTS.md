@@ -55,6 +55,32 @@ UI-specific keys:
 Note: README mentions `smpt_*` keys, but the code uses `smtp_*` keys. Align new
 payloads with code unless you plan to update the parser.
 
+### AI Analysis Parameters (Backend Only)
+
+Backend (API) notifications support optional AI-powered performance analysis. **All parameters are optional and backward-compatible.**
+
+AI-specific keys (backend only):
+- `enable_ai_analysis`: `true`/`false` (default: `false`) - Enable AI analysis section
+- `ai_provider`: `'azure_openai'` (default) - AI provider type
+- `azure_openai_api_key`: Azure OpenAI API key (required if AI enabled)
+- `azure_openai_endpoint`: Azure resource URL (required if AI enabled)
+- `azure_openai_api_version`: API version (default: `'2024-02-15-preview'`)
+- `ai_model`: Model deployment name (default: `'gpt-4o'`)
+- `ai_temperature`: Temperature setting (default: `0.0`)
+
+**Graceful Degradation**: If AI analysis fails (invalid credentials, timeout, API errors), the email sends successfully without the AI Analysis section. Core reporting functionality is never blocked by AI service issues.
+
+**Constitution Compliance (Principle V - API vs UI Feature Parity)**:
+
+This feature intentionally creates **API vs UI divergence** as part of a phased rollout strategy:
+
+- **Backend (API) notifications**: Include AI Analysis section when `enable_ai_analysis=true`
+- **UI notifications**: Do not support AI analysis (not implemented in this iteration)
+
+**Justification**: Phased rollout allows validation of AI analysis on backend notifications before expanding to UI. Backend notifications have more structured performance data (transaction-level metrics, SLA thresholds) making them better suited for initial AI analysis implementation.
+
+**Future Work**: UI notifications may receive AI analysis in a future iteration after backend validation is complete.
+
 ## Dependencies and runtime
 - Python dependencies in `requirements.txt`
   - `perfreporter` (from GitHub) provides `DataManager` for Galloper data.
