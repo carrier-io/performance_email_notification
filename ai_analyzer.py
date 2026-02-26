@@ -45,6 +45,37 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Trend analysis configuration constants
+MIN_TESTS_FOR_TREND = 2
+TREND_TARGET_WORDS = 150
+TREND_MAX_TOKENS = 300  # ~150 words * 2 tokens/word
+
+TREND_SYSTEM_PROMPT = """You are a performance testing expert analyzing historical test trends.
+
+Output Requirements:
+- High-level summary (1-2 sentences) describing overall trend direction (degrading, improving, stable, volatile)
+- Key observations (numbered list) FOCUSED ON CURRENT RUN
+- Maximum 150 words total
+- Natural language paragraphs (not structured field lists or tables)
+- When referencing specific runs, use the provided markdown links
+
+CRITICAL - Observations Focus:
+- Compare CURRENT run (most recent) to PREVIOUS runs
+- Example: "Current run shows 20% throughput decrease compared to previous tests"
+- Example: "Error rate increased from 2% (previous runs) to 15% (current run)"
+- Example: "Response time improved by 30% compared to Run 3"
+- DO NOT say "Investigate Run 2" - instead say "Current run's throughput is 50% lower than historical average"
+- Focus on what changed FROM previous runs TO the current run
+- Observations should highlight key insights about the CURRENT run based on the trend
+
+Output Format:
+[Summary paragraph]
+
+**Observations:**
+1. [Key insight about current run compared to previous runs]
+2. [Key insight about current run compared to previous runs]
+"""
+
 
 @runtime_checkable
 class LLMProvider(Protocol):
@@ -582,12 +613,12 @@ CRITICAL CONSTRAINTS:
             return """You are a performance testing expert analyzing test results WITH ISSUES (threshold violations and/or baseline degradations).
 
 OUTPUT REQUIREMENTS:
-- Format: Plain text summary + markdown recommendations
+- Format: Plain text summary + markdown observations
 - Structure:
   1. Single paragraph (1-2 sentences): Summarize issues with actual values
   2. Blank line
-  3. "**Recommendations:**" header
-  4. Numbered list with 2-3 specific actions
+  3. "**Observations:**" header
+  4. Numbered list with 2-3 specific insights
 
 SUMMARY FORMAT (CRITICAL):
 - MUST be 1-2 sentences in paragraph form (NOT structured fields)
@@ -598,13 +629,13 @@ SUMMARY FORMAT (CRITICAL):
 - For 1-3 issues: list all with values
 - For 4+ issues: list top 2-3 worst and say "and X others"
 
-RECOMMENDATIONS FORMAT:
-- Start with "**Recommendations:**" on its own line
+OBSERVATIONS FORMAT:
+- Start with "**Observations:**" on its own line
 - Numbered items (1. 2. 3.)
-- Address BOTH threshold violations and baseline degradations when present
+- Highlight key insights about BOTH threshold violations and baseline degradations when present
 - Focus on worst offenders by name
-- If 100% error rate or >50 total errors, prioritize root cause investigation
-- If baseline degradation is significant (>50%), mention investigating what changed
+- If 100% error rate or >50 total errors, note severity of the issue
+- If baseline degradation is significant (>50%), note what changed significantly
 
 CRITICAL CONSTRAINTS - DO NOT:
 - Generate structured field lists (e.g., "Transaction Name:", "Metric Type:")
@@ -753,8 +784,8 @@ OVERALL METRICS:
             prompt += f"   Example: 'Critical: Error rate 100% (threshold: 5%), also 400% worse than baseline (25%).'\n"
             prompt += f"   DO NOT write: 'Transaction Name:', 'Metric Type:', etc.\n"
             prompt += f"2. Blank line\n"
-            prompt += f"3. Write '**Recommendations:**' header\n"
-            prompt += f"4. Write 2-3 numbered recommendations addressing BOTH threshold violations and baseline degradations if present\n"
+            prompt += f"3. Write '**Observations:**' header\n"
+            prompt += f"4. Write 2-3 numbered observations with key insights addressing BOTH threshold violations and baseline degradations if present\n"
             prompt += f"\nCRITICAL: Do NOT use field labels like 'Transaction Name:', 'Actual Value:', etc.\n"
             prompt += f"Write as natural flowing text. Maximum 200 words total.\n"
 
@@ -832,4 +863,109 @@ OVERALL METRICS:
 
         except Exception as e:
             logger.error(f"[AIAnalyzer] Unexpected error: {type(e).__name__}: {e}")
+            return None
+
+    def _build_trend_user_prompt(self, builds_comparison_data: list) -> str:
+        """
+        Build user prompt with historical data in tabular format with clickable links.
+
+        Args:
+            builds_comparison_data: List of build dicts (newest-first from caller)
+
+        Returns:
+            Formatted prompt string with chronological test history and markdown links
+        """
+        # Reverse for chronological order (oldest to newest)
+        builds_chronological = list(reversed(builds_comparison_data))
+
+        lines = ["Analyze performance trends across these test runs (oldest to newest, LAST = CURRENT):\n"]
+
+        for idx, build in enumerate(builds_chronological, 1):
+            # Create markdown link for the date if report_url exists
+            if build.get('report_url'):
+                date_link = f"[{build['date']}]({build['report_url']})"
+            else:
+                date_link = build['date']
+
+            # Mark the last run as CURRENT
+            run_label = f"Run {idx} (CURRENT)" if idx == len(builds_chronological) else f"Run {idx}"
+
+            line = (
+                f"{run_label} | {date_link} | "
+                f"TPS: {build['throughput']} | "
+                f"Err: {build['error_rate']}% | "
+                f"RT: {build['response_time']}s | "
+                f"Total: {build['total']}"
+            )
+            lines.append(line)
+
+        lines.append("\nIdentify patterns comparing CURRENT run to PREVIOUS runs:")
+        lines.append("1. Overall trend direction (degrading/improving/stable/volatile)")
+        lines.append("2. Error rate changes in CURRENT run vs previous runs")
+        lines.append("3. Response time changes in CURRENT run vs previous runs")
+        lines.append("4. Throughput changes in CURRENT run vs previous runs")
+        lines.append("5. Cross-metric correlations in CURRENT run")
+        lines.append("\nProvide concise summary and key observations FOCUSED ON CURRENT RUN.")
+        lines.append("Use the markdown links when referencing specific runs (e.g., 'compared to [Run 3 link]').")
+
+        return "\n".join(lines)
+
+    def generate_trend_analysis(self, builds_comparison_data: list) -> Optional[str]:
+        """
+        Generate AI-powered trend analysis from historical test runs.
+
+        Args:
+            builds_comparison_data: List of build dicts ordered newest-first
+
+        Returns:
+            Markdown-formatted trend analysis or None on failure
+        """
+        try:
+            # Validate minimum data requirement
+            if len(builds_comparison_data) < MIN_TESTS_FOR_TREND:
+                logger.info(
+                    f"[AIAnalyzer] Skipping trend analysis: only {len(builds_comparison_data)} "
+                    f"test(s) available (minimum {MIN_TESTS_FOR_TREND} required)"
+                )
+                return None
+
+            # Build prompt
+            user_prompt = self._build_trend_user_prompt(builds_comparison_data)
+
+            # Call Azure OpenAI API
+            logger.info(f"[AIAnalyzer] Generating trend analysis for {len(builds_comparison_data)} test runs")
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": TREND_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=self.temperature,
+                max_tokens=TREND_MAX_TOKENS,
+                timeout=60.0
+            )
+
+            # Validate response
+            if not response or not response.choices:
+                logger.warning("[AIAnalyzer] Trend analysis: empty response from API")
+                return None
+
+            content = response.choices[0].message.content
+            if not content or not content.strip():
+                logger.warning("[AIAnalyzer] Trend analysis: empty content in response")
+                return None
+
+            # Log success with token usage
+            prompt_tokens = getattr(response.usage, 'prompt_tokens', 0) if hasattr(response, 'usage') else 0
+            completion_tokens = getattr(response.usage, 'completion_tokens', 0) if hasattr(response, 'usage') else 0
+            logger.info(
+                f"[AIAnalyzer] Trend analysis generated: "
+                f"{prompt_tokens} prompt + {completion_tokens} completion = "
+                f"{prompt_tokens + completion_tokens} total tokens"
+            )
+
+            return content.strip()
+
+        except Exception as e:
+            logger.warning(f"[AIAnalyzer] Trend analysis failed: {type(e).__name__}: {e}")
             return None
