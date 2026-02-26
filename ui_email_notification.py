@@ -67,14 +67,20 @@ class UIEmailNotification:
         page_comparison, action_comparison = [], []
 
         for index, test in enumerate(tests_data):
-            page_metrics = self._aggregate_metrics(test["pages"], ["load_time", "tbt", "fcp", "lcp", "ttfb"])
-            page_metrics["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
+            test_date = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
+            
+            # Filter out FAILED status (if status is missing, assume OK)
+            filtered_pages = [p for p in test["pages"] if p.get("status") != "FAILED"]
+            filtered_actions = [a for a in test["actions"] if a.get("status") != "FAILED"]
+            
+            page_metrics = self._aggregate_metrics(filtered_pages, ["load_time", "tbt", "fcp", "lcp", "ttfb"])
+            page_metrics["date"] = test_date
             page_metrics[
                 "report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             page_comparison.append(page_metrics)
 
-            action_metrics = self._aggregate_metrics(test["actions"], ["cls", "tbt", "inp"])
-            action_metrics["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
+            action_metrics = self._aggregate_metrics(filtered_actions, ["cls", "tbt", "inp"])
+            action_metrics["date"] = test_date
             action_metrics[
                 "report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             action_comparison.append(action_metrics)
@@ -178,8 +184,12 @@ class UIEmailNotification:
 
     def _process_baseline_comparison(self, baseline_info, results_info, baseline_report_info):
         """Process baseline comparison and calculate degradation rate."""
-        baseline_results = self._aggregate_results_by_identifier(baseline_info, is_baseline=True)
-        current_results = self._aggregate_results_by_identifier(results_info, is_baseline=False)
+        # Filter out FAILED status from both baseline and current results
+        filtered_baseline_info = [r for r in baseline_info if r.get("status") != "FAILED"]
+        filtered_results_info = [r for r in results_info if r.get("status") != "FAILED"]
+        
+        baseline_results = self._aggregate_results_by_identifier(filtered_baseline_info, is_baseline=True)
+        current_results = self._aggregate_results_by_identifier(filtered_results_info, is_baseline=False)
 
         aggregated_baseline = self._finalize_aggregated_results(baseline_results)
         aggregated_current = self._finalize_aggregated_results(current_results)
@@ -321,6 +331,10 @@ class UIEmailNotification:
         inp_values = []
         
         for result in results_info:
+            # Skip FAILED results
+            if result.get("status") == "FAILED":
+                continue
+            
             # Collect LCP from pages
             if result.get('type') == 'page' and 'lcp' in result:
                 value = result['lcp']
