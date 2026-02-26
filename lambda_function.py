@@ -174,4 +174,15 @@ def parse_args(event: Union[list, dict]):
     args['missed_thresholds_qg'] = event.get('missed_thresholds_qg')
     args['status'] = event.get('status')
     args['quality_gate_config'] = event.get('quality_gate_config')
+
+    # AI Analysis Configuration (FR-001 through FR-007)
+    # All parameters are optional with defaults for backward compatibility
+    args['enable_ai_analysis'] = event.get('enable_ai_analysis', True)
+    args['ai_provider'] = event.get('ai_provider', 'azure_openai')
+    args['azure_openai_api_key'] = event.get('azure_openai_api_key', '')
+    args['azure_openai_endpoint'] = event.get('azure_openai_endpoint', 'https://ai-proxy.lab.epam.com')
+    args['azure_openai_api_version'] = event.get('azure_openai_api_version', '2024-02-15-preview')
+    args['ai_model'] = event.get('ai_model', 'gpt-4o')
+    args['ai_temperature'] = event.get('ai_temperature', 0.0)
+
     return args
