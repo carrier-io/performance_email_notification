@@ -2678,6 +2678,29 @@ class ReportBuilder:
 
                 logger.info(f"[ReportBuilder] AI analysis completed: {len(analysis_content) if analysis_content else 0} chars")
 
+                # Trend analysis integration (T017-T021)
+                if len(builds_comparison) >= 2:
+                    try:
+                        logger.info(f"[ReportBuilder] Generating trend analysis for {len(builds_comparison)} test runs...")
+                        trend_content = provider.generate_trend_analysis(builds_comparison)
+                        if ai_analysis is None:
+                            ai_analysis = {}
+                        ai_analysis['trend'] = trend_content
+                        logger.info(f"[ReportBuilder] Trend analysis completed: {len(trend_content) if trend_content else 0} chars")
+                    except Exception as trend_error:
+                        logger.warning(f"[ReportBuilder] Trend analysis failed: {trend_error}")
+                        if ai_analysis is None:
+                            ai_analysis = {}
+                        ai_analysis['trend'] = None
+                else:
+                    logger.info(
+                        f"[ReportBuilder] Skipping trend analysis: only {len(builds_comparison)} "
+                        f"test(s) available (minimum 2 required)"
+                    )
+                    if ai_analysis is None:
+                        ai_analysis = {}
+                    ai_analysis['trend'] = None
+
             except Exception as e:
                 # Graceful degradation (FR-023): log error but continue email delivery
                 import traceback
