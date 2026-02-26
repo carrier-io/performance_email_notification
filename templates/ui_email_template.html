@@ -143,6 +143,19 @@
     {% endif %}
     {% endif %}
 
+    {% if log_failed_transactions and log_failed_transactions|length > 0 %}
+    <div style="margin-top: 24px;">
+        <p style="margin: 24px 0 0px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Failed Transactions:</p>
+        <ul style="padding-left: 25px;">
+        {% for item in log_failed_transactions %}
+            <li style="list-style: none">
+                <span style="color: #F32626; font-size: 14px; font-weight: bold; margin-right: 5px;">✗</span>{{ item.name }}{% if item.error %} <span style="font-family: monospace; font-size: 12px; color: #525F7F;">({{ item.error }})</span>{% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     <div style="margin-top: 24px;">
         <table style="width: 100%;">
             <tbody>
