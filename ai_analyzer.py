@@ -54,26 +54,36 @@ TREND_SYSTEM_PROMPT = """You are a performance testing expert analyzing historic
 
 Output Requirements:
 - High-level summary (1-2 sentences) describing overall trend direction (degrading, improving, stable, volatile)
-- Key observations (numbered list) FOCUSED ON CURRENT RUN
+- Key observations (numbered list) ONLY IF MEANINGFUL - can be 0-3+ observations
 - Maximum 150 words total
 - Natural language paragraphs (not structured field lists or tables)
 - When referencing specific runs, use the provided markdown links
 
-CRITICAL - Observations Focus:
+CRITICAL - Observations Focus (ONLY MEANINGFUL INSIGHTS):
 - Compare CURRENT run (most recent) to PREVIOUS runs
-- Example: "Current run shows 20% throughput decrease compared to previous tests"
-- Example: "Error rate increased from 2% (previous runs) to 15% (current run)"
-- Example: "Response time improved by 30% compared to Run 3"
-- DO NOT say "Investigate Run 2" - instead say "Current run's throughput is 50% lower than historical average"
-- Focus on what changed FROM previous runs TO the current run
-- Observations should highlight key insights about the CURRENT run based on the trend
+- Only include observations for SIGNIFICANT changes (>15% for metrics, >1% for error rates)
+- If degradation/improvement started at a specific run, mention WHEN with link
+- Example: "Throughput degraded 25% starting from [Run 3](link), continuing in current run"
+- Example: "Error rate jumped from 0.5% to 3.2% in current run, first spike since [Run 1](link)"
+- Example: "Response time improved 20% compared to historical average"
+- Filter out slight variations (<10% changes, <0.5% error rate changes)
+- If no meaningful trends beyond summary, skip observations section entirely
+
+When Degradation Detected:
+- Identify WHEN it started (which run) using links: "started from [Run 3](link)"
+- Compare current run to the point before degradation started
+- Example: "Performance declined 30% starting from [26-Feb 13:00](link), worsening in current run"
 
 Output Format:
 [Summary paragraph]
 
+IF MEANINGFUL OBSERVATIONS EXIST:
 **Observations:**
-1. [Key insight about current run compared to previous runs]
-2. [Key insight about current run compared to previous runs]
+1. [Key insight with specific run links if applicable]
+2. [Another key insight - only if meaningful]
+
+IF NO MEANINGFUL OBSERVATIONS:
+[End after summary - no observations section]
 """
 
 
@@ -613,12 +623,11 @@ CRITICAL CONSTRAINTS:
             return """You are a performance testing expert analyzing test results WITH ISSUES (threshold violations and/or baseline degradations).
 
 OUTPUT REQUIREMENTS:
-- Format: Plain text summary + markdown observations
+- Format: Plain text summary + optional markdown observations (only if meaningful insights exist)
 - Structure:
   1. Single paragraph (1-2 sentences): Summarize issues with actual values
-  2. Blank line
-  3. "**Observations:**" header
-  4. Numbered list with 2-3 specific insights
+  2. If meaningful insights exist: Blank line + "**Observations:**" header + numbered list
+  3. If no meaningful insights: END after summary (no observations section)
 
 SUMMARY FORMAT (CRITICAL):
 - MUST be 1-2 sentences in paragraph form (NOT structured fields)
@@ -629,22 +638,32 @@ SUMMARY FORMAT (CRITICAL):
 - For 1-3 issues: list all with values
 - For 4+ issues: list top 2-3 worst and say "and X others"
 
-OBSERVATIONS FORMAT:
+OBSERVATIONS FORMAT (ONLY IF MEANINGFUL):
+- Include 0-3 observations based on SIGNIFICANCE
+- Only mention changes >20% for response time/throughput (or >1% for error rates)
+- Skip observations section entirely if nothing significant beyond summary
 - Start with "**Observations:**" on its own line
-- Numbered items (1. 2. 3.)
-- Highlight key insights about BOTH threshold violations and baseline degradations when present
-- Focus on worst offenders by name
-- If 100% error rate or >50 total errors, note severity of the issue
-- If baseline degradation is significant (>50%), note what changed significantly
+- Numbered items (1. 2. 3. - as many as meaningful, can be just 1 or even 0)
+- Focus on WORST offenders by name with >25% degradation
+- If 100% error rate or >50 total errors, note severity
+- If baseline degradation >30%, note significance
+
+FILTER OUT:
+- Slight differences (<20% response time changes, <1% error rate changes)
+- Minor variations within normal operating range
+- Redundant information already stated in summary
+- Any transaction performing acceptably
+- Improvements or stabilizations (unless critical context)
 
 CRITICAL CONSTRAINTS - DO NOT:
 - Generate structured field lists (e.g., "Transaction Name:", "Metric Type:")
 - Generate tables
 - Use headers like "Violations:" or section titles
 - Mention transactions that pass thresholds
-- Give generic advice
+- Mention slight improvements or minor differences
+- Give generic advice without specific data
 - Mention throughput
-- Exceed 200 words total
+- Exceed 150 words total
 """
 
     def _build_comprehensive_user_prompt(self, performance_data: Dict[str, Any], violations: Dict[str, Any], baseline_degradations: Optional[Dict[str, Any]] = None) -> str:
@@ -783,11 +802,15 @@ OVERALL METRICS:
             prompt += f"   Example: '6 transactions exceed thresholds: POST_X (1.38s > 0.58s), POST_Y (0.81s > 0.58s), and 4 others.'\n"
             prompt += f"   Example: 'Critical: Error rate 100% (threshold: 5%), also 400% worse than baseline (25%).'\n"
             prompt += f"   DO NOT write: 'Transaction Name:', 'Metric Type:', etc.\n"
-            prompt += f"2. Blank line\n"
-            prompt += f"3. Write '**Observations:**' header\n"
-            prompt += f"4. Write 2-3 numbered observations with key insights addressing BOTH threshold violations and baseline degradations if present\n"
+            prompt += f"2. IF MEANINGFUL INSIGHTS EXIST (>20% degradation or >1% error changes):\n"
+            prompt += f"   - Blank line\n"
+            prompt += f"   - Write '**Observations:**' header\n"
+            prompt += f"   - Write 1-3 numbered observations with key insights (as many as meaningful, can be just 1)\n"
+            prompt += f"   - Only mention worst offenders with >25% degradation\n"
+            prompt += f"   - Filter out slight variations (<20% changes)\n"
+            prompt += f"3. IF NO MEANINGFUL INSIGHTS: Stop after summary (no observations section)\n"
             prompt += f"\nCRITICAL: Do NOT use field labels like 'Transaction Name:', 'Actual Value:', etc.\n"
-            prompt += f"Write as natural flowing text. Maximum 200 words total.\n"
+            prompt += f"Write as natural flowing text. Maximum 150 words total.\n"
 
         return prompt
 
@@ -899,14 +922,20 @@ OVERALL METRICS:
             )
             lines.append(line)
 
-        lines.append("\nIdentify patterns comparing CURRENT run to PREVIOUS runs:")
+        lines.append("\nIdentify MEANINGFUL patterns comparing CURRENT run to PREVIOUS runs:")
         lines.append("1. Overall trend direction (degrading/improving/stable/volatile)")
-        lines.append("2. Error rate changes in CURRENT run vs previous runs")
-        lines.append("3. Response time changes in CURRENT run vs previous runs")
-        lines.append("4. Throughput changes in CURRENT run vs previous runs")
-        lines.append("5. Cross-metric correlations in CURRENT run")
-        lines.append("\nProvide concise summary and key observations FOCUSED ON CURRENT RUN.")
-        lines.append("Use the markdown links when referencing specific runs (e.g., 'compared to [Run 3 link]').")
+        lines.append("2. SIGNIFICANT error rate changes (>1%) in CURRENT run vs previous runs")
+        lines.append("3. SIGNIFICANT response time changes (>15%) in CURRENT run vs previous runs")
+        lines.append("4. SIGNIFICANT throughput changes (>15%) in CURRENT run vs previous runs")
+        lines.append("5. Cross-metric correlations ONLY if significant")
+        lines.append("\nIMPORTANT INSTRUCTIONS:")
+        lines.append("- If degradation detected, identify WHEN it started (which run) using markdown links")
+        lines.append("- Example: 'degraded starting from [Run 3 link], continuing in current run'")
+        lines.append("- Only mention changes >15% for metrics or >1% for error rates")
+        lines.append("- Filter out slight variations (<10% changes, <0.5% error rate changes)")
+        lines.append("- If no meaningful insights beyond summary, skip observations section entirely")
+        lines.append("\nProvide concise summary and 0-3 key observations (only if meaningful) FOCUSED ON CURRENT RUN.")
+        lines.append("Use the markdown links when referencing specific runs.")
 
         return "\n".join(lines)
 
