@@ -293,7 +293,7 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.name }}</a></td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: center; border-bottom: solid 1px #EAEDEF;">{{ result.status }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: center; border-bottom: solid 1px #EAEDEF;">{% if result.status == 'SUCCESS' %}✅{% elif result.status == 'FAILED' %}❌{% else %}—{% endif %}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.load_time_color }}">{{ display_value(result.load_time) }}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.dom_color }}">{{ display_value(result.dom) }}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.fcp_color }}">{{ display_value(result.fcp) }}</td>
@@ -329,7 +329,7 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.name }}</a></td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
-            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: center; border-bottom: solid 1px #EAEDEF;">{{ result.status }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: center; border-bottom: solid 1px #EAEDEF;">{% if result.status == 'SUCCESS' %}✅{% elif result.status == 'FAILED' %}❌{% else %}—{% endif %}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_color }}">{{ display_value(result.cls) }}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_color }}">{{ display_value(result.tbt) }}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.inp_color }}">{{ display_value(result.inp) }}</td>
