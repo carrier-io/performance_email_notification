@@ -556,6 +556,7 @@ class UIEmailNotification:
             bucket = report_info['name'].replace(' ', '').replace('_', '').lower()
             log_content = self._download_log_file(bucket, report_uid)
             log_filename = f"log_{report_info['id']}_{report_uid}.log"
+            log_filename = f"/tmp/log_{report_info['id']}_{report_uid}.log"
             with open(log_filename, 'wb') as f:
                 f.write(log_content)
             print(f"[LOG DOWNLOAD] Saved log to: {log_filename}")
