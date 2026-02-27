@@ -61,4 +61,66 @@ You can pass the necessary parameters with the -d option. List of available para
 `'test_limit': 5` - optional, default - 5
 
 `'comparison_metric': 'pct95'` - optional, only for api notifications, default - 'pct95'
- 
+
+---
+
+## AI-Powered Performance Analysis (Backend Notifications)
+
+Backend (API) email notifications support AI-powered performance analysis using Azure OpenAI. When enabled, emails include an "AI Analysis" section with automated insights based on test results and SLA thresholds.
+
+### Features
+
+- **Key Findings**: 3-5 bullet points highlighting critical performance issues
+- **Performance Observations**: Markdown table with problematic transactions/requests
+- **Actionable Items**: 3-5 numbered, data-specific recommendations
+
+### AI Analysis Parameters
+
+All AI parameters are **optional** and backward-compatible. Emails send successfully even if AI analysis fails (graceful degradation).
+
+`'enable_ai_analysis': true/false` - **optional**, default: `false` - Enable AI-powered analysis section
+
+`'ai_provider': 'azure_openai'` - **optional**, default: `'azure_openai'` - AI provider type (currently only Azure OpenAI supported)
+
+`'azure_openai_api_key': '<your-api-key>'` - **required if AI enabled** - Azure OpenAI API key for authentication
+
+`'azure_openai_endpoint': 'https://your-resource.openai.azure.com/'` - **required if AI enabled** - Azure OpenAI endpoint URL
+
+`'azure_openai_api_version': '2024-02-15-preview'` - **optional**, default: `'2024-02-15-preview'` - API version
+
+`'ai_model': 'gpt-4o'` - **optional**, default: `'gpt-4o'` - Model deployment name (must match Azure deployment)
+
+`'ai_temperature': 0.0` - **optional**, default: `0.0` - Temperature for LLM output (0.0 = deterministic, 2.0 = creative)
+
+### Example Usage
+
+```bash
+curl -XPOST -H "Content-Type: application/json" -d '{
+  "test": "checkout_flow_test",
+  "test_type": "backend",
+  "notification_type": "api",
+  "enable_ai_analysis": true,
+  "azure_openai_api_key": "sk-...",
+  "azure_openai_endpoint": "https://my-resource.openai.azure.com/",
+  "ai_model": "gpt-4o",
+  "influx_host": "influxdb.example.com",
+  "smtp_user": "notifications@example.com",
+  "smtp_password": "password",
+  "user_list": "team@example.com"
+}' <host>:5000/task/<task_id>
+```
+
+### Graceful Degradation
+
+If AI analysis fails (invalid credentials, timeout, API errors), the email **will still send successfully** without the AI Analysis section. This ensures core reporting functionality is never blocked by AI service issues.
+
+### Requirements
+
+- Azure OpenAI resource with GPT-4o model deployment
+- API key with appropriate permissions
+- Lambda timeout configured to at least 120 seconds (AI generation adds ~10s per email)
+
+### Provider Extensibility
+
+The implementation uses provider abstraction to support future AI providers (OpenAI, Anthropic Claude, etc.) without code changes. See `specs/002-backend-ai-analysis/quickstart.md` for details on adding new providers.
+

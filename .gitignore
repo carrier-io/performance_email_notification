@@ -83,6 +83,8 @@ celerybeat-schedule
 
 # Environments
 .env
+.env*
+!.env.example
 .venv
 env/
 venv/
@@ -102,3 +104,17 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Reference directories (not part of this repo)
+ai_analysis_email/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

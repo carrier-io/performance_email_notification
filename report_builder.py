@@ -36,6 +36,600 @@ from chart_generator import alerts_linechart, barchart, ui_comparison_linechart
 from email.mime.image import MIMEImage
 import statistics
 from jinja2 import Environment, FileSystemLoader
+import markdown
+from ai_analyzer import AIProviderFactory
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def markdown_to_html(text: str) -> str:
+    """
+    Convert markdown to HTML for email rendering.
+
+    Uses Python markdown library with extensions for tables, line breaks,
+    and sane lists. Output is safe for email clients with XSS prevention.
+
+    XSS Prevention:
+    - Markdown library escapes HTML by default (no raw HTML processing)
+    - Only markdown syntax is converted to HTML
+    - Script tags, iframes, and other dangerous HTML are not rendered
+    - Safe extensions only: tables, nl2br, sane_lists
+
+    Args:
+        text: Markdown-formatted string
+
+    Returns:
+        HTML string safe for email clients, empty string if text is None
+    """
+    if not text:
+        return ""
+
+    # Convert markdown to HTML (safe by default - no raw HTML)
+    html = markdown.markdown(
+        text,
+        extensions=['tables', 'nl2br', 'sane_lists'],
+        output_format='html5'
+    )
+
+    # Add inline styles to tables for better email rendering
+    html = html.replace('<table>', '<table style="width: 100%; border-collapse: collapse; margin: 8px 0;">')
+    html = html.replace('<th>', '<th style="color: #757F99; padding: 8px 12px; font-size: 12px; font-weight: 600; background: #F9FAFF; border: solid 1px #EAEDEF; text-align: left;">')
+    html = html.replace('<td>', '<td style="padding: 8px 12px; font-size: 14px; color: #525F7F; border: solid 1px #EAEDEF; text-align: left;">')
+
+    return html
+
+
+def _detect_baseline_degradations(performance_context, baseline_data):
+    """
+    Analyze baseline comparison and detect degradations.
+
+    Args:
+        performance_context: PerformanceDataContext dict
+        baseline_data: Baseline test data (list of request dicts) or None
+
+    Returns:
+        dict with: {
+            'has_degradations': bool,
+            'overall': {},  # Overall degradations (error_rate, response_time, throughput)
+            'transactions': []  # Individual transaction degradations
+        }
+    """
+    degradations = {
+        'has_degradations': False,
+        'overall': {},
+        'transactions': []
+    }
+
+    if not baseline_data:
+        return degradations
+
+    overall = performance_context['overall_metrics']
+    transactions = performance_context['transaction_stats']
+    requests = performance_context['request_stats']
+
+    # Helper to safely convert
+    def safe_float(value, default=0.0):
+        try:
+            return float(value) if value else default
+        except (ValueError, TypeError):
+            return default
+
+    # Find baseline "All" row for overall comparison
+    baseline_overall = {}
+    for baseline_req in baseline_data:
+        if not isinstance(baseline_req, dict):
+            continue
+        if baseline_req.get('request_name', '').lower() == 'all':
+            baseline_total = safe_float(baseline_req.get('total', 0))
+            baseline_ko = safe_float(baseline_req.get('ko', 0))
+            baseline_er = (baseline_ko / baseline_total * 100) if baseline_total > 0 else 0
+
+            baseline_overall = {
+                'response_time_95th': safe_float(baseline_req.get('pct95', 0)),
+                'error_rate': baseline_er,
+                'throughput': safe_float(baseline_req.get('throughput', 0))
+            }
+            break
+
+    if not baseline_overall:
+        return degradations
+
+    logger.info(f"[AIAnalyzer] Baseline overall: RT={baseline_overall['response_time_95th']}ms, ER={baseline_overall['error_rate']:.2f}%")
+
+    # Check overall error rate degradation
+    if overall['error_rate'] > baseline_overall['error_rate']:
+        diff = overall['error_rate'] - baseline_overall['error_rate']
+        degradations['overall']['error_rate'] = {
+            'current': overall['error_rate'],
+            'baseline': baseline_overall['error_rate'],
+            'difference': diff,
+            'percent_change': (diff / baseline_overall['error_rate'] * 100) if baseline_overall['error_rate'] > 0 else 0
+        }
+        degradations['has_degradations'] = True
+        logger.info(f"[AIAnalyzer] Overall ER degradation: {overall['error_rate']:.2f}% vs baseline {baseline_overall['error_rate']:.2f}%")
+
+    # Check overall response time degradation
+    if overall['response_time_95th'] > baseline_overall['response_time_95th']:
+        diff = overall['response_time_95th'] - baseline_overall['response_time_95th']
+        degradations['overall']['response_time'] = {
+            'current': overall['response_time_95th'],
+            'baseline': baseline_overall['response_time_95th'],
+            'difference': diff,
+            'percent_change': (diff / baseline_overall['response_time_95th'] * 100) if baseline_overall['response_time_95th'] > 0 else 0
+        }
+        degradations['has_degradations'] = True
+        logger.info(f"[AIAnalyzer] Overall RT degradation: {overall['response_time_95th']}ms vs baseline {baseline_overall['response_time_95th']}ms")
+
+    # Check individual transaction degradations (optional, for detailed analysis)
+    all_items = transactions + requests
+    for item in all_items:
+        item_name = item['name']
+
+        # Find matching baseline transaction
+        baseline_item = None
+        for baseline_req in baseline_data:
+            if not isinstance(baseline_req, dict):
+                continue
+            if baseline_req.get('request_name', '') == item_name:
+                baseline_total = safe_float(baseline_req.get('total', 0))
+                baseline_ko = safe_float(baseline_req.get('ko', 0))
+                baseline_er = (baseline_ko / baseline_total * 100) if baseline_total > 0 else 0
+
+                baseline_item = {
+                    'response_time_95th': safe_float(baseline_req.get('pct95', 0)),
+                    'error_rate': baseline_er
+                }
+                break
+
+        if not baseline_item:
+            continue
+
+        # Check response time degradation
+        if item['response_time_95th'] > baseline_item['response_time_95th']:
+            diff = item['response_time_95th'] - baseline_item['response_time_95th']
+            percent_change = (diff / baseline_item['response_time_95th'] * 100) if baseline_item['response_time_95th'] > 0 else 0
+
+            # Only report significant degradations (>20% worse)
+            if percent_change > 20:
+                degradations['transactions'].append({
+                    'name': item_name,
+                    'type': 'response_time',
+                    'current': item['response_time_95th'],
+                    'baseline': baseline_item['response_time_95th'],
+                    'difference': diff,
+                    'percent_change': percent_change
+                })
+                degradations['has_degradations'] = True
+
+    if degradations['has_degradations']:
+        overall_count = len(degradations['overall'])
+        txn_count = len(degradations['transactions'])
+        logger.info(f"[AIAnalyzer] Baseline degradations: Overall={overall_count}, Transactions={txn_count}")
+    else:
+        logger.info(f"[AIAnalyzer] No baseline degradations detected")
+
+    return degradations
+
+
+def _detect_violations(performance_context):
+    """
+    Analyze performance data and categorize violations by severity.
+
+    Returns:
+        dict with: {
+            'has_violations': bool,
+            'critical': [],  # error_rate > 10% OR response_time > 2x threshold
+            'warning': [],   # error_rate 5-10% OR response_time 1-2x threshold
+            'minor': [],     # Just above threshold
+            'use_defaults': bool  # True if using fallback defaults
+        }
+    """
+    violations = {
+        'has_violations': False,
+        'critical': [],
+        'warning': [],
+        'minor': [],
+        'use_defaults': False
+    }
+
+    overall = performance_context['overall_metrics']
+    transactions = performance_context['transaction_stats']
+    requests = performance_context['request_stats']
+    sla = performance_context['sla_thresholds']
+
+    # Determine if using actual SLA or defaults
+    if not sla['configured']:
+        # Check if we have high errors (>5%) to warrant using defaults
+        if overall['error_rate'] > 5.0:
+            violations['use_defaults'] = True
+            # Use defaults for "all" scope
+            sla['response_time'] = 2000  # ms
+            sla['error_rate'] = 5.0  # %
+            logger.info(f"[AIAnalyzer] No SLA configured but high error rate detected ({overall['error_rate']:.2f}%), using defaults")
+        else:
+            # No SLA configured and no obvious problems - skip violation detection
+            logger.info(f"[AIAnalyzer] No SLA configured and error rate low ({overall['error_rate']:.2f}%), skipping violation detection")
+            return violations
+
+    # STEP 1: Check OVERALL/AGGREGATED metrics against "all" scope thresholds
+    logger.info(f"[AIAnalyzer] Checking overall metrics: RT={overall['response_time_95th']}ms, ER={overall['error_rate']:.2f}%")
+
+    # Check overall error rate against "all" scope
+    if sla.get('error_rate') is not None and overall['error_rate'] > sla['error_rate']:
+        exceeded_by = overall['error_rate'] - sla['error_rate']
+        violation = {
+            'name': 'Overall (All Requests)',
+            'type': 'error_rate',
+            'value': overall['error_rate'],
+            'threshold': sla['error_rate'],
+            'exceeded_by': exceeded_by,
+            'total_errors': overall['total_errors'],
+            'total_requests': overall['total_requests']
+        }
+
+        if violation['value'] > 10:
+            violations['critical'].append(violation)
+        elif violation['value'] > sla['error_rate'] * 2:
+            violations['warning'].append(violation)
+        else:
+            violations['minor'].append(violation)
+
+        logger.info(f"[AIAnalyzer] Overall error rate violation: {overall['error_rate']:.2f}% > {sla['error_rate']}%")
+
+    # Check overall response time against "all" scope
+    if sla.get('response_time') is not None and overall['response_time_95th'] > sla['response_time']:
+        exceeded_by = overall['response_time_95th'] - sla['response_time']
+        violation = {
+            'name': 'Overall (All Requests)',
+            'type': 'response_time',
+            'value': overall['response_time_95th'],
+            'threshold': sla['response_time'],
+            'exceeded_by': exceeded_by
+        }
+
+        if violation['value'] > sla['response_time'] * 2:
+            violations['critical'].append(violation)
+        elif violation['value'] > sla['response_time'] * 1.5:
+            violations['warning'].append(violation)
+        else:
+            violations['minor'].append(violation)
+
+        logger.info(f"[AIAnalyzer] Overall response time violation: {overall['response_time_95th']}ms > {sla['response_time']}ms")
+
+    # STEP 2: Check INDIVIDUAL transactions/requests against "specific" or "every" scope thresholds
+    # NOTE: "all" scope does NOT apply to individual transactions
+    all_items = transactions + requests
+    per_transaction_thresholds = sla.get('per_transaction', {})
+
+    for item in all_items:
+        item_name = item['name']
+
+        # Priority chain for INDIVIDUAL transactions:
+        # 1. Specific scope (e.g., "POST_login") - highest priority
+        # 2. "every" scope - applies to all individual transactions
+        # NOTE: "all" scope is NOT used for individual transactions
+
+        # Try specific transaction first
+        transaction_sla = per_transaction_thresholds.get(item_name, {})
+
+        # Response time threshold: specific > every (NO "all" fallback)
+        rt_threshold = transaction_sla.get('response_time')  # Specific first
+        if rt_threshold is None:
+            rt_threshold = per_transaction_thresholds.get('every', {}).get('response_time')  # Then every
+
+        # Error rate threshold: specific > every (NO "all" fallback)
+        er_threshold = transaction_sla.get('error_rate')  # Specific first
+        if er_threshold is None:
+            er_threshold = per_transaction_thresholds.get('every', {}).get('error_rate')  # Then every
+
+        # Log which threshold is used for debugging
+        if rt_threshold:
+            threshold_source = "specific" if transaction_sla.get('response_time') else "every"
+            logger.info(f"[AIAnalyzer] {item_name}: Using {threshold_source} RT threshold = {rt_threshold}ms")
+
+        # Check error rate
+        if er_threshold is not None and item['error_rate'] > er_threshold:
+            exceeded_by = item['error_rate'] - er_threshold
+            violation = {
+                'name': item_name,
+                'type': 'error_rate',
+                'value': item['error_rate'],
+                'threshold': er_threshold,
+                'exceeded_by': exceeded_by,
+                'total_errors': item['total_errors'],
+                'total_requests': item['total_requests']
+            }
+
+            # Categorize by severity
+            if violation['value'] > 10:
+                violations['critical'].append(violation)
+            elif violation['value'] > er_threshold * 2:
+                violations['warning'].append(violation)
+            else:
+                violations['minor'].append(violation)
+
+        # Check response time (already in milliseconds)
+        if rt_threshold is not None and item['response_time_95th'] > rt_threshold:
+            exceeded_by = item['response_time_95th'] - rt_threshold
+            violation = {
+                'name': item_name,
+                'type': 'response_time',
+                'value': item['response_time_95th'],
+                'threshold': rt_threshold,
+                'exceeded_by': exceeded_by
+            }
+
+            # Categorize by severity
+            if violation['value'] > rt_threshold * 2:
+                violations['critical'].append(violation)
+            elif violation['value'] > rt_threshold * 1.5:
+                violations['warning'].append(violation)
+            else:
+                violations['minor'].append(violation)
+
+    violations['has_violations'] = len(violations['critical']) + len(violations['warning']) + len(violations['minor']) > 0
+
+    if violations['has_violations']:
+        logger.info(f"[AIAnalyzer] === VIOLATION SUMMARY ===")
+        logger.info(f"[AIAnalyzer] Total violations: {len(violations['critical']) + len(violations['warning']) + len(violations['minor'])}")
+        logger.info(f"[AIAnalyzer] - Critical: {len(violations['critical'])}")
+        logger.info(f"[AIAnalyzer] - Warning: {len(violations['warning'])}")
+        logger.info(f"[AIAnalyzer] - Minor: {len(violations['minor'])}")
+
+        # Log violation details
+        for severity, items in [('CRITICAL', violations['critical']),
+                                ('WARNING', violations['warning']),
+                                ('MINOR', violations['minor'])]:
+            if items:
+                logger.info(f"[AIAnalyzer] {severity} violations:")
+                for v in items:
+                    if v['type'] == 'error_rate':
+                        logger.info(f"[AIAnalyzer]   - {v['name']}: ER {v['value']:.2f}% > {v['threshold']}% (by {v['exceeded_by']:.2f}%)")
+                    elif v['type'] == 'response_time':
+                        logger.info(f"[AIAnalyzer]   - {v['name']}: RT {v['value']:.0f}ms > {v['threshold']}ms (by {v['exceeded_by']:.0f}ms)")
+    else:
+        logger.info(f"[AIAnalyzer] No violations detected - all metrics within thresholds")
+
+    return violations
+
+
+def _build_performance_context(last_test_data, baseline_and_thresholds, quality_gate_config, test_params, thresholds=None):
+    """
+    Build PerformanceDataContext for AI analysis from existing data structures.
+
+    Reuses existing SLA threshold processing - no duplicate calculations (FR-010).
+
+    Args:
+        last_test_data: Test metrics LIST from data_manager (array of request objects)
+        baseline_and_thresholds: Processed thresholds from get_baseline_and_thresholds()
+        quality_gate_config: Quality gate configuration dict
+        test_params: Test metadata dict
+        thresholds: Optional list of threshold objects from API for extracting actual SLA values
+
+    Returns:
+        Dict with overall_metrics, transaction_stats, request_stats, sla_thresholds, test_metadata
+    """
+    # Defensive: Ensure last_test_data is a list
+    if not isinstance(last_test_data, list):
+        logger.warning(f"[AIAnalyzer] last_test_data is not a list: type={type(last_test_data)}")
+        last_test_data = []
+
+    # Defensive: Ensure quality_gate_config is a dict
+    if not isinstance(quality_gate_config, dict):
+        quality_gate_config = {}
+
+    # Defensive: Ensure test_params is a dict
+    if not isinstance(test_params, dict):
+        test_params = {}
+
+    # Helper function to safely convert to float
+    def safe_float(value, default=0.0):
+        try:
+            return float(value) if value else default
+        except (ValueError, TypeError):
+            return default
+
+    # Extract overall metrics from "All" row in last_test_data
+    overall_metrics = {
+        'response_time_95th': 0,
+        'error_rate': 0,
+        'throughput': 0,
+        'duration_minutes': 0,
+        'total_requests': 0,
+        'total_errors': 0
+    }
+
+    # Find the "All" row for overall metrics
+    for request in last_test_data:
+        if not isinstance(request, dict):
+            continue
+        if request.get('request_name', '').lower() == 'all':
+            # Calculate error rate from ko/total
+            total = safe_float(request.get('total', 0))
+            ko = safe_float(request.get('ko', 0))
+            error_rate = (ko / total * 100) if total > 0 else 0
+
+            overall_metrics = {
+                'response_time_95th': safe_float(request.get('pct95', 0)),
+                'error_rate': error_rate,
+                'throughput': safe_float(request.get('throughput', 0)),
+                'duration_minutes': safe_float(request.get('duration', 0)),
+                'total_requests': int(total),
+                'total_errors': int(ko)
+            }
+            logger.info(f"[AIAnalyzer] Overall metrics extracted: RT={overall_metrics['response_time_95th']}ms, "
+                       f"ER={overall_metrics['error_rate']:.2f}%, Total={overall_metrics['total_requests']}")
+            break
+
+    # Extract transaction stats (top 10 by response time or error rate)
+    transaction_stats = []
+    request_stats = []
+
+    # Extract from last_test_data directly (it's a list of request objects)
+    logger.info(f"[AIAnalyzer] Extracting transaction/request data from last_test_data: {len(last_test_data)} items")
+
+    # DEBUG: Log sample request structure
+    if last_test_data and len(last_test_data) > 0:
+        sample = last_test_data[0]
+        logger.info(f"[AIAnalyzer] Sample request fields: {list(sample.keys())}")
+
+    for request in last_test_data:
+        if not isinstance(request, dict):
+            continue
+
+        request_name = request.get('request_name', '')
+        if not request_name or request_name.lower() == 'all':
+            continue  # Skip "All" row
+
+        # Calculate error rate from ko/total
+        total = safe_float(request.get('total', 0))
+        ko = safe_float(request.get('ko', 0))
+        error_rate = (ko / total * 100) if total > 0 else 0
+
+        # Get response time (default to pct95, already in milliseconds)
+        response_time_95th = safe_float(request.get('pct95', 0))
+        response_time_avg = safe_float(request.get('mean', 0))
+
+        stat = {
+            'name': request_name,
+            'response_time_95th': response_time_95th,  # in milliseconds
+            'response_time_avg': response_time_avg,     # in milliseconds
+            'error_rate': error_rate,
+            'total_requests': int(total),
+            'total_errors': int(ko)
+        }
+
+        # Categorize as transaction or request based on method
+        method = request.get('method', '').upper()
+        if method == 'TRANSACTION':
+            transaction_stats.append(stat)
+        else:
+            request_stats.append(stat)
+
+    logger.info(f"[AIAnalyzer] Extracted {len(transaction_stats)} transactions and {len(request_stats)} requests")
+
+    # Sort by error rate (descending) then by response time
+    transaction_stats.sort(key=lambda x: (x['error_rate'], x['response_time_95th']), reverse=True)
+    request_stats.sort(key=lambda x: (x['error_rate'], x['response_time_95th']), reverse=True)
+
+    # Limit to top 10 for token management
+    transaction_stats = transaction_stats[:10]
+    request_stats = request_stats[:10]
+
+    # Extract actual SLA thresholds from thresholds parameter (reuse existing thresholds per FR-010)
+    # Scope meanings:
+    # - "all": Applied to AGGREGATED/OVERALL metrics (total for entire test)
+    # - "every": Applied to EACH INDIVIDUAL transaction/request (except those with specific thresholds)
+    # - Specific (e.g., "POST_login"): Applied to THAT SPECIFIC transaction/request only
+    sla_enabled = quality_gate_config.get('SLA', {}).get('checked', False)
+    sla_configured = False
+    sla_thresholds = {
+        'response_time': None,  # "all" scope - for overall/aggregated metrics only
+        'error_rate': None,
+        'throughput': None,
+        'configured': False,
+        'per_transaction': {}  # "every" scope and specific scopes - for individual transactions
+    }
+
+    # DEBUG: Log all thresholds structure
+    if sla_enabled and thresholds:
+        logger.info(f"[AIAnalyzer] Processing {len(thresholds)} threshold entries")
+        if len(thresholds) > 0:
+            sample = thresholds[0]
+            logger.info(f"[AIAnalyzer] Sample threshold structure: {sample}")
+
+    # Extract from thresholds parameter (actual configured values)
+    # Threshold structure: {scope, target, aggregation, comparison, value}
+    # Scope meanings:
+    #   - "all": Check against overall/aggregated metrics
+    #   - "every": Check against each individual transaction (fallback)
+    #   - Specific (e.g., "POST_login"): Check against that specific transaction (highest priority)
+    if sla_enabled and thresholds:
+        for th in thresholds:
+            scope = th.get('scope', '').lower()
+            target = th.get('target')
+            value = safe_float(th.get('value', 0))
+            aggregation = th.get('aggregation', '')
+
+            logger.info(f"[AIAnalyzer] Threshold: scope='{th.get('scope', '')}', target={target}, value={value}, agg={aggregation}")
+
+            # Extract "all" scope thresholds (overall SLA)
+            if scope == 'all':
+                if target == 'response_time' and value > 0:
+                    sla_thresholds['response_time'] = value  # in milliseconds
+                    sla_configured = True
+                elif target == 'error_rate' and value > 0:
+                    sla_thresholds['error_rate'] = value  # in percentage
+                    sla_configured = True
+                elif target == 'throughput' and value > 0:
+                    sla_thresholds['throughput'] = value
+
+            # Extract "every" scope thresholds (applies to all individual transactions)
+            elif scope == 'every':
+                # Initialize dict for "every" if not exists
+                if 'every' not in sla_thresholds['per_transaction']:
+                    sla_thresholds['per_transaction']['every'] = {}
+
+                if target == 'response_time' and value > 0:
+                    sla_thresholds['per_transaction']['every']['response_time'] = value
+                    sla_configured = True
+                elif target == 'error_rate' and value > 0:
+                    sla_thresholds['per_transaction']['every']['error_rate'] = value
+                    sla_configured = True
+
+            # Extract per-transaction thresholds (specific scope - takes priority)
+            elif scope not in ['all', 'every', '']:
+                # Use actual scope value as key (e.g., "POST_login")
+                transaction_name = th.get('scope')
+
+                # Initialize dict for this transaction if not exists
+                if transaction_name not in sla_thresholds['per_transaction']:
+                    sla_thresholds['per_transaction'][transaction_name] = {}
+
+                if target == 'response_time' and value > 0:
+                    sla_thresholds['per_transaction'][transaction_name]['response_time'] = value
+                    sla_configured = True
+                elif target == 'error_rate' and value > 0:
+                    sla_thresholds['per_transaction'][transaction_name]['error_rate'] = value
+                    sla_configured = True
+
+    sla_thresholds['configured'] = sla_configured
+
+    if sla_configured:
+        logger.info(f"[AIAnalyzer] Using configured SLA thresholds: Overall RT={sla_thresholds['response_time']}ms, "
+                   f"ER={sla_thresholds['error_rate']}%, Per-transaction count={len(sla_thresholds['per_transaction'])}")
+    else:
+        logger.info(f"[AIAnalyzer] No SLA thresholds configured for this test")
+
+    # Build test metadata
+    test_metadata = {
+        'test_id': test_params.get('test_id', 'N/A'),
+        'test_name': test_params.get('simulation', 'N/A'),
+        'environment': test_params.get('env', 'N/A'),
+        'start_time': test_params.get('start_time', 'N/A'),
+        'status': test_params.get('test_status', 'finished')
+    }
+
+    # Add note if no transaction/request data available
+    context_note = None
+    if not transaction_stats and not request_stats:
+        if not baseline_and_thresholds or not isinstance(baseline_and_thresholds, dict):
+            context_note = "Note: Baseline and threshold configuration not available for this test run."
+        elif not baseline_and_thresholds.get('requests'):
+            context_note = "Note: No individual transaction/request data available for this test run."
+        else:
+            context_note = "Note: No transaction or request data found in test results."
+        logger.info(f"[AIAnalyzer] Context note: {context_note}")
+
+    return {
+        'overall_metrics': overall_metrics,
+        'transaction_stats': transaction_stats,
+        'request_stats': request_stats,
+        'sla_thresholds': sla_thresholds,
+        'test_metadata': test_metadata,
+        'context_note': context_note
+    }
 
 
 def convert_utc_to_cet(utc_datetime_str, output_format='%Y-%m-%d %H:%M:%S'):
@@ -619,7 +1213,7 @@ class ReportBuilder:
 
         # test_description now contains all warnings generated above
         email_body = self.get_api_email_body(args, test_description, last_test_data, baseline, builds_comparison,
-                                             baseline_and_thresholds, general_metrics, comparison_metric)
+                                             baseline_and_thresholds, general_metrics, comparison_metric, thresholds)
         return email_body, charts, str(test_description['start']).split(" ")[0]
 
     def create_ui_email_body(self, tests_data, last_test_data):
@@ -1925,7 +2519,7 @@ class ReportBuilder:
         return test_data
 
     def get_api_email_body(self, args, test_params, last_test_data, baseline, builds_comparison, baseline_and_thresholds,
-                           general_metrics, comparison_metric='pct95'):
+                           general_metrics, comparison_metric='pct95', thresholds=None):
         def format_number(value):
             """Format number with thousand separators and max 2 decimal places"""
             if value in ['N/A', '', None]:
@@ -1966,6 +2560,7 @@ class ReportBuilder:
         env = Environment(loader=FileSystemLoader('./templates/'))
         env.filters['format_number'] = format_number
         env.filters['format_failed_reason'] = format_failed_reason
+        env.filters['markdown_to_html'] = markdown_to_html
         template = env.get_template("backend_email_template.html")
         last_test_data = self.reprocess_test_data(last_test_data, ['total', 'throughput'])
         
@@ -2027,7 +2622,96 @@ class ReportBuilder:
         else:
             test_params["missed_threshold_rate"] = f'-'
             test_params["threshold_status"] = "N/A"
-        
+
+        # AI Analysis Integration (T017)
+        ai_analysis = None
+        if args.get('enable_ai_analysis'):
+            try:
+                logger.info("[ReportBuilder] AI analysis enabled, generating insights...")
+
+                # Build performance context from existing data (FR-010: reuse SLA thresholds)
+                performance_context = _build_performance_context(
+                    last_test_data,
+                    baseline_and_thresholds,
+                    args.get('quality_gate_config'),
+                    test_params,
+                    thresholds  # Pass thresholds for actual SLA extraction
+                )
+
+                logger.info(f"[ReportBuilder] Performance context built successfully. "
+                           f"Transactions: {len(performance_context.get('transaction_stats', []))}, "
+                           f"Requests: {len(performance_context.get('request_stats', []))}")
+
+                # Detect violations with severity categorization
+                violations = _detect_violations(performance_context)
+
+                logger.info(f"[ReportBuilder] Violations: Critical={len(violations['critical'])}, "
+                           f"Warning={len(violations['warning'])}, Minor={len(violations['minor'])}")
+
+                # Detect baseline degradations
+                baseline_degradations = _detect_baseline_degradations(performance_context, baseline)
+
+                if baseline:
+                    logger.info(f"[ReportBuilder] Baseline degradations: Has={baseline_degradations['has_degradations']}, "
+                               f"Overall={len(baseline_degradations['overall'])}, Transactions={len(baseline_degradations['transactions'])}")
+                else:
+                    logger.info(f"[ReportBuilder] Baseline: Not configured for this test")
+
+                # Create AI provider via factory
+                provider_config = {
+                    'provider_type': args.get('ai_provider', 'azure_openai'),
+                    'api_key': args.get('azure_openai_api_key'),
+                    'endpoint': args.get('azure_openai_endpoint'),
+                    'api_version': args.get('azure_openai_api_version', '2024-02-15-preview'),
+                    'model': args.get('ai_model', 'gpt-4o'),
+                    'temperature': args.get('ai_temperature', 0.0)
+                }
+
+                provider = AIProviderFactory.create_provider(provider_config)
+
+                # Generate single comprehensive analysis (with both violations and baseline degradations)
+                analysis_content = provider.generate_analysis(performance_context, violations, baseline_degradations)
+
+                ai_analysis = {
+                    'summary': analysis_content  # Single field for comprehensive analysis
+                }
+
+                logger.info(f"[ReportBuilder] AI analysis completed: {len(analysis_content) if analysis_content else 0} chars")
+
+                # Trend analysis integration (T017-T021)
+                if len(builds_comparison) >= 2:
+                    try:
+                        logger.info(f"[ReportBuilder] Generating trend analysis for {len(builds_comparison)} test runs...")
+                        trend_content = provider.generate_trend_analysis(builds_comparison)
+                        if ai_analysis is None:
+                            ai_analysis = {}
+                        ai_analysis['trend'] = trend_content
+                        logger.info(f"[ReportBuilder] Trend analysis completed: {len(trend_content) if trend_content else 0} chars")
+                    except Exception as trend_error:
+                        logger.warning(f"[ReportBuilder] Trend analysis failed: {trend_error}")
+                        if ai_analysis is None:
+                            ai_analysis = {}
+                        ai_analysis['trend'] = None
+                else:
+                    logger.info(
+                        f"[ReportBuilder] Skipping trend analysis: only {len(builds_comparison)} "
+                        f"test(s) available (minimum 2 required)"
+                    )
+                    if ai_analysis is None:
+                        ai_analysis = {}
+                    ai_analysis['trend'] = None
+
+            except Exception as e:
+                # Graceful degradation (FR-023): log error but continue email delivery
+                import traceback
+                logger.error(f"[ReportBuilder] AI analysis failed: {type(e).__name__}: {e}")
+                logger.error(f"[ReportBuilder] Traceback: {traceback.format_exc()}")
+                logger.error(f"[ReportBuilder] Provider: {args.get('ai_provider')}, Model: {args.get('ai_model')}")
+                ai_analysis = None  # Email will render without AI section
+
+        # Add AI analysis to template params (can be None)
+        test_params['ai_analysis'] = ai_analysis
+
         html = template.render(t_params=test_params, summary=last_test_data, baseline=baseline,
                                comparison=builds_comparison,
                                baseline_and_thresholds=baseline_and_thresholds, general_metrics=general_metrics,

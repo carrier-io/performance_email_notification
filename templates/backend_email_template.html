@@ -267,6 +267,25 @@
         </table>
     </div>
 
+    <!-- AI Analysis Section -->
+    {% if t_params.ai_analysis and t_params.ai_analysis.summary %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">🤖 AI Analysis</p>
+    <div style="margin: 0 0 16px 0; padding: 0 12px; font-family: 'Open Sans', Arial, sans-serif; font-size: 14px; color: #525F7F; line-height: 1.6; overflow-x: auto;">
+        {{ t_params.ai_analysis.summary|markdown_to_html|safe }}
+    </div>
+
+    <!-- Trend Analysis Subsection (T022-T024) -->
+    {% if t_params.ai_analysis.trend %}
+    <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">📈 Trend Analysis</p>
+    <div style="margin: 0 0 16px 0; padding: 0 12px; font-family: 'Open Sans', Arial, sans-serif; font-size: 14px; color: #525F7F; line-height: 1.6; overflow-x: auto;">
+        {{ t_params.ai_analysis.trend|markdown_to_html|safe }}
+    </div>
+    {% endif %}
+
+    <!-- Subtle separator after AI section -->
+    <hr style="border: none; border-top: 1px solid #EAEDEF; margin: 16px 12px;">
+    {% endif %}
+
     {% if general_metrics.show_baseline_column %}
     <p style="margin: 24px 0 8px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">General metrics vs Baseline</p>
     <table style=" width: 100%;">
