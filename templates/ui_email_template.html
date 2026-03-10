@@ -143,6 +143,19 @@
     {% endif %}
     {% endif %}
 
+    {% if log_failed_transactions and log_failed_transactions|length > 0 %}
+    <div style="margin-top: 24px;">
+        <p style="margin: 24px 0 0px 0; padding: 0 12px; font-weight: 700; color: #525F7F;">Failed Transactions:</p>
+        <ul style="padding-left: 25px;">
+        {% for item in log_failed_transactions %}
+            <li style="list-style: none">
+                <span style="color: #F32626; font-size: 14px; font-weight: bold; margin-right: 5px;">✗</span>{{ item.name }}{% if item.error %} <span style="font-family: monospace; font-size: 12px; color: #525F7F;">({{ item.error }})</span>{% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     <div style="margin-top: 24px;">
         <table style="width: 100%;">
             <tbody>
@@ -262,6 +275,7 @@
         <tr>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Page Name</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Loop</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Status</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Load time, sec</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">DOM, sec</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">FCP, sec</th>
@@ -279,6 +293,7 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.name }}</a></td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: center; border-bottom: solid 1px #EAEDEF;">{% if result.status == 'SUCCESS' %}✅{% elif result.status == 'FAILED' %}❌{% else %}—{% endif %}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.load_time_color }}">{{ display_value(result.load_time) }}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.dom_color }}">{{ display_value(result.dom) }}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.fcp_color }}">{{ display_value(result.fcp) }}</td>
@@ -302,6 +317,7 @@
         <tr>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Page Name</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Loop</th>
+            <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">Status</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">CLS</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">TBT, sec</th>
             <th style="color: #757F99; padding: 8px 12px; line-height: 16px; font-size: 12px; font-weight: 600; background: #F9FAFF;  border-bottom: solid 1px #EAEDEF; border-top: solid 1px #EAEDEF; text-align: center;">INP, sec</th>
@@ -313,6 +329,7 @@
         <tr>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: left; border-bottom: solid 1px #EAEDEF;"><a href={{ result.report }}>{{ result.name }}</a></td>
             <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: right; border-bottom: solid 1px #EAEDEF;">{{ result.loop }}</td>
+            <td style="padding: 8px 12px; font-size: 14px; color: #32325D; text-align: center; border-bottom: solid 1px #EAEDEF;">{% if result.status == 'SUCCESS' %}✅{% elif result.status == 'FAILED' %}❌{% else %}—{% endif %}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.cls_color }}">{{ display_value(result.cls) }}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.tbt_color }}">{{ display_value(result.tbt) }}</td>
             <td style="padding: 8px 12px; font-size: 14px; text-align: right; border-bottom: solid 1px #EAEDEF; {{ result.inp_color }}">{{ display_value(result.inp) }}</td>

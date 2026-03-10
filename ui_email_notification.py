@@ -67,14 +67,20 @@ class UIEmailNotification:
         page_comparison, action_comparison = [], []
 
         for index, test in enumerate(tests_data):
-            page_metrics = self._aggregate_metrics(test["pages"], ["load_time", "tbt", "fcp", "lcp", "ttfb"])
-            page_metrics["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
+            test_date = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
+            
+            # Filter out FAILED status (if status is missing, assume OK)
+            filtered_pages = [p for p in test["pages"] if p.get("status") != "FAILED"]
+            filtered_actions = [a for a in test["actions"] if a.get("status") != "FAILED"]
+            
+            page_metrics = self._aggregate_metrics(filtered_pages, ["load_time", "tbt", "fcp", "lcp", "ttfb"])
+            page_metrics["date"] = test_date
             page_metrics[
                 "report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             page_comparison.append(page_metrics)
 
-            action_metrics = self._aggregate_metrics(test["actions"], ["cls", "tbt", "inp"])
-            action_metrics["date"] = self.convert_short_date_to_cet(last_reports[index]["start_time"], '%d-%b %H:%M')
+            action_metrics = self._aggregate_metrics(filtered_actions, ["cls", "tbt", "inp"])
+            action_metrics["date"] = test_date
             action_metrics[
                 "report"] = f"{self.gelloper_url}/-/performance/ui/results?result_id={last_reports[index]['id']}"
             action_comparison.append(action_metrics)
@@ -178,8 +184,12 @@ class UIEmailNotification:
 
     def _process_baseline_comparison(self, baseline_info, results_info, baseline_report_info):
         """Process baseline comparison and calculate degradation rate."""
-        baseline_results = self._aggregate_results_by_identifier(baseline_info, is_baseline=True)
-        current_results = self._aggregate_results_by_identifier(results_info, is_baseline=False)
+        # Filter out FAILED status from both baseline and current results
+        filtered_baseline_info = [r for r in baseline_info if r.get("status") != "FAILED"]
+        filtered_results_info = [r for r in results_info if r.get("status") != "FAILED"]
+        
+        baseline_results = self._aggregate_results_by_identifier(filtered_baseline_info, is_baseline=True)
+        current_results = self._aggregate_results_by_identifier(filtered_results_info, is_baseline=False)
 
         aggregated_baseline = self._finalize_aggregated_results(baseline_results)
         aggregated_current = self._finalize_aggregated_results(current_results)
@@ -321,6 +331,10 @@ class UIEmailNotification:
         inp_values = []
         
         for result in results_info:
+            # Skip FAILED results
+            if result.get("status") == "FAILED":
+                continue
+            
             # Collect LCP from pages
             if result.get('type') == 'page' and 'lcp' in result:
                 value = result['lcp']
@@ -526,10 +540,6 @@ class UIEmailNotification:
                 degradation_rate=degradation_rate_setting
             )
             
-            print(f"[PERFORMANCE SUMMARY] LCP: {performance_summary['metrics']['lcp']['value']} ({performance_summary['metrics']['lcp']['trend']}), "
-                  f"INP: {performance_summary['metrics']['inp']['value']} ({performance_summary['metrics']['inp']['trend']}), "
-                  f"Degradation Rate: {degradation_rate_setting}%")
-            
         except Exception as e:
             print(f"[WARNING] Could not generate performance summary: {e}")
             # Fallback to basic summary
@@ -539,6 +549,21 @@ class UIEmailNotification:
                     "inp": {"value": "N/A", "label": "Unknown", "color": "grey", "trend": "Unknown"}
                 }
             }
+
+        # Download and parse log file from artifacts
+        log_failed_transactions = []
+        try:
+            bucket = report_info['name'].replace(' ', '').replace('_', '').lower()
+            log_content = self._download_log_file(bucket, report_uid)
+            log_filename = f"/tmp/log_{report_info['id']}_{report_uid}.log"
+            with open(log_filename, 'wb') as f:
+                f.write(log_content)
+            print(f"[LOG DOWNLOAD] Saved log to: {log_filename}")
+            parsed = self._parse_log_file(log_content)
+            log_failed_transactions = parsed['failed_transactions']
+            print(f"[LOG PARSE] Failed transactions: {[t['name'] for t in log_failed_transactions]}")
+        except Exception as e:
+            print(f"[LOG DOWNLOAD] Error: {e}")
 
         t_params = {
             "scenario": report_info['name'],
@@ -575,8 +600,9 @@ class UIEmailNotification:
         email_body = self._get_email_body(
             t_params, results_info, page_comparison, action_comparison,
             baseline_comparison_pages, baseline_comparison_actions, degradation_rate,
-            missed_thresholds, baseline_info, aggregated_baseline, 
-            failed_pages_lcp, failed_actions_inp
+            missed_thresholds, baseline_info, aggregated_baseline,
+            failed_pages_lcp, failed_actions_inp,
+            log_failed_transactions
         )
 
         charts = [
@@ -600,11 +626,57 @@ class UIEmailNotification:
 
     def _get_results_info(self, report_id):
         return self._get_url(f"/ui_performance/results/{self.galloper_project_id}/{report_id}?order=asc")
+    
+    def _download_log_file(self, bucket, report_uid):
+        return self._get_url(f"/artifacts/artifact/{self.galloper_project_id}/{bucket}/{report_uid}.log", raw=True)
+
+    @staticmethod
+    def _parse_log_file(log_content):
+        """Parse log content and extract failed transactions with their [ERROR] messages."""
+        import re
+        errors_by_transaction = {}
+        failed_transactions = []
+        seen_transactions = set()
+
+        for raw_line in log_content.decode('utf-8', errors='replace').splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+
+            if '[ERROR]' in line:
+                # Strip leading: "2026-02-20 11:47:53\t[2026-02-20T11:47:44] "
+                cleaned = re.sub(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\]\s+', '', line)
+                # Extract transaction name and strip it from the end: "... on page TransactionName"
+                if ' on page ' in cleaned:
+                    msg_part, trans_name = cleaned.rsplit(' on page ', 1)
+                    errors_by_transaction[trans_name.strip()] = msg_part.strip()
+
+            # Pattern: <timestamp>\t[<ts>] TransactionName_Failed
+            if line.endswith('_Failed'):
+                token = line.split()[-1]
+                name = token[:-len('_Failed')]
+                if name not in seen_transactions:
+                    seen_transactions.add(name)
+                    failed_transactions.append(name)
+
+            # Pattern: Status detected: FAILED for TransactionName
+            if 'Status detected: FAILED for ' in line:
+                name = line.split('Status detected: FAILED for ', 1)[1].strip()
+                if name not in seen_transactions:
+                    seen_transactions.add(name)
+                    failed_transactions.append(name)
+
+        result = [
+            {'name': name, 'error': errors_by_transaction.get(name, '')}
+            for name in failed_transactions
+        ]
+        return {'failed_transactions': result}
 
     def _get_email_body(self, t_params, results_info, page_comparison, action_comparison,
                         baseline_comparison_pages, baseline_comparison_actions, degradation_rate,
                         missed_thresholds, baseline_info, aggregated_baseline,
-                        failed_pages_lcp, failed_actions_inp):
+                        failed_pages_lcp, failed_actions_inp,
+                        log_failed_transactions=None):
         env = Environment(loader=FileSystemLoader('./templates'))
         template = env.get_template("ui_email_template.html")
         return template.render(
@@ -613,12 +685,14 @@ class UIEmailNotification:
             baseline_comparison_actions=baseline_comparison_actions,
             degradation_rate=degradation_rate, missed_thresholds=missed_thresholds,
             baseline_info=baseline_info, aggregated_baseline=aggregated_baseline,
-            failed_pages_lcp=failed_pages_lcp, failed_actions_inp=failed_actions_inp
+            failed_pages_lcp=failed_pages_lcp, failed_actions_inp=failed_actions_inp,
+            log_failed_transactions=log_failed_transactions or []
         )
 
-    def _get_url(self, url):
+    def _get_url(self, url, raw=False):
+        full_url = f"{self.gelloper_url}/api/v1{url}"
         resp = requests.get(
-            f"{self.gelloper_url}/api/v1{url}",
+            full_url,
             headers={
                 'Authorization': f'bearer {self.gelloper_token}',
                 'Content-type': 'application/json'
@@ -626,7 +700,7 @@ class UIEmailNotification:
         )
         if resp.status_code != 200:
             raise Exception(f"Error {resp}")
-        return resp.json()
+        return resp.content if raw else resp.json()
 
     @staticmethod
     def create_ui_metrics_chart_pages(builds):
