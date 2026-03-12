@@ -19,6 +19,7 @@ from api_email_notification import ApiEmailNotification
 from ui_email_notification import UIEmailNotification
 from time import sleep
 from typing import Union
+import ast
 
 
 def lambda_handler(event: Union[list, dict], context):
@@ -61,6 +62,9 @@ def lambda_handler(event: Union[list, dict], context):
 
 
 def parse_args(event: Union[list, dict]):
+    dial_token = get_task_param_default("dial_token")
+    test_limit = get_task_param_default("test_limit", 5)
+    some_var = get_task_param_default("some_var", "not_set")
     if isinstance(event, list):
         _event = event
     else:
@@ -117,7 +121,7 @@ def parse_args(event: Union[list, dict]):
 
     # Notification Config
     args['user_list'] = event.get('user_list')
-    args['test_limit'] = event.get("test_limit", 5)
+    args['test_limit'] = test_limit
     # args['comparison_metric'] = event.get("comparison_metric", 'pct95')
     # Try to extract comparison_metric from multiple sources (in priority order)
     comparison_metric_from_event = None
@@ -179,10 +183,27 @@ def parse_args(event: Union[list, dict]):
     # All parameters are optional with defaults for backward compatibility
     args['enable_ai_analysis'] = event.get('enable_ai_analysis', True)
     args['ai_provider'] = event.get('ai_provider', 'azure_openai')
-    args['azure_openai_api_key'] = event.get('azure_openai_api_key', '')
+    args['azure_openai_api_key'] = dial_token
+    if not dial_token:
+        args['enable_ai_analysis'] = False
     args['azure_openai_endpoint'] = event.get('azure_openai_endpoint', 'https://ai-proxy.lab.epam.com')
     args['azure_openai_api_version'] = event.get('azure_openai_api_version', '2024-02-15-preview')
     args['ai_model'] = event.get('ai_model', 'gpt-4o')
     args['ai_temperature'] = event.get('ai_temperature', 0.0)
 
     return args
+
+
+def get_task_param_default(param_name: str, default=None):
+    try:
+        raw = environ.get("task_parameters", "[]")
+        task_parameters = ast.literal_eval(raw)
+    except Exception as e:
+        print(e)
+        print("failed to parse task parameters")
+        task_parameters = []
+
+    for param in task_parameters:
+        if param.get("name") == param_name:
+            return param.get("default")
+    return default
